@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.0.3
+- Apps2Samsung's TV-Store now shows in the app grid: it was taken for a second Samsung App Store and hidden (#4, thanks exzos28).
+
 ## 1.0.2
 - Back from sleep on the launcher: screens that wake up on the TV input or Samsung's home (The Frame 2025, which has no *Autorun Last App* setting) now open APL Launcher again when it was in front at power-off. An HDMI input, for example a console that switched the screen on, is left alone. This is in the launcher package: install it again (APL Launcher Setup or the .wgt for Apps2Samsung).
 - The Frame: Art Mode's app is no longer closed at start-up or after a minute in the background.
