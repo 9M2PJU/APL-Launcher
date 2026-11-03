@@ -6,6 +6,9 @@ plus aucun menu Samsung.
 
 ![Accueil](docs/images/home.jpg)
 
+**[▶ L'essayer dans le navigateur](https://knikt.github.io/APL-Launcher-for-TizenOS/)** : rien à télécharger, rien ne touche à ta TV.
+Flèches, Entrée et Échap (ou la télécommande à l'écran).
+
 La documentation complète est en anglais : [README.md](README.md). Ce qui marche, écran par écran et
 fonction par fonction : [docs/compatibility.md](docs/compatibility.md).
 

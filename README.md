@@ -7,6 +7,8 @@ Top Shelf, glass dock, Control Center, Settings, Sources — and no more Samsung
 
 ![Home screen](docs/images/home.jpg)
 
+**[▶ Try it in your browser](https://knikt.github.io/APL-Launcher-for-TizenOS/)** — no download, nothing touches your TV. Arrows, Enter and Esc (or the on-screen remote).
+
 [Requirements](#requirements) · [Install](#quick-start) · [Features](#features) · [Compatibility](docs/compatibility.md) · [User guide](docs/user-guide.md) · [Troubleshooting](docs/troubleshooting.md) · [Français](README.fr.md)
 
 </div>
