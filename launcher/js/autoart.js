@@ -233,6 +233,12 @@
                 if (a.madeBg) { a.bg = null; a.madeBg = false; }
             });
             providersP = null; running = false; run(apps, onChange);
+        },
+        /* Only the backgrounds made by genart.js, painted again in the chosen style: nothing searched again. */
+        restyle: function (apps, onChange) {
+            if (APL.genArt) APL.genArt.clear();
+            apps.forEach(function (a) { if (a.madeBg) { a.bg = null; a.madeBg = false; } });
+            running = false; run(apps, onChange);
         }
     };
 })(window);

@@ -382,10 +382,10 @@
 
     var bgTimer = null;
     function onFocus(i, el) {
-        var app = apps[i], inDock = el.dataset.row === "0";
+        var app = apps[i], inDock = el.dataset.row === "0", fromGrid = mode === "grid";
         if (mode !== "full") setMode(inDock ? "shelf" : "grid");
         else layout();
-        if (APL.widgets) APL.widgets.show(inDock ? app : null);
+        if (APL.widgets) APL.widgets.show(inDock ? app : null, fromGrid);
         if (!inDock) flushBlur();
         // In the grid, as on tvOS: the Top Shelf artwork freezes and becomes
         // the blurred background; it no longer changes from one app to the next (and nothing to decode).
@@ -535,6 +535,13 @@
         var keep = nav && nav.index >= 0 ? apps[nav.index] && apps[nav.index].id : null;
         dropLayers();
         allApps.forEach(function (a) { if (a.folder && APL.folders.byId(a.folder)) a.tileHtml = APL.folders.tileHtml(APL.folders.byId(a.folder)); });
+        // The Smart Hub tile starts hidden, once per profile: shown from Settings › Apps › Show on Home Screen
+        if (!APL.sys.pref("smartHubTileSet")) {
+            var hide = APL.sys.pref("hiddenApps").slice();
+            if (hide.indexOf(SAMSUNG_HOME_TILE) === -1) hide.push(SAMSUNG_HOME_TILE);
+            APL.sys.setPref("smartHubTileSet", true);
+            APL.sys.setPref("hiddenApps", hide);
+        }
         apps = allApps.filter(function (a) {
             if (APL.sys.pref("hiddenApps").indexOf(a.id) !== -1 || APL.folders.holding(a.id)) return false;
             return !a.folder || APL.folders.byId(a.folder);
@@ -913,6 +920,7 @@
     });
 
     APL.refreshArt = function () { if (APL.autoArt) APL.autoArt.refresh(allApps, render); };
+    APL.restyleArt = function () { if (APL.autoArt) APL.autoArt.restyle(allApps, render); };
 
     APL.resetHomeOrder = function () {
         APL.sys.setPref("appOrder", []);

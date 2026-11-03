@@ -39,6 +39,8 @@
         sourceDevices: {},          // device chosen for each input (Sources screen)
         autoUpdate: true,           // launcher updates from GitHub, on their own
         autoArt: true,              // logos, backgrounds and content found automatically (App Store, TMDB)
+        shelfArt: "logo",           // Top Shelf of apps without artwork: "logo" | "colors" | "wallpaper" (genart.js)
+        smartHubTileSet: false,     // the Smart Hub tile was hidden once in this profile (it starts hidden)
         liveShelf: true,            // dynamic Top Shelf (TMDB / YouTube)
         visualEffects: PREVIEW,     // blur / glass: costly on the screen, off by default
         gameWanted: false,          // Game Mode requested (applied when switching to an input)
@@ -58,7 +60,7 @@
        Home Screen layout, hidden apps, preferences, recent apps. */
     var PROFILE_KEYS = { hiddenApps: 1, appOrder: 1, clock24: 1, showHint: 1, reduceMotion: 1, dnd: 1,
                          uiSounds: 1, screensaverStyle: 1, screensaverDelay: 1, liveShelf: 1, recentApps: 1,
-                         appearance: 1, folders: 1, aerialHidden: 1 };
+                         appearance: 1, folders: 1, aerialHidden: 1, smartHubTileSet: 1 };
     DEFAULTS.recentApps = [];
     var COLORS = ["#ff9f0a", "#30d158", "#0a84ff", "#bf5af2", "#ff375f", "#64d2ff", "#ffd60a", "#ac8e68"];
     function load(k, fallback) {
@@ -190,14 +192,20 @@
         };
     }
 
+    /* Apps are drawn in 1920 × 1080 (the screen offers them no other mode), while the panel and
+       the videos can be 4K or 8K: both are shown. */
     function display() {
         return new Promise(function (resolve) {
             if (PREVIEW) return resolve(APL.t("3840 × 2160 (preview)"));
+            var p = wa && wa.productinfo;
+            var panel = safe(function () { return p.is8KPanelSupported() ? "7680 × 4320" : ""; }, "") ||
+                        safe(function () { return p.isUdPanelSupported() ? "3840 × 2160" : ""; }, "");
             try {
                 tz.systeminfo.getPropertyValue("DISPLAY", function (d) {
-                    resolve(d.resolutionWidth + " × " + d.resolutionHeight);
-                }, function () { resolve("—"); });
-            } catch (e) { resolve("—"); }
+                    var ui = d.resolutionWidth + " × " + d.resolutionHeight;
+                    resolve(panel && panel !== ui ? APL.t("{panel} (interface {ui})", { panel: panel, ui: ui }) : ui);
+                }, function () { resolve(panel || "—"); });
+            } catch (e) { resolve(panel || "—"); }
         });
     }
 

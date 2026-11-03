@@ -1,8 +1,8 @@
 {
- "version": "1.0.3",
+ "version": "1.0.4",
  "loader": 1,
  "reinstall": "1.0.0",
- "notes": "Apps2Samsung's TV-Store now shows in the app grid.",
+ "notes": "Back after sleep and Art Mode on The Frame, Smart Hub tile, background choice for other apps, smoother Continue Watching cards.",
  "scripts": [
   "js/lang-fr.js",
   "js/i18n.js",

@@ -205,6 +205,10 @@
                 }, APL.t("Puts the apps back in their original order (your apps, Settings, Sources, then the others)."), "reset"),
                 toggle(APL.t("Automatic Artwork"), "autoArt",
                     APL.t("The launcher finds each app's logo, background and current content on its own (Apple's App Store, TMDB), even for apps installed later. Otherwise, it makes them from the app's icon.")),
+                choice(APL.t("Background for Other Apps"), "shelfArt",
+                    [["logo", APL.t("Logo on Its Colors")], ["colors", APL.t("Its Colors Only")], ["wallpaper", APL.t("APL Wallpaper")]],
+                    APL.t("Top Shelf of the apps that have no artwork of their own: their logo enlarged on their colors, their colors alone, or the same wallpaper for all of them."),
+                    function () { if (APL.restyleArt) APL.restyleArt(); }),
                 action(APL.t("Search for Artwork Again"), function () {
                     if (APL.refreshArt) APL.refreshArt();
                     APL.toast(APL.t("Searching for artwork in the background…"), true);

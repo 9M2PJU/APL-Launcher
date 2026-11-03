@@ -29,7 +29,8 @@
     var AQUA_BLOBS = HOME + "AquaPlay02/data/IndexedDB/file__0.indexeddb.blob";
     var HOT_DB = HOME + "6YLB5zo9te/data/databases/file__0/1";
     var STREMIO_STORE = HOME + "IkWsFHtOY9/data/Local Storage/leveldb";
-    var CACHE_MS = 30000, DONE_AT = 0.95;              // watched to 95%: it is finished
+    // The cards only change after an app was used, and coming back from it empties the cache
+    var CACHE_MS = 10 * 60000, DONE_AT = 0.95;          // watched to 95%: it is finished
     var ART_KEY = "apl.wdg.art2";             // 2: pictures with the title drawn on them (liveshelf.js keyArt)
     var root = null, row = null, shownFor = null, shownApp = null, cache = {}, pending = {};
 
@@ -501,21 +502,28 @@
     }
 
     /* On the Home Screen: the cards of the selected app, and of it alone. We wait for the focus to
-       settle: while moving along the dock, nothing is read or drawn. */
-    var SETTLE_MS = 140, showTimer = null, painted = "";
-    function show(app) {
+       settle: while moving along the dock, nothing is read or drawn. Coming up from the grid, the
+       Home Screen slides for 200 ms and its blurred background goes away: the cards wait for the
+       end of it. The reading runs a command on the screen: after the cards already known, never
+       during an animation. */
+    var SETTLE_MS = 140, FROM_GRID_MS = 320, READ_LATER_MS = 900;
+    var showTimer = null, readTimer = null, painted = "";
+    function show(app, fromGrid) {
         var id = app && app.id, same = id === shownFor;
         shownFor = id;
         shownApp = app;
         if (!root) build();
         clearTimeout(showTimer);
+        clearTimeout(readTimer);
         if (!same) setShown(false);
         if (!READERS[id] || sys.PREVIEW) return;
         showTimer = setTimeout(function () {
             var last = lastKnown(id);
             if (last) paint(id, last);
-            readCards(id).then(function (cards) { if (cards && shownFor === id) paint(id, cards); });
-        }, SETTLE_MS);
+            readTimer = setTimeout(function () {
+                readCards(id).then(function (cards) { if (cards && shownFor === id) paint(id, cards); });
+            }, last ? READ_LATER_MS : 0);
+        }, fromGrid ? FROM_GRID_MS : SETTLE_MS);
     }
     /* Same cards as on screen: nothing is redrawn. While on the cards, nothing moves under the focus. */
     function paint(id, cards) {

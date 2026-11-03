@@ -185,7 +185,6 @@ function readState(done) {
 /* The screen shows the TV input (antenna, no device) or Samsung's home: the launcher should come back. */
 function onTvInput(st) { return !!st.app && ((/tv-viewer/.test(st.app) && st.source === 0) || /csfs|home\.sidebar/.test(st.app)); }
 
-/* The launcher was just hidden: by another app, or by the screen going to sleep? */
 /* The launcher was just hidden: by another app, by Art Mode, or by the screen going to sleep? */
 function checkSleep(tries) {
     if (sleeping || waking || inArt) return;

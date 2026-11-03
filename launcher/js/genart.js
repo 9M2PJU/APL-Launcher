@@ -286,8 +286,17 @@
         x.fillStyle = glow;
         x.fillRect(-BG_W, -BG_H * 2, BG_W * 2, BG_H * 4);
         x.restore();
-        drawLogo(x, logo, BG_W / 2, cy2, 820, logo.icon ? 400 : 320);
+        if (logo) drawLogo(x, logo, BG_W / 2, cy2, 820, logo.icon ? 400 : 320);
         return c.toDataURL("image/jpeg", 0.84);
+    }
+
+    /* Settings › Home Screen › Background for Other Apps: the logo enlarged on the app's colors
+       (a small icon gets blurry), the colors alone, or one wallpaper for all of them. */
+    var WALLPAPER = "wallpaper", wallpaperUrl = null;
+    function bgMode() { var m = sys.pref("shelfArt"); return m === "colors" || m === WALLPAPER ? m : "logo"; }
+    function wallpaper() {
+        if (!wallpaperUrl) wallpaperUrl = paintBg(hslToRgb(226, 52, 24), null, 226, 58, "APL Launcher");
+        return wallpaperUrl;
     }
 
     /* ---------- for one app ---------- */
@@ -308,13 +317,15 @@
             base = hslToRgb(hue, 58, 26);
             logo = { text: app.name || "", font: fontName(), colour: "#fff" };
         }
-        return { tile: paintTile(base, logo), bg: paintBg(base, logo, hue, sat, app.id), accent: rgb(hslToRgb(hue, sat, 50)) };
+        var mode = bgMode();
+        return { tile: paintTile(base, logo), accent: rgb(hslToRgb(hue, sat, 50)), mode: mode,
+                 bg: mode === WALLPAPER ? WALLPAPER : paintBg(base, mode === "colors" ? null : logo, hue, sat, app.id) };
     }
 
     function stored(app) {
         try {
             var r = JSON.parse(global.localStorage.getItem(PREFIX + app.id) || "null");
-            return r && r.v === VERSION && r.of === String(app.icon || "") ? r : null;
+            return r && r.v === VERSION && r.of === String(app.icon || "") && (r.mode || "logo") === bgMode() ? r : null;
         } catch (e) { return null; }
     }
     function put(app, r) {
@@ -323,7 +334,7 @@
     function use(app, r) {
         var changed = false;
         if (!app.tile && !app.tileHtml) { app.tile = r.tile; app.madeTile = true; changed = true; }
-        if (!app.bg && !app.shelfHtml) { app.bg = r.bg; app.madeBg = true; changed = true; }
+        if (!app.bg && !app.shelfHtml) { app.bg = r.bg === WALLPAPER ? wallpaper() : r.bg; app.madeBg = true; changed = true; }
         if (!app.accent) app.accent = r.accent;
         return changed;
     }
