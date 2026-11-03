@@ -40,6 +40,8 @@ namespace APL
         private static VconfChanged fullscreenChanged;
         private Timer homeCheck;
         private bool returnToLauncher = true;
+        // The Smart Hub tile opened Samsung's home on purpose: leave it until something else is in front
+        private bool samsungHomeWanted;
         private Alexa alexa;
         private string alexaFile, alexaList;
         private readonly KeyGuard keyGuard = new KeyGuard();
@@ -117,6 +119,7 @@ namespace APL
             string apps = Extra(e, "apl_apps");
             if (!string.IsNullOrEmpty(apps)) idleApps.HomeApps(apps);
             if (action == "stay") return;                  // started by the launcher, to be ready
+            if (action == "samsung_home") { OpenSamsungHome(); return; }
             if (action == "open") { panel.Open(); return; }
             KeyPressed();
         }
@@ -154,14 +157,20 @@ namespace APL
         /// <summary>Samsung's home flashes by while apps start: it counts only if it stays.</summary>
         private void OnFullscreenChanged()
         {
-            idleApps.Front(FullscreenApp());
-            if (!returnToLauncher || !IsSamsungHome(FullscreenApp())) return;
+            string front = FullscreenApp();
+            idleApps.Front(front);
+            if (samsungHomeWanted)
+            {
+                if (IsSamsungHome(front)) return;          // the one the tile opened
+                samsungHomeWanted = false;                 // the user went elsewhere: back to normal
+            }
+            if (!returnToLauncher || !IsSamsungHome(front)) return;
             if (homeCheck == null)
             {
                 homeCheck = new Timer(350);
                 homeCheck.Tick += delegate
                 {
-                    if (returnToLauncher && IsSamsungHome(FullscreenApp())) OpenLauncher();
+                    if (returnToLauncher && !samsungHomeWanted && IsSamsungHome(FullscreenApp())) OpenLauncher();
                     return false;
                 };
             }
@@ -277,6 +286,19 @@ namespace APL
         private static bool IsSamsungHome(string app)
         {
             return string.IsNullOrEmpty(app) ? false : app.Contains("csfs") || app.Contains("home.sidebar");
+        }
+
+        /// <summary>
+        /// The launcher's Smart Hub tile. Samsung's home ignores a plain app-control launch (Vetro's dock
+        /// found the same); the platform's app_launcher, as root through Vetro, shows it. It then stays:
+        /// "Return to the Launcher" waits until something else is in front (OnFullscreenChanged).
+        /// </summary>
+        private async void OpenSamsungHome()
+        {
+            samsungHomeWanted = true;
+            Note("Smart Hub opened from the launcher");
+            try { await Vetro.Exec("/usr/bin/app_launcher -s com.samsung.tv.csfs >/dev/null 2>&1"); }
+            catch (Exception ex) { samsungHomeWanted = false; Note("Smart Hub: " + ex.Message); }
         }
 
         public static async void OpenLauncher(string action = "")

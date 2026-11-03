@@ -8,7 +8,8 @@
    the "Return to the Launcher" setting and the delay for closing background apps.
 
    With no overlay installed, the Home key must stay with the launcher and the others
-   with Samsung: the Vetro rules are put back at start-up, so that no key is lost.
+   with Samsung: the Vetro rules are put back at start-up, so that no key is lost, and an
+   alert says what was changed.
    ============================================================ */
 (function (global) {
     "use strict";
@@ -55,19 +56,53 @@
         } catch (e) {}
     }
 
-    /* Keys handed to the overlay while it is not there: Home goes back to the launcher, the others to Samsung. */
+    /* The Smart Hub tile: the overlay opens Samsung's home and leaves it on screen until something
+       else comes in front (overlay/Program.cs, apl_action samsung_home). */
+    function openSamsungHome() {
+        if (!installed || sys.PREVIEW) return;
+        try {
+            var T = global.tizen;
+            var ctl = new T.ApplicationControl("http://tizen.org/appcontrol/operation/default", null, null, null,
+                                               [new T.ApplicationControlData("apl_action", ["samsung_home"])]);
+            T.application.launchAppControl(ctl, OVERLAY, function () {}, function () {});
+        } catch (e) {}
+    }
+
+    /* Keys handed to the overlay while it is not there: Home goes back to the launcher, the others to
+       Samsung. Only the rules that launch the overlay change (the ones APL Launcher Setup made), and
+       the person at the screen is told what changed: nothing happens behind their back. */
+    var KEY_NAMES = { "63": "Home", "244": "⏯", "560": "Samsung TV Plus", "221": "Prime Video" };
+    function keyName(rule) {
+        var code = rule.trigger && String(rule.trigger.value);
+        return KEY_NAMES[code] || APL.t("key {code}", { code: code });
+    }
     function checkHomeRule() {
         sys.vetroGet("/remap").then(function (r) {
-            var rules = (r && r.rules) || [], changed = false;
+            var rules = (r && r.rules) || [], changed = false, home = false, freed = [];
             rules = rules.filter(function (rule) {
                 var mine = (rule.actions || []).filter(function (a) { return a.type === "launch" && a.appId === OVERLAY; });
                 if (!mine.length) return true;
                 changed = true;
                 mine.forEach(function (a) { a.appId = LAUNCHER; });
-                return rule.id === HOME_RULE;
+                if (rule.id === HOME_RULE) { home = true; return true; }
+                freed.push(keyName(rule));
+                return false;
             });
-            if (changed) sys.vetroPost("/remap", { rules: rules }).catch(function () {});
+            if (!changed) return;
+            sys.vetroPost("/remap", { rules: rules }).then(function () { tellRepaired(home, freed); }).catch(function () {});
         }, function () {});
+    }
+    function tellRepaired(home, freed) {
+        if (!APL.alert) return;
+        var keys = freed.join(", "), many = freed.length > 1, message;
+        if (home && freed.length) message = many
+            ? APL.t("Home now opens APL Launcher, and {keys} are back to Samsung. Run APL Launcher Setup again to get the overlay back.", { keys: keys })
+            : APL.t("Home now opens APL Launcher, and {keys} is back to Samsung. Run APL Launcher Setup again to get the overlay back.", { keys: keys });
+        else if (home) message = APL.t("Home now opens APL Launcher. Run APL Launcher Setup again to get the overlay back.");
+        else message = many
+            ? APL.t("{keys} are back to Samsung. Run APL Launcher Setup again to get the overlay back.", { keys: keys })
+            : APL.t("{keys} is back to Samsung. Run APL Launcher Setup again to get the overlay back.", { keys: keys });
+        APL.alert({ title: APL.t("APL Overlay is not installed"), message: message, buttons: [{ label: APL.t("OK") }] });
     }
 
     function start() {
@@ -90,6 +125,7 @@
             send();
         },
         refresh: send,
+        openSamsungHome: openSamsungHome,
         isInstalled: function () { return installed; }
     };
 })(window);

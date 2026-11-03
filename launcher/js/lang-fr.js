@@ -539,5 +539,14 @@ window.APL_LANG_FR = {
     "Update failed: the launcher's GitHub repository is private (it must be public).": "Mise à jour impossible : le dépôt GitHub du launcher est privé (il doit être public).",
     "Update failed: {error}. Try again later.": "Mise à jour impossible : {error}. Réessaie plus tard.",
     "no network": "pas de réseau",
-    "Going back to the installed version…": "Retour à la version installée…"
+    "Going back to the installed version…": "Retour à la version installée…",
+    "APL Overlay is not installed": "APL Overlay n'est pas installé",
+    "key {code}": "touche {code}",
+    "Home now opens APL Launcher, and {keys} are back to Samsung. Run APL Launcher Setup again to get the overlay back.": "Home ouvre maintenant APL Launcher, et {keys} reviennent à Samsung. Relance APL Launcher Setup pour retrouver l'overlay.",
+    "Home now opens APL Launcher, and {keys} is back to Samsung. Run APL Launcher Setup again to get the overlay back.": "Home ouvre maintenant APL Launcher, et {keys} revient à Samsung. Relance APL Launcher Setup pour retrouver l'overlay.",
+    "Home now opens APL Launcher. Run APL Launcher Setup again to get the overlay back.": "Home ouvre maintenant APL Launcher. Relance APL Launcher Setup pour retrouver l'overlay.",
+    "{keys} are back to Samsung. Run APL Launcher Setup again to get the overlay back.": "{keys} reviennent à Samsung. Relance APL Launcher Setup pour retrouver l'overlay.",
+    "{keys} is back to Samsung. Run APL Launcher Setup again to get the overlay back.": "{keys} revient à Samsung. Relance APL Launcher Setup pour retrouver l'overlay.",
+    "A tile that opens Samsung's Smart Hub, the way out now that the Home button opens the launcher. Press Home there to come back.": "Une tuile qui ouvre le Smart Hub de Samsung, la porte de sortie maintenant que le bouton Home ouvre le launcher. Appuie sur Home pour revenir.",
+    "Opens Samsung's Smart Hub on the screen": "Ouvre le Smart Hub de Samsung sur l'écran"
 };
