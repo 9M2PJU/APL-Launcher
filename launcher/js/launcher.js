@@ -492,7 +492,9 @@
     function bootCleanup() {
         if (bootCleaned || document.hidden || APL.sys.PREVIEW || !APL.sys.pref("bootCleanup")) return;
         bootCleaned = true;
-        var ids = BOOT_CLOSE.concat(Object.keys(APL.sys.pref("servicesCut") || {}));
+        var frame = /LS03/i.test(APL.sys.product().model || "");      // The Frame: Art Mode needs art-app
+        var ids = BOOT_CLOSE.filter(function (id) { return !(frame && id === "org.tizen.art-app"); })
+                            .concat(Object.keys(APL.sys.pref("servicesCut") || {}));
         APL.sys.exec("[ -f /tmp/apl-cleaned ] || { touch /tmp/apl-cleaned; (" + ids.map(function (id) {
             return "app_launcher -k " + id;
         }).join("; ") + ") >/dev/null 2>&1 & }; true").catch(function () { bootCleaned = false; });

@@ -1,8 +1,8 @@
 {
- "version": "1.0.1",
+ "version": "1.0.2",
  "loader": 1,
  "reinstall": "1.0.0",
- "notes": "Smoother videos: unused Samsung apps that open by themselves close after 1 minute.",
+ "notes": "The launcher comes back after sleep on screens that wake up on the TV input (The Frame).",
  "scripts": [
   "js/lang-fr.js",
   "js/i18n.js",

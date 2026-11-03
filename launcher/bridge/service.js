@@ -17,6 +17,11 @@
    So the launcher sends its request with no port attached, and this service answers
    through its own trusted port to APL_BRIDGE_REPLY. Large
    answers are sent in several pieces (message port limit).
+
+   Wake-up: some screens (The Frame 2025) come back on the TV input
+   after sleep, even when the launcher was in front at power-off, and
+   have no "Autorun Last App" setting. The launcher says when it is in
+   front; the service then stays started and brings it back.
    ============================================================ */
 "use strict";
 
@@ -31,11 +36,18 @@ var ALLOWED = /^\/(status|screen|tv-settings|tv-menu|exec|components\/action|con
 var IDLE_MS = 15 * 60 * 1000;
 var CHUNK = 4000;                       // characters per message (at most 12 KB once encoded)
 var BOOT_WINDOW_S = 240, LAUNCH_TRIES = 5;
+/* Going to sleep, the screen hides the launcher and sets memory/pm/state (1 = on); about 17 s
+   later it freezes the apps, and the timer then misses its ticks (the fallback signal). */
+var SLEEP_CHECKS = 4, POLL_MS = 3000, TICK_MS = 5000, ASLEEP_MS = 20000, HIDDEN_GRACE_MS = 45000;
+var WAKE_WATCH_MS = 90000, SETTLE_MS = 15000;
 
 var port = null, idle = null, openedAtBoot = false;
+var launcherFront = false, hiddenAt = 0, lastTick = Date.now(), ticking = null, sleeping = false, waking = false;
 
 function stopLater() {
     clearTimeout(idle);
+    // Stays while the launcher is in front or the screen sleeps on it, to bring it back at wake-up
+    if (launcherFront || sleeping || waking) return;
     idle = setTimeout(function () {
         try { tizen.application.getCurrentApplication().exit(); } catch (e) {}
     }, IDLE_MS);
@@ -61,39 +73,112 @@ function answer(id, status, body) {
 }
 
 function onMessage(data) {
+    var front = field(data, "front");
+    if (front) {                        // the launcher came in front ("1") or left it ("0")
+        launcherFront = front === "1";
+        if (!launcherFront) { hiddenAt = Date.now(); checkSleep(SLEEP_CHECKS); }
+        stopLater();
+        return;
+    }
     stopLater();
     var id = field(data, "id"), method = field(data, "method") || "GET", path = field(data, "path"), body = field(data, "body");
     if (!ALLOWED.test(path) || (method !== "GET" && method !== "POST")) {
         answer(id, 404, '{"error":"not relayed"}');
         return;
     }
-    relay(id, method, path, Buffer.from(body || "", "utf8"), HOSTS.length - 1);
+    vetro(method, path, Buffer.from(body || "", "utf8"), 150000, function (status, text) { answer(id, status, text); });
 }
 
-function relay(id, method, path, buf, retries) {
+/* A request to Vetro; done(status, text) is called once. */
+function vetro(method, path, buf, timeoutMs, done, retries) {
+    if (retries === undefined) retries = HOSTS.length - 1;
     var req = http.request({
         host: HOSTS[hostIndex], port: VETRO_PORT, path: path, method: method,
         headers: { "Content-Type": "application/json", "Content-Length": buf.length }
     }, function (res) {
         var chunks = [];
         res.on("data", function (c) { chunks.push(c); });
-        res.on("end", function () { answer(id, res.statusCode || 502, Buffer.concat(chunks).toString("utf8")); });
+        res.on("end", function () { done(res.statusCode || 502, Buffer.concat(chunks).toString("utf8")); });
     });
     req.on("error", function (e) {
         // Connection refused: the request did not go out, try the other way of writing the address
         if (retries > 0 && /EHOSTUNREACH|EACCES|ECONNREFUSED|ENETUNREACH|EINVAL/.test(e.code)) {
             hostIndex = (hostIndex + 1) % HOSTS.length;
-            relay(id, method, path, buf, retries - 1);
+            vetro(method, path, buf, timeoutMs, done, retries - 1);
             return;
         }
-        answer(id, 502, JSON.stringify({ ok: false, error: "Vetro unreachable: " + e.message }));
+        done(502, JSON.stringify({ ok: false, error: "Vetro unreachable: " + e.message }));
     });
-    req.setTimeout(150000, function () { req.abort(); });
+    req.setTimeout(timeoutMs, function () { req.abort(); });
     req.end(buf);
+}
+
+/* ---------- wake-up ----------
+   Back from sleep, if the launcher was in front at power-off: when the screen shows the TV input
+   (antenna, no device) or Samsung's home, the launcher is opened again. An HDMI input (a console
+   that switched the screen on), an app or the launcher itself are left alone. Vetro restarts its
+   agent at wake-up: it answers again after about 15 s. */
+function shell(command, done) {
+    var buf = Buffer.from(JSON.stringify({ cmd: command }), "utf8");
+    vetro("POST", "/exec", buf, 20000, function (status, text) {
+        var out = "";
+        try { out = String(JSON.parse(text).output || ""); } catch (e) {}
+        done(out);
+    });
+}
+function vconfValue(out, key) { return (new RegExp(key + ", value = (\\S+)").exec(out) || [])[1]; }
+
+/* The launcher was just hidden: by another app, or by the screen going to sleep? */
+function checkSleep(tries) {
+    if (sleeping || waking) return;
+    shell("vconftool get memory/pm/state", function (out) {
+        var state = vconfValue(out, "memory/pm/state");
+        if (state && state !== "1") { sleeping = true; stopLater(); watchWake(); return; }
+        if (tries > 1 && !launcherFront) setTimeout(function () { checkSleep(tries - 1); }, 1000);
+    });
+}
+function watchWake() {
+    shell("vconftool get memory/pm/state", function (out) {
+        if (vconfValue(out, "memory/pm/state") === "1") { sleeping = false; wokeUp(true); return; }
+        setTimeout(watchWake, POLL_MS);
+    });
+}
+
+/* Fallback: the apps were frozen during the sleep. */
+function tick() {
+    var now = Date.now();
+    if (now - lastTick > ASLEEP_MS) wokeUp(launcherFront || sleeping || (hiddenAt > 0 && lastTick - hiddenAt < HIDDEN_GRACE_MS));
+    lastTick = now;
+}
+
+function wokeUp(wasFront) {
+    if (waking || !wasFront) return;
+    waking = true;
+    var until = Date.now() + WAKE_WATCH_MS, launcherSince = 0;
+    function done() { waking = false; stopLater(); }
+    (function look() {
+        shell("vconftool get memory/appfw/current_fullscreen_appid; vconftool get memory/system/source_type", function (out) {
+            var app = vconfValue(out, "current_fullscreen_appid");
+            var source = parseInt(vconfValue(out, "source_type"), 10);
+            if (app) {
+                if ((/tv-viewer/.test(app) && source === 0) || /csfs|home\.sidebar/.test(app)) {
+                    try { tizen.application.launch(APP_ID, function () {}, function () {}); } catch (e) {}
+                    done();
+                    return;
+                }
+                if (app !== APP_ID) { done(); return; }
+                if (!launcherSince) launcherSince = Date.now();
+                if (Date.now() - launcherSince > SETTLE_MS) { done(); return; }    // the screen came back on it
+            }
+            if (Date.now() > until) { done(); return; }
+            setTimeout(look, POLL_MS);
+        });
+    })();
 }
 
 function start() {
     stopLater();
+    if (!ticking) ticking = setInterval(tick, TICK_MS);
     if (port) return;
     port = tizen.messageport.requestTrustedLocalMessagePort(PORT_NAME);
     port.addMessagePortListener(onMessage);
@@ -121,4 +206,4 @@ module.exports.onStart = function () { start(); openLauncher(LAUNCH_TRIES); };
 // Some environments run the script without calling onStart
 try { start(); openLauncher(LAUNCH_TRIES); } catch (e) {}
 module.exports.onRequest = function () { start(); };
-module.exports.onExit = function () { clearTimeout(idle); port = null; };
+module.exports.onExit = function () { clearTimeout(idle); clearInterval(ticking); ticking = null; port = null; };

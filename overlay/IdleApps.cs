@@ -19,10 +19,10 @@ namespace APL
         private const int UnusedMinutes = 1;
         private static readonly string[] Never = { "APLauncher.", "apl.launcher.", "vetrotvapp", "com.samsung.tv.csfs", "com.samsung.tv.home.sidebar", "org.tizen.tv-viewer" };
         private static readonly string[] Receivers = { "airplay", "ScreenMirroring", "multiscreen" };
-        // Samsung's that open by themselves, as in the launcher's bootCleanup
+        // Samsung's that open by themselves, as in the launcher's bootCleanup (not art-app: The Frame's Art Mode needs it)
         private static readonly HashSet<string> SelfOpening = new HashSet<string> {
             "com.samsung.tv.home.media", "com.samsung.tv.mycontents", "com.samsung.tv.quicklaunch", "org.tizen.browser",
-            "com.samsung.tv.bixbycapsuleviewer", "org.tizen.art-app", "com.samsung.tv.aria-video", "com.samsung.tv.cobalt-yt",
+            "com.samsung.tv.bixbycapsuleviewer", "com.samsung.tv.aria-video", "com.samsung.tv.cobalt-yt",
             "MCmYXNxgcu.DisneyPlus", "org.tizen.netflix-app", "org.tizen.primevideo", "HEPsqFNie0.tvplusstandalone" };
         private static readonly Regex Running = new Regex(@"^\s*([A-Za-z0-9_.-]+) \(\d+\)\s*$");
 

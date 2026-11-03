@@ -420,6 +420,19 @@
             throw e;
         });
     }
+    /* Tells the bridge whether the launcher is in front: if the screen goes to sleep on it, the
+       bridge brings it back at wake-up on screens that come back on the TV input (bridge/service.js). */
+    function bridgeFront(visible) {
+        if (PREVIEW || !tz || !tz.messageport) return;
+        function send() {
+            tz.messageport.requestTrustedRemoteMessagePort(BRIDGE_ID, BRIDGE_PORT).sendMessage([{ key: "front", value: visible ? "1" : "0" }]);
+        }
+        try { send(); } catch (e) { if (visible) startBridge().then(send).catch(function () {}); }
+    }
+    if (!PREVIEW && global.document) {
+        document.addEventListener("visibilitychange", function () { bridgeFront(!document.hidden); });
+        setTimeout(function () { if (!document.hidden) bridgeFront(true); }, 5000);
+    }
     function vetroGet(path) {
         return bridgeRequest("GET", path, "").then(function (r) {
             if (r.status >= 400) throw new Error("Vetro " + r.status);

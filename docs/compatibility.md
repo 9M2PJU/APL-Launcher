@@ -15,6 +15,7 @@ Every "Works" below was checked on a real screen, not only in the PC preview.
 | Screen | Status | Notes |
 |---|---|---|
 | Samsung Smart Monitor M8, Tizen 9 | ✅ | Developed and used every day on this screen, rooted with Vetro. |
+| Samsung The Frame 2025 (43", Tizen 9), launcher alone through Apps2Samsung | ⚠️ | Reported by a user: Home and a full start open the launcher. Coming back to it after sleep needs 1.0.2, not yet confirmed on that screen. No APL Overlay in this package. |
 | Other Samsung Smart Monitors and TVs | 🧪 | Not tested yet. They need Vetro, so only screens that Vetro supports can work. Reports are welcome in the issues. |
 | Samsung screens without root / Vetro | ❌ | The launcher needs Vetro for the Home button, the remote buttons and the system controls. |
 
