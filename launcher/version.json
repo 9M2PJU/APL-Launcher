@@ -1,8 +1,8 @@
 {
- "version": "1.0.0",
+ "version": "1.0.1",
  "loader": 1,
  "reinstall": "1.0.0",
- "notes": "Première version publique",
+ "notes": "Smoother videos: unused Samsung apps that open by themselves close after 1 minute.",
  "scripts": [
   "js/lang-fr.js",
   "js/i18n.js",

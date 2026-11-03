@@ -56,7 +56,7 @@ A small .NET app for Tizen's native toolkit, kept hidden in memory:
 - **Alexa:** announces apps and commands as smart plugs on the local network (`Alexa.cs`).
 - **Alexa's glow:** a Siri-like orb and glow along the bottom while the remote's microphone button is held, then while Alexa answers (`MicButton.cs`, `Panel.Listen`). A small root script, started through Vetro, reads Vetro's forwarded remote and keeps `/tmp/apl-mic-down` while the button is down.
 - **Stuck keys:** releases a key the screen still believes is down after Vetro's input helper restarts (`KeyGuard.cs`).
-- **Idle apps:** closes an app left in the background for 10 minutes (`IdleApps.cs`): the launcher's apps, those seen in front and Samsung's that open by themselves, never the one in front, Samsung's home, the TV inputs or AirPlay. The launcher sends the delay (`apl_idle`, 0 to turn it off) and its app list (`apl_apps`).
+- **Idle apps:** closes an app left in the background for 10 minutes (`IdleApps.cs`): the launcher's apps, those seen in front and Samsung's that open by themselves (after 1 minute when they were never in front: they reopen at every wake-up and hold about 250 MB), never the one in front, Samsung's home, the TV inputs or AirPlay. The launcher sends the delay (`apl_idle`, 0 to turn it off) and its app list (`apl_apps`).
 
 `scripts/05-build-overlay.ps1` builds it with the C# compiler from Visual Studio Build Tools and .NET 6, using the Tizen libraries copied from the screen. The **Install** page of APL Launcher Setup runs it. It is not updated automatically like the launcher. Without it, the launcher takes the Home key back and everything else works.
 

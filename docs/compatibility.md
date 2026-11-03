@@ -106,7 +106,7 @@ Vetro intercepts one device at a time: pick the remote in Vetro › Remapper (se
 
 | Feature | Status | Notes |
 |---|---|---|
-| Apps left 10 minutes in the background close by themselves | ✅ | Never the app in front, the launcher, the TV inputs or AirPlay. |
+| Apps left 10 minutes in the background close by themselves | ✅ | Never the app in front, the launcher, the TV inputs or AirPlay. Samsung's apps that open by themselves and were never used close after 1 minute. |
 | Optimize and Restore | ✅ | Checked on the screen with the scripts; the new app runs the same scripts. |
 | Full restart (`reboot`) | ✅ | The launcher is back after about a minute. |
 | Power cut, or a device switched on on HDMI at start-up | 🧪 | Not tested. |
