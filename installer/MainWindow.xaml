@@ -1,0 +1,75 @@
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="APL Launcher Setup" Width="1100" Height="720" MinWidth="960" MinHeight="640"
+        WindowStartupLocation="CenterScreen" Background="{StaticResource Brush.Window}"
+        FontFamily="{StaticResource Font.Text}" FontSize="14" Foreground="{StaticResource Brush.Text}"
+        UseLayoutRounding="True" SnapsToDevicePixels="True" TextOptions.TextFormattingMode="Ideal">
+    <Grid x:Name="Root" Background="{StaticResource Brush.Window}">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="232"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- ===== Sidebar ===== -->
+        <Border Background="{StaticResource Brush.Sidebar}" BorderBrush="{StaticResource Brush.Separator}" BorderThickness="0,0,1,0">
+            <DockPanel Margin="12,22,12,14">
+                <Grid DockPanel.Dock="Top" Margin="8,0,0,26">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Image x:Name="AppIcon" Width="42" Height="42" RenderOptions.BitmapScalingMode="HighQuality"/>
+                    <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+                        <TextBlock Text="APL Launcher" FontFamily="{StaticResource Font.Display}" FontSize="16" FontWeight="SemiBold"/>
+                        <TextBlock x:Name="VersionText" FontSize="12" Foreground="{StaticResource Brush.Text2}" Margin="0,1,0,0"/>
+                    </StackPanel>
+                </Grid>
+
+                <!-- Bottom: the screen in use, or the task running -->
+                <Border DockPanel.Dock="Bottom" x:Name="SideStatus" CornerRadius="10" Background="#1F2025" Padding="12,10" Margin="0,8,0,0">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid x:Name="SideMark" Width="16" Height="16" VerticalAlignment="Top" Margin="0,1,0,0"/>
+                        <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                            <TextBlock x:Name="SideTitle" FontSize="13" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                            <TextBlock x:Name="SideText" FontSize="12" Foreground="{StaticResource Brush.Text2}" TextTrimming="CharacterEllipsis" Margin="0,1,0,0"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <StackPanel x:Name="Nav">
+                    <RadioButton x:Name="NavInstall" Style="{StaticResource NavItem}" Content="Install" Tag="&#xE896;" Background="{StaticResource Brush.Accent}" IsChecked="True"/>
+                    <RadioButton x:Name="NavOptimize" Style="{StaticResource NavItem}" Content="Optimize" Tag="&#xE945;" Background="{StaticResource Brush.Orange}"/>
+                    <RadioButton x:Name="NavRestore" Style="{StaticResource NavItem}" Content="Restore" Tag="&#xE777;" Background="{StaticResource Brush.Indigo}"/>
+                    <RadioButton x:Name="NavTools" Style="{StaticResource NavItem}" Content="Tools" Tag="&#xE90F;" Background="{StaticResource Brush.Gray}"/>
+                    <RadioButton x:Name="NavAbout" Style="{StaticResource NavItem}" Content="About" Tag="&#xE946;" Background="#636366"/>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- ===== Pages (one visible at a time) ===== -->
+        <Grid x:Name="PageHost" Grid.Column="1"/>
+
+        <!-- ===== Sheet: confirmations and errors, drawn over the window ===== -->
+        <Grid x:Name="Sheet" Grid.ColumnSpan="2" Visibility="Collapsed" Background="{StaticResource Brush.Scrim}">
+            <Border x:Name="SheetCard" Width="460" HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Background="{StaticResource Brush.Dialog}" BorderBrush="#34353C" BorderThickness="1" CornerRadius="18" Padding="28,26,28,24">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="40" ShadowDepth="8" Direction="270" Opacity="0.5"/>
+                </Border.Effect>
+                <StackPanel>
+                    <Grid x:Name="SheetIcon" HorizontalAlignment="Left" Margin="0,0,0,16"/>
+                    <TextBlock x:Name="SheetTitle" Style="{StaticResource Text.H2}" FontSize="19"/>
+                    <StackPanel x:Name="SheetBody" Margin="0,10,0,0"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,24,0,0">
+                        <Button x:Name="SheetCancel" Style="{StaticResource Button.Secondary}" Content="Cancel" Margin="0,0,10,0"/>
+                        <Button x:Name="SheetOk" Style="{StaticResource Button.Primary}" Content="OK"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Grid>
+</Window>

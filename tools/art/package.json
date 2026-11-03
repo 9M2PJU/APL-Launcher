@@ -1,0 +1,14 @@
+{
+  "name": "apl-launcher-art",
+  "private": true,
+  "type": "module",
+  "description": "Génère les tuiles et fonds d'apps du launcher (voir make-art.mjs).",
+  "scripts": {
+    "art": "node make-art.mjs"
+  },
+  "dependencies": {
+    "@fontsource/inter": "^5.0.0",
+    "playwright": "^1.40.0",
+    "simple-icons": "^16.0.0"
+  }
+}

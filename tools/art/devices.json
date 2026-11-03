@@ -1,0 +1,277 @@
+{
+  "_doc": "Devices plugged into the screen's inputs (Sources screen). Same format as apps.json, without a Top Shelf background.",
+  "apps": [
+    {
+      "key": "switch2",
+      "name": "Nintendo Switch 2",
+      "eyebrow": "DEVICE",
+      "accent": "#e60012",
+      "match": [
+        "switch ?2"
+      ],
+      "ids": [],
+      "logo": {
+        "src": "di:nintendo-switch",
+        "white": true,
+        "suffix": "2",
+        "knockout": "#dd2f28",
+        "crop": true
+      },
+      "tile": {
+        "bg": "linear-gradient(160deg,#ff1a2b 0%,#c4000f 100%)",
+        "h": 0.5
+      }
+    },
+    {
+      "key": "switch",
+      "name": "Nintendo Switch",
+      "eyebrow": "DEVICE",
+      "accent": "#e60012",
+      "match": [
+        "switch",
+        "nintendo"
+      ],
+      "ids": [],
+      "logo": {
+        "src": "di:nintendo-switch",
+        "white": true,
+        "knockout": "#dd2f28",
+        "crop": true
+      },
+      "tile": {
+        "bg": "linear-gradient(160deg,#ff1a2b 0%,#c4000f 100%)",
+        "h": 0.56
+      }
+    },
+    {
+      "key": "steamdeck",
+      "name": "Steam Deck",
+      "eyebrow": "DEVICE",
+      "accent": "#1a9fff",
+      "match": [
+        "steam ?deck",
+        "valve"
+      ],
+      "ids": [],
+      "logo": {
+        "src": "si:steamdeck",
+        "white": true
+      },
+      "tile": {
+        "bg": "linear-gradient(160deg,#23262e 0%,#0e1014 100%)",
+        "h": 0.56
+      }
+    },
+    {
+      "key": "ps5",
+      "name": "PlayStation 5",
+      "eyebrow": "DEVICE",
+      "accent": "#0070d1",
+      "match": [
+        "ps ?5",
+        "playstation ?5"
+      ],
+      "ids": [],
+      "logo": {
+        "src": "si:playstation5",
+        "white": true
+      },
+      "tile": {
+        "bg": "linear-gradient(160deg,#0a5bd6 0%,#00307a 100%)",
+        "w": 0.62
+      }
+    },
+    {
+      "key": "ps4",
+      "name": "PlayStation 4",
+      "eyebrow": "DEVICE",
+      "accent": "#003791",
+      "match": [
+        "ps ?4",
+        "playstation"
+      ],
+      "ids": [],
+      "logo": {
+        "src": "si:playstation4",
+        "white": true
+      },
+      "tile": {
+        "bg": "linear-gradient(160deg,#0b3b9c 0%,#04205a 100%)",
+        "w": 0.62
+      }
+    },
+    {
+      "key": "xbox",
+      "name": "Xbox",
+      "eyebrow": "DEVICE",
+      "accent": "#107c10",
+      "match": [
+        "xbox"
+      ],
+      "ids": [],
+      "logo": {
+        "src": "di:xbox",
+        "knockout": "#ffffff",
+        "white": true
+      },
+      "tile": {
+        "bg": "linear-gradient(160deg,#16911a 0%,#0b5a0b 100%)",
+        "h": 0.6
+      }
+    },
+    {
+      "key": "pc",
+      "name": "PC",
+      "eyebrow": "DEVICE",
+      "accent": "#0f6cbd",
+      "match": [
+        "pc",
+        "windows",
+        "desktop",
+        "computer",
+        "ordinateur"
+      ],
+      "ids": [],
+      "logo": {
+        "src": "di:microsoft-windows",
+        "white": true,
+        "crop": true
+      },
+      "tile": {
+        "bg": "linear-gradient(160deg,#1c7fd6 0%,#0a4a8f 100%)",
+        "h": 0.42
+      }
+    },
+    {
+      "key": "mac",
+      "name": "Mac",
+      "eyebrow": "DEVICE",
+      "accent": "#1d1d1f",
+      "match": [
+        "mac",
+        "apple"
+      ],
+      "ids": [],
+      "logo": {
+        "src": "si:apple",
+        "white": true
+      },
+      "tile": {
+        "bg": "linear-gradient(160deg,#3a3a3f 0%,#121214 100%)",
+        "h": 0.5
+      }
+    },
+    {
+      "key": "appletv",
+      "name": "Apple TV",
+      "eyebrow": "DEVICE",
+      "accent": "#000000",
+      "match": [
+        "apple ?tv"
+      ],
+      "ids": [],
+      "logo": {
+        "src": "si:appletv",
+        "white": true
+      },
+      "tile": {
+        "bg": "linear-gradient(160deg,#2a2a2e 0%,#000 100%)",
+        "w": 0.56
+      }
+    },
+    {
+      "key": "shield",
+      "name": "NVIDIA Shield",
+      "eyebrow": "DEVICE",
+      "accent": "#76b900",
+      "match": [
+        "shield",
+        "nvidia"
+      ],
+      "ids": [],
+      "logo": {
+        "src": "si:nvidia",
+        "white": true
+      },
+      "tile": {
+        "bg": "linear-gradient(160deg,#1d1f1a 0%,#0a0b08 100%)",
+        "h": 0.5
+      }
+    },
+    {
+      "key": "firetv",
+      "name": "Fire TV",
+      "eyebrow": "DEVICE",
+      "accent": "#ff9900",
+      "match": [
+        "fire ?tv",
+        "amazon"
+      ],
+      "ids": [],
+      "logo": {
+        "src": "di:amazon-light",
+        "crop": true
+      },
+      "tile": {
+        "bg": "linear-gradient(160deg,#232f3e 0%,#0f151d 100%)",
+        "w": 0.56
+      }
+    },
+    {
+      "key": "chromecast",
+      "name": "Chromecast",
+      "eyebrow": "DEVICE",
+      "accent": "#4285f4",
+      "match": [
+        "chromecast",
+        "google"
+      ],
+      "ids": [],
+      "logo": {
+        "src": "di:chromecast"
+      },
+      "tile": {
+        "bg": "#ffffff",
+        "h": 0.5
+      }
+    },
+    {
+      "key": "freebox",
+      "name": "Freebox",
+      "eyebrow": "DEVICE",
+      "accent": "#cd1e25",
+      "match": [
+        "freebox",
+        "free"
+      ],
+      "ids": [],
+      "logo": {
+        "src": "di:freebox-pop",
+        "crop": true
+      },
+      "tile": {
+        "bg": "#ffffff",
+        "w": 0.6
+      }
+    },
+    {
+      "key": "orange",
+      "name": "Orange TV Box",
+      "eyebrow": "DEVICE",
+      "accent": "#ff7900",
+      "match": [
+        "orange",
+        "livebox"
+      ],
+      "ids": [],
+      "logo": {
+        "src": "si:orange",
+        "color": "#ff7900"
+      },
+      "tile": {
+        "bg": "#000000",
+        "h": 0.56
+      }
+    }
+  ]
+}

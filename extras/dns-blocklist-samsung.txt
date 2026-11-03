@@ -1,0 +1,54 @@
+# ============================================================
+#  DNS blocklist — Samsung Tizen ads / ACR / telemetry
+#  Load it into Pi-hole, AdGuard Home, NextDNS or your router.
+#  The SAFEST method and 100% REVERSIBLE: nothing is changed on
+#  the screen. To undo everything, remove the list.
+#
+#  Tip: put the screen's IP address in its own group and apply
+#  this list to THAT GROUP only, so your other devices are not
+#  affected.
+#
+#  "hosts" format (0.0.0.0 domain). Also works as-is as a
+#  Pi-hole adlist.
+# ============================================================
+
+# --- Samsung advertising (Samsung Ads) ---
+0.0.0.0 ads.samsungads.com
+0.0.0.0 config.samsungads.com
+0.0.0.0 adbit.samsungads.com
+0.0.0.0 bes.samsungads.com
+0.0.0.0 sras.samsungads.com
+0.0.0.0 samsungads.com
+0.0.0.0 ad.samsungadhub.com
+0.0.0.0 adgear.samsungott.net
+
+# --- ACR / on-screen content recognition ---
+0.0.0.0 log-config.samsungacr.com
+0.0.0.0 log-ingestion.samsungacr.com
+0.0.0.0 log-2.samsungacr.com
+0.0.0.0 log-3.samsungacr.com
+0.0.0.0 i-acr.samsungcloudsolution.com
+0.0.0.0 acr0.samsungcloudsolution.com
+
+# --- Telemetry / analytics / logs ---
+0.0.0.0 configprd.samsungcloudsolution.com
+0.0.0.0 gpm.samsungqbe.com
+0.0.0.0 nmetric.samsungqbe.com
+0.0.0.0 log-config.samsungadhub.com
+0.0.0.0 analytics-api.samsungqbe.com
+0.0.0.0 lcprd1.samsungcloudsolution.net
+0.0.0.0 dls.di.atlas.samsung.com
+0.0.0.0 pats.samsungcloudsolution.com
+
+# --- Samsung TV Plus (ads/tracking; also blocks the free channels) ---
+# Uncomment only if you do NOT use Samsung TV Plus:
+# 0.0.0.0 samsung-tvplus-prd.s.samsungcloudsolution.net
+# 0.0.0.0 cbyz0dfkp3.execute-api.us-east-1.amazonaws.com
+
+# ============================================================
+#  DO NOT BLOCK (Smart Hub and app installs break otherwise):
+#    - samsungcloudsolution.com (root, except the subdomains above)
+#    - time.samsungcloudsolution.com
+#    - lcprd1.samsungcloudsolution.com
+#  Allow-list them if a broader block catches them.
+# ============================================================

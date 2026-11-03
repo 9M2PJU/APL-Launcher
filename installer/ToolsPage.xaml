@@ -1,0 +1,96 @@
+<Grid xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid.Resources>
+        <!-- Card header: icon tile + title -->
+        <Style x:Key="ToolTitle" TargetType="TextBlock" BasedOn="{StaticResource Text.Label}">
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="Margin" Value="12,0,0,0"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+    </Grid.Resources>
+    <ScrollViewer x:Name="Scroll" VerticalScrollBarVisibility="Auto" Focusable="False">
+        <StackPanel Margin="40,34,40,28" MaxWidth="780">
+            <TextBlock Style="{StaticResource Text.Title}" Text="Tools"/>
+            <TextBlock Style="{StaticResource Text.Subtitle}" Text="To try the launcher on this PC, and to look into a problem on the screen."/>
+
+            <UniformGrid Columns="2" Margin="-8,18,-8,0">
+                <!-- Preview -->
+                <Border Style="{StaticResource Card}" Margin="8">
+                    <DockPanel>
+                        <Grid DockPanel.Dock="Top">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                            <Border Style="{StaticResource IconTile}" Background="{StaticResource Brush.Accent}" VerticalAlignment="Center">
+                                <TextBlock Style="{StaticResource Text.Icon}" Text="&#xE890;" Foreground="White"/>
+                            </Border>
+                            <TextBlock Grid.Column="1" Style="{StaticResource ToolTitle}" Text="Preview on this PC"/>
+                        </Grid>
+                        <Button x:Name="PreviewButton" DockPanel.Dock="Bottom" Style="{StaticResource Button.Secondary}" Content="Open the preview" HorizontalAlignment="Left" Margin="0,16,0,0"/>
+                        <TextBlock Style="{StaticResource Text.Secondary}" Margin="0,12,0,0" Text="Opens the launcher in a window, with an on-screen remote. Nothing is installed on the screen."/>
+                    </DockPanel>
+                </Border>
+                <!-- Open Vetro -->
+                <Border Style="{StaticResource Card}" Margin="8">
+                    <DockPanel>
+                        <Grid DockPanel.Dock="Top">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                            <Border Style="{StaticResource IconTile}" Background="{StaticResource Brush.Teal}" VerticalAlignment="Center">
+                                <TextBlock Style="{StaticResource Text.Icon}" Text="&#xE774;" Foreground="White"/>
+                            </Border>
+                            <TextBlock Grid.Column="1" Style="{StaticResource ToolTitle}" Text="Open Vetro"/>
+                        </Grid>
+                        <Button x:Name="VetroButton" DockPanel.Dock="Bottom" Style="{StaticResource Button.Secondary}" HorizontalAlignment="Left" Margin="0,16,0,0">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="Open Vetro"/>
+                                <TextBlock Style="{StaticResource Text.Icon}" Text="&#xE8A7;" FontSize="12" Margin="9,1,0,0"/>
+                            </StackPanel>
+                        </Button>
+                        <TextBlock x:Name="VetroText" Style="{StaticResource Text.Secondary}" Margin="0,12,0,0" Text="Vetro's dashboard in the browser: Remapper, apps and switches of the screen."/>
+                    </DockPanel>
+                </Border>
+                <!-- Repair TizenBrew -->
+                <Border Style="{StaticResource Card}" Margin="8">
+                    <DockPanel>
+                        <Grid DockPanel.Dock="Top">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                            <Border Style="{StaticResource IconTile}" Background="{StaticResource Brush.Orange}" VerticalAlignment="Center">
+                                <TextBlock Style="{StaticResource Text.Icon}" Text="&#xE90F;" Foreground="White"/>
+                            </Border>
+                            <TextBlock Grid.Column="1" Style="{StaticResource ToolTitle}" Text="Repair TizenBrew"/>
+                        </Grid>
+                        <Button x:Name="RepairButton" DockPanel.Dock="Bottom" Style="{StaticResource Button.Secondary}" Content="Repair TizenBrew…" HorizontalAlignment="Left" Margin="0,16,0,0"/>
+                        <TextBlock Style="{StaticResource Text.Secondary}" Margin="0,12,0,0" Text="Checks TizenBrew, its service and TizenTube, and fixes what it safely can. It asks before changing anything."/>
+                    </DockPanel>
+                </Border>
+                <!-- Diagnose inputs -->
+                <Border Style="{StaticResource Card}" Margin="8">
+                    <DockPanel>
+                        <Grid DockPanel.Dock="Top">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                            <Border Style="{StaticResource IconTile}" Background="{StaticResource Brush.Purple}" VerticalAlignment="Center">
+                                <TextBlock Style="{StaticResource Text.Icon}" Text="&#xE7F4;" Foreground="White"/>
+                            </Border>
+                            <TextBlock Grid.Column="1" Style="{StaticResource ToolTitle}" Text="Diagnose inputs"/>
+                        </Grid>
+                        <Button x:Name="SourcesButton" DockPanel.Dock="Bottom" Style="{StaticResource Button.Secondary}" Content="Diagnose inputs…" HorizontalAlignment="Left" Margin="0,16,0,0"/>
+                        <TextBlock Style="{StaticResource Text.Secondary}" Margin="0,12,0,0" Text="Looks for where the screen keeps the names of your devices (Switch, PS5…). Read-only; the report goes on the Desktop."/>
+                    </DockPanel>
+                </Border>
+                <!-- Diagnose the screen -->
+                <Border Style="{StaticResource Card}" Margin="8">
+                    <DockPanel>
+                        <Grid DockPanel.Dock="Top">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                            <Border Style="{StaticResource IconTile}" Background="{StaticResource Brush.Gray}" VerticalAlignment="Center">
+                                <TextBlock Style="{StaticResource Text.Icon}" Text="&#xE9D9;" Foreground="White"/>
+                            </Border>
+                            <TextBlock Grid.Column="1" Style="{StaticResource ToolTitle}" Text="Diagnose the screen"/>
+                        </Grid>
+                        <Button x:Name="TvButton" DockPanel.Dock="Bottom" Style="{StaticResource Button.Secondary}" Content="Diagnose the screen…" HorizontalAlignment="Left" Margin="0,16,0,0"/>
+                        <TextBlock Style="{StaticResource Text.Secondary}" Margin="0,12,0,0" Text="What the screen can do: picture and sound settings, menus, Bluetooth. Read-only; writes a report."/>
+                    </DockPanel>
+                </Border>
+            </UniformGrid>
+            <TextBlock x:Name="ToolsHint" Style="{StaticResource Text.Caption}" Margin="2,10,0,0" Text="Repair and the diagnostics open in their own window, because they ask questions."/>
+        </StackPanel>
+    </ScrollViewer>
+</Grid>

@@ -1,0 +1,77 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Text;
+using System.Text.RegularExpressions;
+
+namespace APL.Setup
+{
+    internal sealed class Site
+    {
+        public string Name = "", Url = "";
+    }
+
+    internal sealed class SavedKeys
+    {
+        public string Tmdb = "", YouTube = "", Fanart = "";
+        public List<Site> Sites = new List<Site>();
+    }
+
+    /// <summary>What the scripts saved in %APPDATA%\APL-Launcher, read to prefill the form. The app never writes it.</summary>
+    internal static class Saved
+    {
+        private static readonly string Dir = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "APL-Launcher");
+
+        internal static string TvIp()
+        {
+            try
+            {
+                string f = Path.Combine(Dir, "tv-ip.txt");
+                return File.Exists(f) ? File.ReadAllText(f).Trim() : "";
+            }
+            catch { return ""; }
+        }
+
+        internal static SavedKeys Keys()
+        {
+            var k = new SavedKeys();
+            try
+            {
+                string f = Path.Combine(Dir, "keys.local.js");
+                if (!File.Exists(f)) return k;
+                // window.APL_KEYS = { tmdb: "…", youtube: "…", fanart: "…", webApps: [{ name: "…", url: "…" }] };
+                string js = File.ReadAllText(f, Encoding.UTF8);
+                k.Tmdb = Field(js, "tmdb");
+                k.YouTube = Field(js, "youtube");
+                k.Fanart = Field(js, "fanart");
+                var list = Regex.Match(js, @"webApps\s*:\s*\[(.*?)\]", RegexOptions.Singleline);
+                if (list.Success)
+                {
+                    foreach (Match o in Regex.Matches(list.Groups[1].Value, @"\{(.*?)\}", RegexOptions.Singleline))
+                    {
+                        var s = new Site { Name = Field(o.Groups[1].Value, "name"), Url = Field(o.Groups[1].Value, "url") };
+                        if (s.Name.Length > 0 || s.Url.Length > 0) k.Sites.Add(s);
+                    }
+                }
+            }
+            catch (Exception ex) { Log.Error("keys.local.js", ex); }
+            return k;
+        }
+
+        // name: "value" or 'value', with the key itself possibly quoted
+        private static string Field(string js, string name)
+        {
+            var m = Regex.Match(js, @"[""']?\b" + name + @"[""']?\s*:\s*(?:""((?:[^""\\]|\\.)*)""|'((?:[^'\\]|\\.)*)')",
+                                RegexOptions.IgnoreCase | RegexOptions.Singleline);
+            if (!m.Success) return "";
+            string v = m.Groups[1].Success ? m.Groups[1].Value : m.Groups[2].Value;
+            return Regex.Replace(v, @"\\(u[0-9a-fA-F]{4}|.)", e =>
+            {
+                string x = e.Groups[1].Value;
+                if (x.Length == 5) return ((char)Convert.ToInt32(x.Substring(1), 16)).ToString();
+                return x == "n" ? "\n" : x == "t" ? "\t" : x;
+            }).Trim();
+        }
+    }
+}

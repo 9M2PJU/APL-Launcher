@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns="http://tizen.org/ns/packages" api-version="9.0" package="apl.launcher.overlay" version="1.0.0">
+  <profile name="tv" />
+  <ui-application appid="apl.launcher.overlay"
+                  exec="APLOverlay.dll"
+                  type="dotnet"
+                  multiple="false"
+                  taskmanage="false"
+                  nodisplay="true"
+                  launch_mode="single"
+                  api-version="9.0">
+    <label>APL Overlay</label>
+    <icon>APLOverlay.png</icon>
+    <metadata key="http://tizen.org/metadata/prefer_dotnet_aot" value="true" />
+    <splash-screens />
+  </ui-application>
+  <privileges>
+    <privilege>http://tizen.org/privilege/internet</privilege>
+    <privilege>http://tizen.org/privilege/bluetooth</privilege>
+    <privilege>http://tizen.org/privilege/network.get</privilege>
+  </privileges>
+</manifest>

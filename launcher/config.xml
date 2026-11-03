@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<widget xmlns="http://www.w3.org/ns/widgets" xmlns:tizen="http://tizen.org/ns/widgets" id="http://apl.launcher/home" version="1.0.0" viewmodes="maximized">
+    <!--
+      APL Launcher — Apple-TV-style home screen for Samsung Tizen TVs / Smart Monitors.
+      package id = APLauncher   (Tizen requires EXACTLY 10 characters [0-9A-Za-z])
+      appId      = APLauncher.Home
+    -->
+    <tizen:application id="APLauncher.Home" package="APLauncher" required_version="2.4"/>
+    <tizen:profile name="tv"/>
+
+    <name>APL Launcher</name>
+    <author href="https://github.com/Knikt/APL-Launcher-for-TizenOS">APL Launcher</author>
+    <description>Apple-TV-style app launcher for Samsung Tizen.</description>
+
+    <icon src="icon.png"/>
+    <content src="index.html"/>
+    <!-- The Home button relaunches the launcher (app_launcher -s, through Vetro): without this, the screen
+         reloads the whole page every time it returns Home -->
+    <tizen:app-control>
+        <tizen:src name="index.html" reload="disable"/>
+        <tizen:operation name="http://tizen.org/appcontrol/operation/default"/>
+    </tizen:app-control>
+
+    <!-- 1920x1080 TV surface -->
+    <feature name="http://tizen.org/feature/screen.size.all"/>
+    <!-- Web service (private relay to Vetro, bridge/service.js) -->
+    <feature name="http://tizen.org/feature/web.service"/>
+
+    <!-- Needed to enumerate installed apps and launch them -->
+    <tizen:privilege name="http://tizen.org/privilege/application.launch"/>
+    <tizen:privilege name="http://tizen.org/privilege/application.info"/>
+    <tizen:privilege name="http://tizen.org/privilege/packagemanager.info"/>
+
+    <!-- Control Center and Settings -->
+    <tizen:privilege name="http://tizen.org/privilege/tv.audio"/>
+    <tizen:privilege name="http://tizen.org/privilege/tv.inputdevice"/>
+    <tizen:privilege name="http://tizen.org/privilege/tv.window"/>
+    <tizen:privilege name="http://tizen.org/privilege/system"/>
+    <tizen:privilege name="http://tizen.org/privilege/internet"/>
+    <tizen:privilege name="http://developer.samsung.com/privilege/productinfo"/>
+    <tizen:privilege name="http://developer.samsung.com/privilege/network.public"/>
+    <tizen:privilege name="http://developer.samsung.com/privilege/avinfo"/>
+    <!-- Bluetooth search and pairing (AirPods…) right in Control Center -->
+    <tizen:privilege name="http://tizen.org/privilege/bluetooth"/>
+    <tizen:privilege name="http://tizen.org/privilege/bluetooth.admin"/>
+    <tizen:privilege name="http://tizen.org/privilege/bluetooth.gap"/>
+
+    <tizen:setting screen-orientation="landscape"
+                   context-menu="disable"
+                   background-support="disable"
+                   encryption="disable"
+                   install-location="auto"
+                   hwkey-event="enable"/>
+
+    <!-- Private relay to Vetro (bridge/service.js): makes Vetro's answers readable
+         (picture settings, Bluetooth…). No network port: a Tizen message port reserved for
+         apps signed with the same certificate. Started by the launcher when needed, and when
+         the screen starts up, to open the launcher. -->
+    <tizen:service id="APLauncher.Bridge" on-boot="true" auto-restart="false">
+        <tizen:content src="bridge/service.js"/>
+        <tizen:name>APL Launcher Bridge</tizen:name>
+        <tizen:description>Private relay between APL Launcher and Vetro</tizen:description>
+        <tizen:category name="http://tizen.org/category/service"/>
+    </tizen:service>
+
+    <access origin="*" subdomains="true"/>
+    <!-- Allows the automatic updates' code (kept on the screen) and the image sources -->
+    <tizen:content-security-policy>default-src * file: data: blob: 'unsafe-inline'; script-src * file: data: blob: 'unsafe-inline'; style-src * file: data: 'unsafe-inline'; img-src * file: data: blob:; media-src * file: blob:; connect-src *; font-src * file: data:</tizen:content-security-policy>
+</widget>

@@ -1,0 +1,120 @@
+# Testing on a real screen
+
+The PC preview cannot reach a screen's system services. To check a feature for real, work from a PC on the same network as the screen, with Vetro running on it.
+
+## Reaching the screen
+
+Vetro's dashboard and API listen on `http://<screen-ip>:8099` (the installer remembers the IP in `%APPDATA%\APL-Launcher`). From a PC there is no CORS restriction:
+
+| Call | Use |
+|---|---|
+| `GET /status` | Vetro version and root agent state |
+| `POST /exec {"cmd": "…"}` | Runs a shell command **as root** on the screen, returns `stdout`, `stderr`, `exit_code` |
+| `GET /tv-settings`, `POST /tv-settings {id, value, expected}` | Picture settings Vetro knows (backlight, contrast…). Slow (about 8 s), and on the M8 a backlight written this way is forgotten within a second |
+| `GET /tv-menu` | Samsung menu entries (`/usr/share/menu/fulljson/menu-tv.json`) with their vconf keys and choices |
+| `POST /components/action` | Stop, start-up flags, uninstall an app |
+
+`scripts/lib.ps1` has `Test-Vetro`, `Invoke-VetroExec` and `Install-ViaVetro`. `scripts/diagnose-tv.ps1` (APL Launcher Setup › Tools › *Diagnose the screen*) writes a read-only report of what the screen exposes.
+
+`/exec` runs commands one at a time, so a long script with `sleep` blocks the launcher's own calls and skews a test. It stops after about 30 seconds, and it doubles backslashes: write commands without any.
+
+**Safety:** read before writing, change one setting at a time, read it back, and keep a way back. Never remove or disable Samsung's home (`com.samsung.tv.csfs`), Vetro, TizenBrew or system packages. Never change Developer Mode's *Host PC IP* (`127.0.0.1`).
+
+## Deploying a build quickly
+
+```powershell
+.\scripts\03-build-launcher.ps1 -ProfileName <signing profile>
+. .\scripts\lib.ps1; Install-ViaVetro -Ip <screen-ip> -Wgt dist\APL-Launcher.wgt
+```
+
+APL Launcher Setup's **Install** page does the same, with the keys and websites it collects.
+
+## Seeing and driving the screen
+
+`dlogutil` returns nothing on the M8, so check what the screen really shows instead. Through `/exec`:
+
+```sh
+enlightenment_info -dump_screen -p /tmp/ -n snap.png    # capture; transfer it as hex with od, and compare a sha256sum
+input_keyevent Down                                     # also Up, Left, Right, Return, XF86Back, XF86Red
+input_keyevent Return down                              # press only; "up" releases
+```
+
+`XF86Display` opens Samsung's home. A single `Return down` with no repeat does not open the app menu; repeat the key to simulate a held OK. To check a long press, send `Return` about 12 times in a row (press/release pairs) or `Return down` every 80 ms and then `Return up`.
+
+- **The capture has an alpha channel.** A transparent area, such as the hole over a playing video, reads as `A=0` and looks white in most viewers. Read the alpha before concluding that the screen is white.
+- **Simulating the physical remote:** `input_keyevent` does not go through Vetro's interception. Writing raw events to the receiver does, Home rules included: on this 32-bit kernel an event is 16 bytes (8 of time, then type, code and value), for example `echo <base64 of key down + sync> | base64 -d > /dev/input/event2`. `GET /input` then lists them with their time and the app in front. X key codes are evdev codes + 8 (`/usr/share/X11/xkb/keycodes/tizen`): Home is 63.
+- **`/exec` and `GET /input` wait for each other, and for Vetro's key rules.** A test script holding `/exec` with a `sleep` delays everything, including Home. Run test sequences in the background.
+
+## Measuring smoothness
+
+The M8's interface plane is 1920×1080 at 60 Hz, its only mode (`enlightenment_info -output_mode`). Measure with `requestAnimationFrame` and a `PerformanceObserver` for `longtask`, send key events from inside the page, and stop any test that polls `/exec`: spawning `input_keyevent` and polling both skew the result.
+
+- Painting a new full-screen image costs about 100 ms of main thread on the M8, whatever the effect on it. Keep backgrounds ready as hidden layers with `will-change: opacity`.
+- **A continuous CSS animation is very costly.** A slow transform on a full-screen layer kept three browser threads busy: 135 % of one core at rest, against 16 % without it. Sample `/proc/<pid>/task/*/stat` to see which thread works, and `document.getAnimations()` to see what runs.
+- **4K interface:** not possible on the M8. With `html5.4k.support` the page stays 1920×1080 at device pixel ratio 1, and the compositor's only mode is 1920×1080 at 60 Hz. `enlightenment_info -output_mode` lists that single mode. Video has its own 4K plane: a `<video>` in the launcher plays Apple's 4K HEVC aerials at 3840×2160 within about 1.2 s, one at a time (a second one plays and the first freezes, with no error). Apple's newest aerials (`…_240p_t2160_…tsa.mov` on `itunes-assets`) fail with error 4. The screen downloads them at about 27 MB/s.
+- The screen has 1.8 GB of memory and usually very little free, with swap nearly full. Apps left open cost real memory: TizenBrew and the launcher are about 118 MB each.
+- **The IR remote (`wt61p807 rc device`) reports a release 250 to 340 ms after a press, even a short one.** A hold gives press, release, press with under 5 ms between release and press. `GET /input` on Vetro returns the last 30 real events with timestamps.
+
+## App lifecycle
+
+- Vetro's Home rule runs `app_launcher -s APLauncher.Home`. Without `<tizen:src reload="disable"/>` for the default operation in `config.xml`, the runtime reloads the whole page each time.
+- A running web app comes back without reloading when launched with the app-control data `SkipReload=Yes` (`/usr/share/wrt/app/src/runtime.js`, `handleAppControlEvent`).
+- **Autostart flags apply at the next full start.** `POST /components/action` with `action: "flags"` is read back at once, but a service closed with `app_launcher -k` after that still returns within 30 s, using more memory than before. `action: "stop"` answers false for these services. After the restart `pkginfo` shows `Onboot: 0`, yet the boot manager still starts some of them: closing them then lasts, except for `voice-client`, `smartthings-client`, `tts-engine-neural`, `ondevice-voice` and `canalysis-service`.
+- **A shell `reboot` lands on the last input, not the last app**, even with *Run the last app automatically* on. On HDMI with nothing plugged in, `tv-viewer` shows a page with a 60 s countdown that ends about 78 s after the kernel starts, then the screen sleeps. Opening any app before the end cancels it; a launch after 0 s is too late. Web services with `on-boot` start at about 57 s (Vetro's too, so nothing can be sent over Vetro before that). `APLauncher.Bridge` uses this to open the launcher, which was in front at 64 s, with cleanup done at 91 s. A normal power-off and power-on from sleep comes back to the launcher. Not tested: a real power cut, and a device switched on at HDMI during start-up (the launcher would open over it).
+- **Real double presses on Home, on the M8:** down, up after 186 to 358 ms, down 2 to 74 ms later, up 254 to 345 ms later, then nothing. A held key starts the same way and goes on, so the two only differ after the second release: `overlay/RemoteKeys.cs` waits for that release + 90 ms. `GET /input` keeps the real presses: read them instead of guessing.
+- **Remote codes:** Home 63, Pause 244 (`XF86PlayBack`), Samsung TV Plus 560 (`XF86KeyTVPlus`), Prime Video 221 (`XF86Amazon`). `/usr/share/X11/xkb/symbols/inet` lists the names; the evdev code is the number in `<I...>` minus 8.
+- **Remote timing:** a brief press is released 250 to 340 ms later. A held key gives release + press within 5 ms, first at about 340 ms, then every 150 ms or so. `enlightenment_info -key_repeat print` showed a 350 ms delay and a 108 ms rate, so the release could lose the race: the launcher sets the delay to 600 ms each time it starts (`-key_repeat set 600 0`, lost on restart). Other apps still count a press longer than 340 ms twice: the release + press comes from the receiver. Key events reach the launcher about 5 ms after they are written to `/dev/input/event2` (Right 106, Left 105), and the next frame follows within 15 ms.
+- **The HDMI page without restarting:** `app_launcher -s org.tizen.tv-viewer change_source 13 sourceType 13 sourceName 'HDMI 1' sourceIcon <icon> __K_EX_LAUNCH_REQUESTOR user`. Open the launcher within the 60 s, or the screen sleeps. Back on the launcher, the page does not come back.
+- Samsung's home (`com.samsung.tv.csfs`) restarts at once when closed, so closing it frees nothing and costs a restart. `ps -eo pid,etime,time,comm` shows when each process last started.
+- Closing the front app falls back to Samsung's home. `overlay/` watches `memory/appfw/current_fullscreen_appid` through `vconf_notify_key_changed` (no polling) and brings the launcher back.
+- **Over a video:** a web app's window is opaque for the compositor (depth 24), so the app under it is fully obscured and stops. A native NUI window with `WindowMode.Transparent` (depth 32) leaves it visible and running: `enlightenment_info -topvwins` shows `Vsbt` 0 for the app under it. Samsung's own panels are .NET apps too.
+- `POST /remap` turns interception off for about 3 seconds while it restarts its helper. Vetro runs a `launch` rule on each press and each repeat, one after the other, so a repeat can arrive seconds late: `overlay/Program.cs` identifies a press by its time on the remote.
+- **Stuck keys.** Vetro's root agent restarted by itself at 17:57, 19:32 and 19:54 on a day the screen had been on since 13:41 (`t` in `/tmp/vetro.jsonl`), cause unknown, and the input helper restarted with it. The helper grabs `/dev/input/event2` and forwards to its own device, `vetro-forwarded-remote`, so a key pressed while it is away and released after it grabs stays down for the compositor, on event2. From then on each press of that key reaches the app as keyup + keydown, its release never does, and the app receives keydown every 108 ms (`rate` in `enlightenment_info -key_repeat print`) until another arrow takes over the repeat. OK and Back do not: the repeat keeps going under them. Measured: Left had 19 normal releases out of 19 before the restart at 19:54 and 0 out of 8 after it, while the other keys stayed normal, and `GET /input` showed the real release each time. To clear it, stop the helper by posting the same rules to `/remap`, then write press + release to event2 before it comes back: the page received keyup alone, so the compositor ignored the press. `overlay/KeyGuard.cs` does this, woken by the helper's token file in `/tmp`. It spots such a key by its first event since `sequence` 1, which is not a press. To test it without disturbing an app, use code 390 (`XF86Undefined`): write the press while the helper is away and the release once it is back.
+- **Alexa on the microphone button.** The remote's microphone goes through `org.tizen.multi-assistant-service`, which hands it to the assistant in `db/multi-assistant/default_assistant_appid` (`buxton2ctl get system <key>`; `vconftool get` finds nothing there). Vetro's *All voice assistants* switch disables it with the rest, and `POST /debloat` refuses to enable it alone: `POST /quick {"id":"voice-all","off":false}` does. `app_launcher -s org.tizen.menu menuitem general-voice-voice-assistant` opens Samsung's Voice menu on *Voice Assistant*; picking Amazon Alexa starts the sign-in (QR code and a code for amazon.fr/code, valid 10 minutes), then pages about hands-free wake, the microphone button and things to try. Launching `com.samsung.tv.alexa-fullscreen-app` with `PAGETYPE ALEXA_LOGIN`, a value found in its program, showed nothing. A signed-in account leaves `alexa_login_success` and `alexa_setup_complete` in `/home/owner/share/.voice/`. Logs cannot help: `dlogutil -d` prints nothing on the M8 (`enable_apps(0)`). With Alexa chosen, Vetro's *Bixby* switch turns off five Bixby components and leaves `org.tizen.voice-app`, which Alexa also uses.
+- **Infrared or Bluetooth remote.** The remote had dropped its Bluetooth link (`memory/bluetooth/bt_smart_rc_connected` False, while `db/bluetooth_smartrc/conn_dev_addr` still held its address) and worked by infrared, through `wt61p807 rc device` (event2). By infrared the microphone sends code 515, `XF86BTPairingGuide`, released after about 140 ms however long it is held, and no voice reaches the screen. Holding Back and Play/Pause together for 3 seconds paired it again. Over Bluetooth its keys come from `Smart Control 2016` (event7 here; event24 and event25 appeared with the same name) with real press and release times: Right 106, microphone 216 (`XF86BTVoice`), Home 63, Samsung TV Plus 560, Prime Video 221, the same codes as by infrared. Vetro intercepts one device only: `POST /input {"mode":"filter","device":"/dev/input/event7"}` moved it there and saved it; event2 is then left alone. `XF86BTVoice` is grabbed by `org.tizen.multi-assistant-service`, `com.samsung.tv.alexa-client` and `org.tizen.voice-app` (`enlightenment_info -keygrab_status <file>`). The hub had stopped once after Alexa's set-up; started again, it did not answer until `alexa-client` was restarted too. `input_keyevent XF86BTVoice` shows nothing even then: only the real button starts Alexa.
+- **What Alexa shows.** For a plain question Alexa only speaks: `alexa-fullscreen-app` does not even start. Its screens (cards, settings, sign-in) are a page from Amazon (`https://sonic.xapp.avs.amazon.dev/main/5.0/latest/index.html?bridge=default-ws&port=21055`) in a web engine, fed through a WebSocket on 127.0.0.1:21055 while the app runs. With about fifty apps open, the engine was killed for lack of memory (`oom_reaper ... efl_webprocess` in `dmesg`): the app left an empty, transparent window over everything (`enlightenment_info -topvwins`), closed with `app_launcher -k`. Neither the words said nor Alexa's answer reach anything else on the screen, so the glow has no text.
+- **Sharing a key needs a privilege.** `ecore_wl2_window_keygrab_set` in shared mode, without a window as Samsung's microphone hub does, returned success from APL Overlay, but the grab never appeared in `enlightenment_info -keygrab_status <file>`: the keygrab privilege is for platform apps. Vetro forwards every key it does not block to `vetro-forwarded-remote` (event14 here, a new number when its helper restarts), which root can read without disturbing anything: the microphone shows there as key 216.
+- **Unsigned scripts do not run.** `sh /tmp/script.sh` prints `[uep][bash] the file is NOT signed!!` and stops; `sh -c "$(cat /tmp/script.sh)"` runs, as Vetro's own commands do.
+- **APL Overlay runs from a precompiled copy.** It sits in `bin/.native_image/APLOverlay.ni.dll`, made at install time: replacing `bin/APLOverlay.dll` changes nothing until `dotnettool --ni-reset-pkg apl.launcher.overlay` then `dotnettool --ni-pkg apl.launcher.overlay` (`--ni-pkg` alone keeps an existing copy). `/usr/bin/dotnet` also runs a plain .NET 6 program as root.
+- **AquaPlay's last programme.** `lastChannel` and `recent` hold codes: `x…` for a channel, `s…` for a series, `v…` for a film (`kind` `series` or `vod`). Series and films are in JSON lists in its IndexedDB blobs, two-byte (UTF-16) when a name needs it: `export LC_ALL=C; grep -a -l -m1 -E 'k.?e.?y.?".?:.?".?s.?5.?…'` finds the file, then `tr -d '[:cntrl:]'` and a `grep -o` of `"name":"…","skey":"…","key":"s57407"` give the name alone, about 0.7 s. Film records also hold the subscription's stream address: read the name only. `resume` holds films under their code and episodes under `e` + the episode's id, in milliseconds, written every 10 s after the first minute and cleared near the end; `seriesNext` holds, per series, the episode in progress or next (`e` the episode's id, `s` the season, `n` the episode). AquaPlay reads no launch request (no `getRequestedAppControl` in its code), so nothing can open it on a given series or channel. On launch it shows its own home first (`settings.homeScreen`), and resumes the last channel only when that is a live one (`startupPlayLast`); from the background it resumes a live channel that was playing when hidden.
+- **Idle apps.** `app_launcher -S` lists running apps and services alike, one `appid (pid)` per line, so APL Overlay only closes the launcher's apps, those seen in front and Samsung's that open by themselves. After 29 hours the screen held 50 of them and 255 MB were available; with the delay at one minute for a test, the overlay closed My Contents, `aria-video` and Samsung's media home while TizenTube stayed in front, and 510 MB were available.
+- **Keys a page really receives:** TizenBrew's debug port (43191 that day, read with `netstat -ltnp`) is open on the whole local network, and TizenTube logs each key to the console as `Key event:`. `Runtime.enable` over the page's websocket replays the last few hundred, with times. Keep only those lines. `dlogutil` returns nothing through `/exec`.
+- TizenBrew starts, exits, relaunches itself in debug mode through its service, then waits on its module list. Its own auto-launch setting (`autoLaunchModule`) did not fire in testing.
+- Overscan takes no address at launch. It reads `startupMode` and `startupUrl` from `settings.tsv` in its data folder; write that file without replacing it, so its owner and label stay.
+
+## What apps keep on the screen
+
+Copy a database before reading it, and read it only. Data is in `/opt/usr/home/owner/apps_rw/<package>/data`.
+
+- **Stremio** (`IkWsFHtOY9`, official store app): `Local Storage/leveldb/*.log`, origin `file://`, key `library_recent`: `_id` (IMDb ID), `name`, `type`, `state.timeOffset` and `state.duration` in ms, `state.lastWatched`, `state.video_id` (`tt123:2:5`). Its `profile` key holds the account key and email: never print it. The launcher only greps a list of fields.
+- **Samsung's store from a command:** `app_launcher -s com.samsung.tv.store Sub_Menu search` opens the search, and `Sub_Menu detail widget_id <id>` a page. It closes itself when the ID is unknown. On its keyboard, Down from a letter with accents lands on the accent row first.
+- **AquaPlay** (`AquaPlay02`): `Local Storage/leveldb/*.log`, key `nova.state.v1`. `lastChannel` and `recent` per playlist, and `resume` entries with position, duration and name. Channels are only codes there (`x57072`). The channel list is in `IndexedDB/file__0.indexeddb.blob/*/*/*`, in the file starting with `ch3:<playlist>`: V8-serialized records with `name`, `skey`, `key`, `tvgId`, `logo`, `group`, then `url`. The `url` holds the subscription address: never print it. These files are 8 MB, so find the record with `grep -a -b -o`, then read around that offset. A regex with a long `.{0,300}` runs past Vetro's 30 s limit.
+- **Hot Player** (`6YLB5zo9te`): Web SQL `databases/file__0/1`, table `WatchHistory (playlist, type, id, sub_id, date, total_time, current_time, title)`. `title` is only the episode, such as `S02E06`. `current_time` is an SQLite keyword: write `[current_time]`. Its `Params` table holds the playlist address with the account's credentials: never print it.
+- **Samsung's home** (`com.samsung.tv.home.media`): table `preview` in `coba.db`. Its *Continue Watching* row was empty on this screen.
+- **Netflix, Prime Video, YouTube:** nothing readable found. The IPTV provider resets plain `curl` requests (exit code 56).
+
+## How the launcher talks to the screen
+
+- **Vetro answers:** the launcher's page cannot read Vetro's answers. `launcher/bridge/service.js` (service `APLauncher.Bridge`, same package) relays the calls over a trusted message port (same signing certificate only, no network port). It stops after 15 idle minutes and took 1 to 4.9 s to come back, while the reads themselves take 10 to 30 ms: anything shown on screen must not wait for it. Cards show their last known version first (`apl.wdg.cards`).
+- **Limits of the service on Tizen 9:**
+  - `127.0.0.1` is refused (`EHOSTUNREACH`), `::ffff:127.0.0.1` works.
+  - The service must not be sent a reply port: it answers through its own trusted port to `APL_BRIDGE_REPLY`.
+  - The service runs in the `wrt-service` process it shares with Vetro. **Never use `child_process` there: it crashes that process and restarts Vetro.**
+- **Background:** the launcher stops running once another app or an input is in front. Anything that must happen after that goes to the screen first, as a background shell command.
+- **Remote keys:** `/usr/bin/input_keyevent <XF86 name>` as root (`XF86Menu`, `XF86PowerOff`, `XF86Home`, `XF86Back`…).
+- **Inputs:** app control to `org.tizen.tv-viewer` with `change_source` / `sourceType` = Samsung input number (TV 0, HDMI 1–4 = 13–16), `sourceName`, `sourceIcon`, `mbrIndex` `-2`. `app_launcher` reads `-2` as an option, so leave `mbrIndex` out on the command line. The USB-C input is assumed to be 14: it has not been checked with a device plugged in.
+
+## Native controls
+
+- **Picture and game settings** live on D-Bus: `busctl --system call org.tizen.tv.avoc /org/tizen/tv/avoc org.tizen.tv.avoc.AvOutputControl <Method> <signature> <args>`. List the methods with `gdbus introspect --system --dest org.tizen.tv.avoc --object-path /org/tizen/tv/avoc`. Getters answer `ii <value> <code>`, with code `0` meaning success.
+  - **Setters take `(value, type)`.** Type `1` saves the value; with type `0` the screen applies it and forgets it within a second.
+  - Working on the M8: `SetBacklight` (`ii`), `SetContrast`, `SetSharpness`, `SetColorStrength` (`yi`), `SetPictureMode` (`ii`).
+  - Picture modes: Dynamic 65536, Standard 65537, Eco 65552, Movie 65538. Reads only: Game 458769, and 327705 when a video app is in front. Each mode keeps its own values; Standard, Eco and Movie came with a backlight of 0, and Standard with a contrast of 0, so the launcher copies the current values into a mode that has 0.
+  - Game mode: `CheckGameMode` answers 0 until an input has been shown since start-up, then 1. `SetGameMode ii <save type> <0|1>` needs that, and Game mode has its own backlight.
+  - **Refused by the M8:** `SetSmartLed` (local dimming) answers `-6` for every value, although `CheckSmartLed` answers 1. `SetFilmmakerAutoMode` reads back 0, and no Samsung menu file mentions Filmmaker.
+  - **Values checked against Samsung's own menus:** sound mode 1 Standard, 5 Amplify; colour tone 1 Cool, 2 Standard, 5 and 6 Warm; contrast enhancer 3 High; clarity 2 Auto; colour space 1 Native. Negative values need `--`: `SetBrightness ii -- -1 1`. Sliders are centred: shadow detail and gamma on 0, tint on 15, balance on 10, equalizer bands on 50.
+  - **No effect without the right source:** `SetGameSurroundSound` and `SetDynamicBlackEq` need Game mode, `SetHdrToneMapping` an HDR source, and `SetLedClearMotion` reads back 0.
+  - Options in `/usr/share/menu/fulljson/menu-monitor.json` mostly come from provider libraries, not the file.
+- **Bluetooth:** there is no BlueZ on the M8.
+  - List, search and pair with `tizen.bluetooth` (`getKnownDevices`, `discoverDevices`, `createBonding`, `destroyBonding`). `getKnownDevices` also returns unpaired devices seen during a search: keep only `isBonded`.
+  - Send the sound with Samsung's service: `busctl --system call com.samsung.tv.bt.connectionmanager /com/samsung/tv/bt/connectionmanager org.tizen.btapp.ApiInterface buds_switching_connect s <address>`, and `disconnect_last_btspk_list` to stop. `get_connected_bt_speaker_info` says who receives the sound. `replace_current_bluetooth_speaker` answers 0 but does nothing when no device is connected, and `buds_switching_disconnect` answers 12 without disconnecting.

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=1920, height=1080, user-scalable=no">
+    <title>APL Launcher</title>
+    <link id="apl-css" rel="stylesheet" href="css/launcher.css">
+</head>
+<body class="mode-shelf">
+    <!-- Top Shelf: full-frame artwork of the selected app (2 layers for the fade) -->
+    <div id="bgA" class="bg"></div>
+    <div id="bgB" class="bg"></div>
+    <!-- Blurred grid background: a small pre-blurred image, nothing computed live -->
+    <div id="bgBlur" class="bgblur"></div>
+    <div class="scrim"></div>
+
+    <!-- Status pill (top right): time + avatar -->
+    <div class="status">
+        <span id="clock" class="status__clock">09:41</span>
+        <span class="status__avatar" aria-hidden="true"></span>
+    </div>
+
+    <!-- The Top Shelf film or series: title and rating -->
+    <div id="shelfInfo" class="shelfinfo">
+        <div id="shelfTitle" class="shelfinfo__title"></div>
+        <div id="shelfMeta" class="shelfinfo__meta"></div>
+    </div>
+
+    <!-- "Press ▲ for full screen" (launcher.js puts in the translated text) -->
+    <div id="hint" class="hint">
+        <span class="hint__chevron" aria-hidden="true"></span>
+        <span class="hint__text">Press ▲ for full screen</span>
+    </div>
+
+    <!-- Home Screen: dock (top row) + the rows below -->
+    <main id="home" class="home">
+        <div class="dock"><div id="row0" class="row0"></div></div>
+        <div id="rows" class="rows"></div>
+    </main>
+
+    <div id="toast" class="toast" aria-live="polite"></div>
+    <div id="boot" class="boot"></div>
+
+    <!-- Samsung API (productinfo, network, avinfo): provided by the screen -->
+    <script src="$WEBAPIS/webapis/webapis.js"></script>
+    <!-- What this version contains, then start-up: boot.js loads the rest,
+         or the newer version downloaded by the automatic update. -->
+    <script src="js/build.js"></script>
+    <script src="js/boot.js"></script>
+</body>
+</html>

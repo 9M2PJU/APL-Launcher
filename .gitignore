@@ -1,0 +1,41 @@
+# Samsung certificates and secrets — NEVER commit them
+*.p12
+*.pfx
+*.pwd
+*.pem
+*.key
+SamsungCertificate/
+author.pwd
+distributor.pwd
+
+# SF Pro fonts (Apple, licensed — put them there locally)
+launcher/fonts/*.otf
+launcher/fonts/*.OTF
+launcher/fonts/*.ttf
+launcher/fonts/*.TTF
+
+# Build output
+dist/
+*.wgt
+work/
+outputs/
+launcher/.manifest.tmp
+launcher/author-signature.xml
+launcher/signature1.xml
+
+# Misc
+.DS_Store
+Thumbs.db
+node_modules/
+*.log
+
+# Artwork generator
+tools/art/node_modules
+tools/art/.cache/
+launcher/js/keys.local.js
+# Avatars added by the installer (your Memoji, Apple's Memoji): never published
+launcher/js/avatars.local.js
+# Personal interface sounds (launcher/sounds/README.md): never published
+launcher/sounds/*.wav
+launcher/images/avatars/custom/
+launcher/images/avatars/memoji/
