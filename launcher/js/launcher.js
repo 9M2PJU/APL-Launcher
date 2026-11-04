@@ -488,16 +488,34 @@
     var BOOT_CLOSE = VIDEO_APPS.concat(["MCmYXNxgcu.DisneyPlus", "com.samsung.tv.home.media", "com.samsung.tv.mycontents", "com.samsung.tv.quicklaunch",
                                         "org.tizen.browser", "com.samsung.tv.bixbycapsuleviewer", "org.tizen.art-app", "com.samsung.tv.aria-video",
                                         "com.samsung.tv.cobalt-yt"]);
+    /* A command run once Vetro answers. Right after a full start Vetro needs up to 90 s, and the launcher can
+       already be on screen a second after power-on (the screen's home app): the bridge then answers
+       { ok: false } instead of failing, so that counts as "not yet" too. Tried every 15 s, `tries` times. */
+    function whenVetro(cmd, tries, done) {
+        APL.sys.exec(cmd).then(function (r) {
+            if (r && r.ok === false) throw new Error(r.error || "Vetro not ready");
+            if (done) done(true);
+        }).catch(function () {
+            if (tries > 0) setTimeout(function () { whenVetro(cmd, tries - 1, done); }, 15000);
+            else if (done) done(false);
+        });
+    }
+
     var bootCleaned = false;
-    function bootCleanup() {
+    function bootCleanup(tries) {
         if (bootCleaned || document.hidden || APL.sys.PREVIEW || !APL.sys.pref("bootCleanup")) return;
         bootCleaned = true;
         var frame = /LS03/i.test(APL.sys.product().model || "");      // The Frame: Art Mode needs art-app
         var ids = BOOT_CLOSE.filter(function (id) { return !(frame && id === "org.tizen.art-app"); })
                             .concat(Object.keys(APL.sys.pref("servicesCut") || {}));
-        APL.sys.exec("[ -f /tmp/apl-cleaned ] || { touch /tmp/apl-cleaned; (" + ids.map(function (id) {
+        whenVetro("[ -f /tmp/apl-cleaned ] || { touch /tmp/apl-cleaned; (" + ids.map(function (id) {
             return "app_launcher -k " + id;
-        }).join("; ") + ") >/dev/null 2>&1 & }; true").catch(function () { bootCleaned = false; });
+        }).join("; ") + ") >/dev/null 2>&1 & }; true", 0, function (ok) {
+            if (ok) return;
+            bootCleaned = false;
+            // Again later, checking each time that the launcher is still in front (never an app just opened)
+            if (tries > 0) setTimeout(function () { bootCleanup(tries - 1); }, 15000);
+        });
     }
 
     /* The system repeats a key after 350 ms, and the remote only "releases" it after 250 to
@@ -505,9 +523,7 @@
        The setting is lost on restart: it is set again at every launch, as soon as Vetro answers. */
     function slowKeyRepeat(tries) {
         if (APL.sys.PREVIEW) return;
-        APL.sys.exec("enlightenment_info -key_repeat set 600 0 >/dev/null 2>&1; true").catch(function () {
-            if (tries > 0) setTimeout(function () { slowKeyRepeat(tries - 1); }, 15000);
-        });
+        whenVetro("enlightenment_info -key_repeat set 600 0 >/dev/null 2>&1; true", tries);
     }
 
     /* ---------- misc ---------- */
@@ -658,7 +674,7 @@
             render();
             if (APL.overlay) APL.overlay.start();
             slowKeyRepeat(8);
-            setTimeout(bootCleanup, 25000);
+            setTimeout(function () { bootCleanup(8); }, 25000);
             global.APL_BOOT_OK = true;          // the version (installed or updated) starts fine
             if (requestedAction()) runAction(requestedAction());   // opened for a specific reason: TizenTube, App Switcher…
             setTimeout(function () { dom.boot.classList.add("is-hidden"); }, 120);
@@ -983,7 +999,7 @@
         if (document.hidden) return;
         lastShown = Date.now();
         hideVeil();
-        setTimeout(bootCleanup, 25000);
+        setTimeout(function () { bootCleanup(8); }, 25000);
         if (switcherOnShow) { switcherOnShow = false; if (APL.switcher) APL.switcher.open(); }
     });
     var lastHome = 0;

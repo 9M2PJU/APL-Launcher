@@ -17,9 +17,10 @@ namespace APL
     {
         private const uint CheckMs = 60000;
         private const int UnusedMinutes = 1;
-        private static readonly string[] Never = { "APLauncher.", "apl.launcher.", "vetrotvapp", "com.samsung.tv.csfs", "com.samsung.tv.home.sidebar", "org.tizen.tv-viewer" };
+        // The Frame's Art Mode (org.tizen.art-app) is a screen mode, not an app left open: closing it breaks Art Mode
+        private static readonly string[] Never = { "APLauncher.", "apl.launcher.", "vetrotvapp", "com.samsung.tv.csfs", "com.samsung.tv.home.sidebar", "org.tizen.tv-viewer", "org.tizen.art-app" };
         private static readonly string[] Receivers = { "airplay", "ScreenMirroring", "multiscreen" };
-        // Samsung's that open by themselves, as in the launcher's bootCleanup (not art-app: The Frame's Art Mode needs it)
+        // Samsung's that open by themselves, as in the launcher's bootCleanup (not art-app, see Never)
         private static readonly HashSet<string> SelfOpening = new HashSet<string> {
             "com.samsung.tv.home.media", "com.samsung.tv.mycontents", "com.samsung.tv.quicklaunch", "org.tizen.browser",
             "com.samsung.tv.bixbycapsuleviewer", "com.samsung.tv.aria-video", "com.samsung.tv.cobalt-yt",

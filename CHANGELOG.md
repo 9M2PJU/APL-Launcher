@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.9
+- Tizen 6.x: the Home Screen stayed black with no apps. The stylesheet used the CSS `inset` property, which the browser engine of Tizen 6.5 and older doesn't know, so every app icon was 0×0. It now uses `top`, `right`, `bottom` and `left`; newer screens look the same. Found by a Reddit user.
+- *Settings › Advanced Features › Start Screen Option › Start on APL Launcher*: the screen makes the launcher its home app and shows it about a second after power-on, instead of about a minute (#12, thanks skjnldsv). Measured on the M8: 1.3 s instead of 64 s. Turning it off puts the original values back; Restore does too, and the Optimizer leaves Autorun Smart Hub on while the launcher is the home app.
+- The start-up cleanup and the remote's key-repeat fix gave up silently when Vetro wasn't answering yet, which happens after a full start: they now try again every 15 s for 2 minutes. On the M8 the key repeat had stayed at 350 ms.
+- The Frame: APL Overlay reaches Vetro through the screen's LAN address like the bridge, the launcher is back right after a wake, and the full package's bridge reads the screen state straight from the platform (#11, thanks skjnldsv).
+- APL Overlay never closes The Frame's Art Mode any more.
+
 ## 1.0.8
 - A start-up that doesn't finish no longer leaves a black screen: after 20 s on screen without the Home Screen, the launcher shows the errors it met, its version and the screen's model, to send in a GitHub issue.
 

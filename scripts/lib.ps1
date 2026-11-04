@@ -160,6 +160,29 @@ function Invoke-VetroExec {
     return [string]$r.output
 }
 
+# A vconf value read through Vetro, '' when it can't be read
+function Get-VconfValue {
+    param([string]$Base, [string]$Key)
+    try { $o = Invoke-VetroExec $Base "vconftool get $Key 2>&1" } catch { return '' }
+    if ($o -match 'value = (\S+)') { return $Matches[1] }
+    return ''
+}
+
+# "Start on APL Launcher" undone: when the launcher is the screen's home app (db/appfw/home_appid, opened at
+# power-on with Autorun Smart Hub), the firmware's own home app goes back (db/first_screen/type, else
+# Samsung's home), read back. Returns the app set back, '' when nothing needed it.
+function Reset-ScreenHomeApp {
+    param([string]$Base)
+    if ((Get-VconfValue $Base 'db/appfw/home_appid') -notlike 'APLauncher*') { return '' }
+    $original = Get-VconfValue $Base 'db/first_screen/type'
+    if (-not $original -or $original -like 'APLauncher*' -or $original -notmatch '^[A-Za-z0-9_.-]+$') { $original = 'com.samsung.tv.csfs' }
+    Invoke-VetroExec $Base "vconftool set -f -t string db/appfw/home_appid $original" | Out-Null
+    if ((Get-VconfValue $Base 'db/appfw/home_appid') -ne $original) {
+        throw (Tr "the screen kept APL Launcher as its home app" "l'écran garde APL Launcher comme application d'accueil")
+    }
+    return $original
+}
+
 # Expiry of the certificates a .wgt is signed with (the first, signer's, certificate of author-signature.xml
 # and signature1.xml): the earliest date, or $null if the package can't be read.
 function Get-WgtCertExpiry {

@@ -1,8 +1,8 @@
 {
- "version": "1.0.8",
+ "version": "1.0.9",
  "loader": 1,
  "reinstall": "1.0.0",
- "notes": "A start-up that doesn't finish is shown on screen with its errors.",
+ "notes": "Tizen 6: apps show on the Home Screen again. Start on APL Launcher about a second after power-on.",
  "scripts": [
   "js/diag.js",
   "js/lang-fr.js",

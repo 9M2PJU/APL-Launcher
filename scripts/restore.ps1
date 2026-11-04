@@ -45,6 +45,14 @@ try {
     Write-Host (Tr "        Vetro unreachable ($($_.Exception.Message))." "        Vetro injoignable ($($_.Exception.Message)).") -ForegroundColor DarkYellow
     Write-Host (Tr "        If Home doesn't work, open $vetro in the browser > Remapper > delete the Home rule." "        Si Home ne marche pas, ouvre $vetro dans le navigateur > Remapper > supprime la règle Home.")
 }
+# The screen's home app (Start on APL Launcher): its own again, before the launcher may be uninstalled below,
+# so the screen never starts on an app that is gone
+try {
+    $homeBack = Reset-ScreenHomeApp $vetro
+    if ($homeBack) { Write-Host (Tr "        The screen starts on its own home app again ($homeBack)." "        L'écran redémarre sur son propre accueil ($homeBack).") -ForegroundColor Green }
+} catch {
+    Write-Host ((Tr "        The screen's home app could not be set back: " "        L'accueil de l'écran n'a pas pu être remis : ") + $_.Exception.Message) -ForegroundColor DarkYellow
+}
 
 # ---------- 2. uninstall (optional) ----------
 Write-Host ""

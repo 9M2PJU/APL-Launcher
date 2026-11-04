@@ -17,9 +17,10 @@ This list follows what users report. To add your screen, open an issue with its 
 | Screen | Status | Notes |
 |---|---|---|
 | Samsung Smart Monitor M8, Tizen 9 | ✅ | Developed and used every day on this screen, rooted with Vetro, installed with APL Launcher Setup. |
-| Samsung The Frame 2025 (TQ43LS03FAUXXC, 43", Tizen 9) | ⚠️ | Reported by a contributor. **Launcher package** (Apps2Samsung): Home and a full start open the launcher, and since 1.0.4 it comes back after sleep and after Art Mode. **Full package** (launcher and APL Overlay): works, with limits that fixes on the way (pull request #11) remove: APL Overlay cannot reach Vetro on this screen, so keep Home on the launcher in Vetro's Remapper for now, and after a long sleep the launcher can take up to 20 s to come back. APL Overlay can close Art Mode after 10 minutes in the background: fixed for the next version. Home twice, Home held and ⏯ do nothing yet on this screen. After a full start, Tizen only starts the launcher about 77 s after power-on. |
+| Samsung The Frame 2025 (TQ43LS03FAUXXC, 43", Tizen 9) | ⚠️ | Reported by a contributor. **Launcher package** (Apps2Samsung): Home and a full start open the launcher, and it comes back after sleep and after Art Mode. **Full package** (launcher and APL Overlay): works; since 1.0.9 APL Overlay reaches Vetro on this screen, the launcher is back about half a second after a wake, and Art Mode is never closed. *Start on APL Launcher* shows the launcher right after power-on. Home twice, Home held and ⏯ do nothing yet on this screen. |
 | Samsung QN92D (2024, Tizen 8) | ⚠️ | Reported by a contributor, with the full package (Apps2Samsung): the launcher, its bridge and the start-up service work, and the launcher opens about 80 s after a full start. Nothing else reported yet. |
 | Samsung AU7700 (2021, Tizen 6) | 🧪 | Asked about in the issues, not tried yet. This model is not in Vetro's compatibility list yet, so root itself is not confirmed. If Vetro works, the launcher alone is the realistic part: APL Overlay is only reported on Tizen 8 and 9. |
+| Screens on Tizen 6.x | ⚠️ | Reported on Reddit: no apps on the Home Screen before 1.0.9 (the browser engine ignored a CSS property and every icon was 0×0), all of them showing after a fix. On Tizen 6.0, a few items touch (for example the clock and the profile picture), since its engine also lacks spacing in rows. |
 | Other Samsung Smart Monitors and TVs | 🧪 | Not tested yet. They need Vetro, so only screens that Vetro supports can work. Reports are welcome in the issues. |
 | Samsung screens without root / Vetro | ❌ | The launcher needs Vetro for the Home button, the remote buttons and the system controls. |
 
@@ -29,7 +30,7 @@ This list follows what users report. To add your screen, open an issue with its 
 |---|---|---|
 | A 4K TV (Reddit) | ⚠️ | Works, and an automatic update arrived while it was in use. Its three points are fixed: the resolution shown as 1920×1080 and Stremio's cards slowing the animation (1.0.4), only one HDMI input in Sources (1.0.5). Several HDMI inputs not confirmed on it yet. |
 | A TV (Reddit) | ⚠️ | No return to the launcher after standby, and Samsung's home not caught: reported before 1.0.4 and without APL Overlay. |
-| A TV (Reddit) | ⚠️ | Setup refused a valid Tizen Studio certificate (fixed in 1.0.7), then the launcher stayed black with no apps. Since 1.0.8 it shows the error on screen instead; waiting for it. |
+| A TV (Reddit) | ⚠️ | Setup refused a valid Tizen Studio certificate (fixed in 1.0.7), then the launcher stayed black with no apps: most likely the Tizen 6.x problem fixed in 1.0.9. |
 
 ## Remotes
 
@@ -120,10 +121,11 @@ Vetro intercepts one device at a time: pick the remote in Vetro › Remapper (se
 
 | Feature | Status | Notes |
 |---|---|---|
-| Apps left 10 minutes in the background close by themselves | ✅ | Never the app in front, the launcher, the TV inputs or AirPlay. Samsung's apps that open by themselves and were never used close after 1 minute. |
+| Apps left 10 minutes in the background close by themselves | ✅ | Never the app in front, the launcher, the TV inputs, AirPlay or The Frame's Art Mode. Samsung's apps that open by themselves and were never used close after 1 minute. |
 | Optimize and Restore | ✅ | Checked on the screen with the scripts; the new app runs the same scripts. |
 | Back to the launcher after standby | ✅ | The M8 comes back on it by itself. The Frame comes back on the TV input: since 1.0.4 the launcher brings itself back, also when leaving Art Mode (contributor's report). |
 | Full restart (`reboot`) | ✅ | The launcher is back after about a minute; about 80 s on The Frame and the QN92D, where Tizen starts it later. |
+| Start on APL Launcher | ✅ | *Settings › Advanced Features › Start Screen Option*: the screen makes the launcher its home app and shows it about a second after power-on (1.3 s on the M8, measured over two restarts; also on The Frame). Turning it off, or Restore, puts the original values back; uninstalling the launcher gives the screen its own home back too. |
 | Power cut, or a device switched on on HDMI at start-up | 🧪 | Not tested. |
 | Automatic updates from GitHub | ✅ | Seen on the M8 and on a user's TV. A new version of the package itself (APL Overlay, the bridge) still needs installing again. The automatic rollback has not been needed yet. |
 | TizenBrew and TizenTube | ✅ | Not needed; the launcher opens them and leaves them alone. |
