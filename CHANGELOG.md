@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.10
+- APL Overlay: Home pressed in the first minute after power-on, before Vetro takes the key, opened Samsung's home and could leave it there. APL Overlay now brings the launcher back without Vetro, also when Samsung's home was already in front when it started. Tried on the M8: five presses before Vetro was up, the launcher back each time in under half a second.
+- Alexa on the microphone button didn't work after a full start once the launcher showed early: APL Overlay asked Vetro once, before it was up. It now tries every 15 s until Vetro runs it (on the M8: about 70 s after power-on).
+- Both are in APL Overlay: install again with APL Launcher Setup, or the full package with Apps2Samsung.
+
 ## 1.0.9
 - Tizen 6.x: the Home Screen stayed black with no apps. The stylesheet used the CSS `inset` property, which the browser engine of Tizen 6.5 and older doesn't know, so every app icon was 0×0. It now uses `top`, `right`, `bottom` and `left`; newer screens look the same. Found by a Reddit user.
 - *Settings › Advanced Features › Start Screen Option › Start on APL Launcher*: the screen makes the launcher its home app and shows it about a second after power-on, instead of about a minute (#12, thanks skjnldsv). Measured on the M8: 1.3 s instead of 64 s. Turning it off puts the original values back; Restore does too, and the Optimizer leaves Autorun Smart Hub on while the launcher is the home app.

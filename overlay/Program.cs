@@ -72,6 +72,9 @@ namespace APL
             keyGuard.Start();
             idleApps.Front(FullscreenApp());
             idleApps.Start();
+            // Samsung's home may already be in front when this app starts: Home pressed in the first seconds after
+            // power-on, before Vetro takes the key and before the launcher opens this app. Handled like a change.
+            OnFullscreenChanged();
         }
 
         /// <summary>The launcher's list of apps for the Echo; empty when the bridge is turned off.</summary>
@@ -308,8 +311,17 @@ namespace APL
         public static async void OpenLauncher(string action = "")
         {
             string data = string.IsNullOrEmpty(action) ? "" : " apl_action " + action;
-            try { await Vetro.Exec("/usr/bin/app_launcher -s " + Launcher + data + " >/dev/null 2>&1"); }
-            catch (Exception ex) { Note("launcher: " + ex.Message); }
+            try { await Vetro.ExecWhenReady("/usr/bin/app_launcher -s " + Launcher + data + " >/dev/null 2>&1"); return; }
+            catch (Exception ex) { Note("launcher: " + ex.Message + ", opening it directly"); }
+            // Vetro not up yet (the minute after a full start, when Home still opens Samsung's home): the platform's
+            // own launch request, which needs the appmanager.launch privilege (tizen-manifest.xml)
+            try
+            {
+                var request = new AppControl { ApplicationId = Launcher, Operation = AppControlOperations.Default };
+                if (!string.IsNullOrEmpty(action)) request.ExtraData.Add("apl_action", action);
+                AppControl.SendLaunchRequest(request);
+            }
+            catch (Exception ex) { Note("launcher directly: " + ex.Message); }
         }
 
         private void OnKey(object sender, Window.KeyEventArgs e)

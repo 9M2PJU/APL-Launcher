@@ -1,8 +1,8 @@
 {
- "version": "1.0.9",
+ "version": "1.0.10",
  "loader": 1,
  "reinstall": "1.0.0",
- "notes": "Tizen 6: apps show on the Home Screen again. Start on APL Launcher about a second after power-on.",
+ "notes": "Home in the first minute after power-on and Alexa's microphone work again (APL Overlay).",
  "scripts": [
   "js/diag.js",
   "js/lang-fr.js",

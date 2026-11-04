@@ -117,13 +117,24 @@ namespace APL
         }
 
         /// <summary>Runs a shell command as root and returns its output. No backslashes: Vetro doubles them.</summary>
-        public static async Task<string> Exec(string command)
+        public static Task<string> Exec(string command) { return Run(command, false); }
+
+        /// <summary>
+        /// Like Exec, but fails when Vetro did not run the command at all: in the minute after a full start its
+        /// root agent is not connected yet, and it answers { "ok": false } with no exit code (a command that ran
+        /// and failed has one).
+        /// </summary>
+        public static Task<string> ExecWhenReady(string command) { return Run(command, true); }
+
+        private static async Task<string> Run(string command, bool mustRun)
         {
             string answer = await Request("POST", "/exec", "{\"cmd\":" + JsonSerializer.Serialize(command) + "}");
             using (JsonDocument doc = JsonDocument.Parse(answer))
             {
-                JsonElement output;
-                return doc.RootElement.TryGetProperty("output", out output) ? output.GetString() ?? "" : "";
+                JsonElement root = doc.RootElement, value;
+                if (mustRun && root.TryGetProperty("ok", out value) && value.ValueKind == JsonValueKind.False && !root.TryGetProperty("exit_code", out value))
+                    throw new InvalidOperationException(root.TryGetProperty("error", out value) ? value.GetString() : "Vetro did not run the command");
+                return root.TryGetProperty("output", out value) ? value.GetString() ?? "" : "";
             }
         }
 

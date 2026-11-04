@@ -81,7 +81,7 @@ Vetro intercepts one device at a time: pick the remote in Vetro › Remapper (se
 
 | Feature | Status | Notes |
 |---|---|---|
-| Home: back to the launcher | ✅ | After a full restart, Vetro takes up to 2 minutes to take over the remote. |
+| Home: back to the launcher | ✅ | In the first minute after a full start, before Vetro takes the key, Home opens Samsung's home for a moment and APL Overlay brings the launcher back (1.0.10). |
 | Home twice: App Switcher | ✅ | |
 | Hold Home, or ⏯: Control Center, even over a video | ✅ | ⏯ no longer pauses videos. |
 | Samsung TV Plus → AquaPlay, Prime Video → TizenTube | ✅ | Only when those apps are installed; otherwise the buttons keep their Samsung role. |
