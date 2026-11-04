@@ -193,11 +193,32 @@
         next.dataset.app = app.id;
         if (next === bgActive) return;
         if (shelfImage(app)) motion(next); else next.classList.remove("is-motion");
-        next.classList.add("is-active");
+        fadeTo(next);
+    }
+    /* Crossfade without a dip to black (two half-faded pictures over black): of the two layers, the
+       upper one in the page does the fading and the lower one stays whole underneath. The new one fades
+       in over the old one, or appears at once under it while the old one fades out. Nothing moves and
+       the stacking never changes: only the opacity, so no full-screen repaint (100 ms on the M8). */
+    var FADE_MS = 300;
+    function fadeTo(next) {
         var old = bgActive;
-        old.classList.remove("is-active");
-        if (old._stale) setTimeout(function () { old.parentNode.removeChild(old); }, 400);
+        clearTimeout(next._out);
+        clearTimeout(old._out);
         bgActive = next;
+        if (old.compareDocumentPosition(next) & global.Node.DOCUMENT_POSITION_FOLLOWING) {
+            next.classList.add("is-active");                     // above: fades in over the old one
+            old._out = setTimeout(function () { hideLayer(old); }, FADE_MS + 50);
+        } else {
+            next.classList.add("is-instant", "is-active");       // below: whole at once, under the old one
+            void next.offsetWidth;
+            next.classList.remove("is-instant");
+            hideLayer(old);                                       // the old one fades out over it
+        }
+    }
+    function hideLayer(l) {
+        if (l === bgActive) return;                               // shown again in the meantime
+        l.classList.remove("is-active");
+        if (l._stale) setTimeout(function () { if (l !== bgActive && l.parentNode) l.parentNode.removeChild(l); }, FADE_MS + 50);
     }
 
     var backdropToken = 0;
@@ -347,9 +368,7 @@
         next.dataset.app = tag;
         motion(next);
         wantBlur(item.bgSmall || null, app);
-        next.classList.add("is-active");
-        bgActive.classList.remove("is-active");
-        bgActive = next;
+        fadeTo(next);
         shelfInfo(item);
     }
 
@@ -986,6 +1005,8 @@
         var light = a === "light" || (a === "auto" && !isNight(new Date()));
         document.body.classList.toggle("theme-light", light);
         if (APL.overlay) APL.overlay.setTheme(light);
+        // Generated backgrounds exist for both themes: the other one, already made
+        if (APL.genArt && allApps && APL.genArt.retheme(allApps)) render();
     }
 
     /* Performance mode: no real-time blur or glass (which made the screen lag). */
