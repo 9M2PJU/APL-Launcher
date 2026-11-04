@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.12
+- Sources: *Add to Home Screen* (hold OK on an input) was the last of 16 cards, below the bottom of the screen. It now comes first, and the cards are smaller so all of them fit. Reported on Reddit.
+- *Settings › Apps › Top Shelf Background* (was *Background for Other Apps*): a new choice, *APL Wallpaper for Every App*, puts the same wallpaper behind every app, including those with artwork of their own. Continue Watching and the Dynamic Top Shelf then sit on it too. The other choices only change the apps without artwork, and now say so. The APL wallpaper itself is now a plain dark gradient.
+
 ## 1.0.11
 - APL Launcher Setup installs the full package, like Apps2Samsung (#9, thanks exzos28): it downloads the release's package, adds your personal files and signs it with your certificate, so the PC no longer needs the C# compiler or .NET 6. A screen set up before moves by itself: the buttons go to the new APL Overlay first, then the old separate package is removed. Tried on the M8: keys, websites, settings and *Start on APL Launcher* kept.
 - APL Overlay no longer closes Netflix and YouTube's engine over and over: the screen preloads them and starts them again a minute after they are closed, about 15 times an hour. An app that comes back by itself twice in a row is now left alone, until it is used.

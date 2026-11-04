@@ -176,10 +176,11 @@
         titleEl.textContent = APL.t("What's connected to {port}?", { port: c.port });
         hintEl.textContent = APL.t("OK to choose · Back to cancel");
         var onHome = pinned().indexOf(c.id) !== -1;
-        cards = DEVICES.map(function (d) { return { device: d, name: APL.t(d.name), sub: "", key: d.key }; })
-            .concat([{ device: null, icon: c.icon, name: APL.t("Nothing Specific"), sub: APL.t("Show “{port}”", { port: c.port }), key: "none" },
-                     { device: null, icon: onHome ? "minus" : "plus", name: onHome ? APL.t("Remove from Home Screen") : APL.t("Add to Home Screen"),
-                       sub: c.name, key: "pin" }]);
+        // Add to Home Screen first: at the end, after the 14 devices, it was below the bottom of the screen
+        cards = [{ device: null, icon: onHome ? "minus" : "plus", name: onHome ? APL.t("Remove from Home Screen") : APL.t("Add to Home Screen"),
+                   sub: c.name, key: "pin" },
+                 { device: null, icon: c.icon, name: APL.t("Nothing Specific"), sub: APL.t("Show “{port}”", { port: c.port }), key: "none" }]
+            .concat(DEVICES.map(function (d) { return { device: d, name: APL.t(d.name), sub: "", key: d.key }; }));
         var cur = (sys.pref("sourceDevices") || {})[c.id], at = 0;
         cards.forEach(function (x, i) { if (x.key === cur) at = i; });
         fill(cards, at);

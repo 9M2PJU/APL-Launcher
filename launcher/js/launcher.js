@@ -60,8 +60,16 @@
     /* Dominant colour: the one sampled from the Tizen icon, otherwise the accent. */
     function brandColour(app) { return app.edge || app.accent || "#3a4a8a"; }
 
+    /* The Top Shelf image: the app's artwork, or the APL wallpaper behind every app
+       (Settings › Apps › Top Shelf Background › APL Wallpaper for Every App). */
+    function shelfImage(app) {
+        if (APL.sys.pref("shelfArt") === "all" && APL.genArt && APL.genArt.wallpaper) return APL.genArt.wallpaper();
+        return app.bg;
+    }
+
     function backdropFor(app) {
-        if (app.bg) return "#000 center / cover no-repeat url('" + app.bg + "')";
+        var bg = shelfImage(app);
+        if (bg) return "#000 center / cover no-repeat url('" + bg + "')";
         // No artwork provided: a generated brand card (same style as the
         // catalog backgrounds) — a glow in the app's colour on a dark background.
         var a = brandColour(app);
@@ -167,7 +175,7 @@
         var l = document.createElement("div");
         l.className = "bg";
         l.style.background = backdropFor(app);
-        if (!app.bg) l.appendChild(brandCard(app));
+        if (!shelfImage(app)) l.appendChild(brandCard(app));
         l.dataset.app = app.id;
         dom.bgA.parentNode.insertBefore(l, dom.bgA);
         layers[app.id] = l;
@@ -184,7 +192,7 @@
     function showLayer(next, app) {
         next.dataset.app = app.id;
         if (next === bgActive) return;
-        if (app.bg) motion(next); else next.classList.remove("is-motion");
+        if (shelfImage(app)) motion(next); else next.classList.remove("is-motion");
         next.classList.add("is-active");
         var old = bgActive;
         old.classList.remove("is-active");
@@ -194,16 +202,17 @@
 
     var backdropToken = 0;
     function setBackdrop(app) {
-        wantBlur(app.bgBlur || app.bg, app);
+        var image = shelfImage(app);
+        wantBlur(image === app.bg ? app.bgBlur || app.bg : image, app);
         var token = ++backdropToken;
         if (apps.indexOf(app) < DOCK_SIZE) { showLayer(layerFor(app), app); return; }
         if (bgActive.dataset.app === app.id) return;
-        whenDecoded(app.bg, function () {
+        whenDecoded(image, function () {
             if (token !== backdropToken) return;          // another app was selected in the meantime
             var next = (bgActive === dom.bgA) ? dom.bgB : dom.bgA;
             next.innerHTML = "";
             next.style.background = backdropFor(app);
-            if (!app.bg) next.appendChild(brandCard(app));
+            if (!image) next.appendChild(brandCard(app));
             showLayer(next, app);
         });
     }
@@ -364,6 +373,7 @@
     function startLive(app) {
         stopLive();
         if (!APL.live || !APL.live.hasSource(app)) return;
+        if (APL.sys.pref("shelfArt") === "all") return;      // one wallpaper for every app: nothing changes behind it
         liveTimer = setTimeout(function () {
             APL.live.itemsNow(app).then(function (items) {
                 if (!items || apps[nav.index] !== app) return;
@@ -947,7 +957,8 @@
     };
 
     APL.refreshArt = function () { if (APL.autoArt) APL.autoArt.refresh(allApps, render); };
-    APL.restyleArt = function () { if (APL.autoArt) APL.autoArt.restyle(allApps, render); };
+    // render() too: with the wallpaper for every app, no made background changes, yet every layer must be redrawn
+    APL.restyleArt = function () { if (APL.autoArt) APL.autoArt.restyle(allApps, render); render(); };
 
     APL.resetHomeOrder = function () {
         APL.sys.setPref("appOrder", []);

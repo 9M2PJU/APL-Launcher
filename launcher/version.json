@@ -1,8 +1,8 @@
 {
- "version": "1.0.11",
+ "version": "1.0.12",
  "loader": 1,
  "reinstall": "1.0.0",
- "notes": "Setup installs the full package; APL Overlay leaves Netflix and YouTube's engine alone.",
+ "notes": "Sources: Add to Home Screen comes first. Top Shelf: one dark wallpaper for every app.",
  "scripts": [
   "js/diag.js",
   "js/lang-fr.js",

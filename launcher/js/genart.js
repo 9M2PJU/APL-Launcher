@@ -290,12 +290,30 @@
         return c.toDataURL("image/jpeg", 0.84);
     }
 
-    /* Settings › Home Screen › Background for Other Apps: the logo enlarged on the app's colors
+    /* Settings › Apps › Top Shelf Background: the logo enlarged on the app's colors
        (a small icon gets blurry), the colors alone, or one wallpaper for all of them. */
     var WALLPAPER = "wallpaper", wallpaperUrl = null;
-    function bgMode() { var m = sys.pref("shelfArt"); return m === "colors" || m === WALLPAPER ? m : "logo"; }
+    function bgMode() { var m = sys.pref("shelfArt"); return m === "colors" || m === WALLPAPER ? m : m === "all" ? WALLPAPER : "logo"; }
+    /* A plain dark gradient, as on Apple TV: no shapes, so the dock and the cards stand out on it. */
     function wallpaper() {
-        if (!wallpaperUrl) wallpaperUrl = paintBg(hslToRgb(226, 52, 24), null, 226, 58, "APL Launcher");
+        if (wallpaperUrl) return wallpaperUrl;
+        var c = canvas(BG_W, BG_H), x = c.getContext("2d");
+        var g = x.createLinearGradient(0, 0, 0, BG_H);
+        g.addColorStop(0, "#151a2b");
+        g.addColorStop(0.55, "#0c0f19");
+        g.addColorStop(1, "#06070c");
+        x.fillStyle = g;
+        x.fillRect(0, 0, BG_W, BG_H);
+        // Two soft glows, top left and right, barely there
+        [[BG_W * 0.22, BG_H * 0.18, BG_W * 0.55, "rgba(70, 96, 170, 0.22)"],
+         [BG_W * 0.84, BG_H * 0.3, BG_W * 0.45, "rgba(104, 78, 160, 0.14)"]].forEach(function (o) {
+            var r = x.createRadialGradient(o[0], o[1], 0, o[0], o[1], o[2]);
+            r.addColorStop(0, o[3]);
+            r.addColorStop(1, "rgba(0, 0, 0, 0)");
+            x.fillStyle = r;
+            x.fillRect(0, 0, BG_W, BG_H);
+        });
+        wallpaperUrl = c.toDataURL("image/jpeg", 0.9);
         return wallpaperUrl;
     }
 
@@ -372,5 +390,5 @@
         } catch (e) {}
     }
 
-    APL.genArt = { make: make, applyCached: applyCached, missing: missing, clear: clear };
+    APL.genArt = { make: make, applyCached: applyCached, missing: missing, clear: clear, wallpaper: wallpaper };
 })(window);
