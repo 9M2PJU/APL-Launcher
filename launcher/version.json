@@ -1,8 +1,8 @@
 {
- "version": "1.0.4",
+ "version": "1.0.5",
  "loader": 1,
  "reinstall": "1.0.0",
- "notes": "Back after sleep and Art Mode on The Frame, Smart Hub tile, background choice for other apps, smoother Continue Watching cards.",
+ "notes": "Every HDMI input in Sources, and inputs can be added to the Home Screen.",
  "scripts": [
   "js/lang-fr.js",
   "js/i18n.js",

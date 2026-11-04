@@ -82,7 +82,8 @@ Vetro intercepts one device at a time: pick the remote in Vetro › Remapper (se
 | Sleep, Wi-Fi, Do Not Disturb, Sleep Timer, Brightness | ✅ | |
 | Audio output and Bluetooth headphones (AirPods…) | ✅ | |
 | Settings covering every Samsung settings page | ✅ | Real picture controls (backlight, contrast, sharpness, colour, local dimming); a few pages open Samsung's own settings. |
-| Sources: inputs and the device on each | ✅ | |
+| Sources: inputs and the device on each | ✅ | The HDMI inputs are read from the screen through Vetro (Tizen 9 no longer lists them). Checked on the M8 (one HDMI and USB-C); a screen with several HDMI inputs is not checked yet. |
+| An input as a tile on the Home Screen | ✅ | Sources › hold OK on the input › Add to Home Screen. |
 
 ### Voice
 
