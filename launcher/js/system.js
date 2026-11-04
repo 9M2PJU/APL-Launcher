@@ -55,6 +55,7 @@
         alexaBridge: true,          // the Echo Dot can open apps (overlay/Alexa.cs)
         servicesCut: {},            // blocked Samsung services and their original settings (services.js)
         bootCleanup: true,          // once per power-on: closes what Samsung opens on its own
+        homeAppSaved: null,         // { home, autostart } before "Start on APL Launcher", put back when it is turned off
         idleClose: true,            // an app left in the background for 10 min is closed (overlay/IdleApps.cs)
         language: "auto"            // "auto" (screen language) | "en" | "fr": read at start-up by i18n.js
     };
@@ -632,12 +633,22 @@
         soundMode:  { get: "GetSoundMode u 0", set: "SetSoundMode uu -- V 1" },
         autoVolume: { get: "GetAutoVolume u 0", set: "SetAutoVolume uu -- V 1" },
         feedback:   { get: "GetSoundFeedback i 0", set: "SetSoundFeedback ii -- 1 V" },
-        smartHub:   { vconf: "db/menu/smart_hub/ontvsetting/auto_start" }
+        smartHub:   { vconf: "db/menu/smart_hub/ontvsetting/auto_start" },
+        /* The screen's home app (db/appfw/home_appid). At power-on the screen puts either the TV input or the
+           home app in front, and Autorun Smart Hub chooses the home app: with the launcher as home app, it is
+           on screen about a second after power-on instead of after the start-up service (~1 min). Off: the
+           screen's own home app again, as the firmware records it in db/first_screen/type. */
+        homeApp:    { home: true }
     };
+    var HOME_KEY = "db/appfw/home_appid", AUTOSTART_KEY = "db/menu/smart_hub/ontvsetting/auto_start";
     var MOCK_NATIVE = {};
     function nativeGet(id) {
         var d = NATIVE[id];
         if (PREVIEW) return Promise.resolve(MOCK_NATIVE[id] || (d.min !== undefined ? Math.round((d.min + d.max) / 2) : 0));
+        if (d.home) {
+            // On only if both took: with Autorun off the screen still starts on the TV input
+            return homeAppRead().then(function (s) { return s.home === "APLauncher.Home" && s.autostart === 1 ? 1 : 0; });
+        }
         if (d.vconf) {
             return tvExec("vconftool get " + d.vconf + " 2>&1").then(function (r) {
                 var m = /value = (-?[0-9]+)/.exec(String(r.output || ""));
@@ -656,9 +667,39 @@
         var d = NATIVE[id];
         if (PREVIEW) { MOCK_NATIVE[id] = value; return Promise.resolve(value); }
         var write = d.vconf ? "vconftool set -f -t int " + d.vconf + " " + value + " 2>&1" : AVOC + d.set.replace("V", value) + " 2>&1";
-        return tvExec(write).then(function () { return nativeGet(id); }).then(function (back) {
+        return (d.home ? homeAppSet(value) : tvExec(write)).then(function () { return nativeGet(id); }).then(function (back) {
             if (back !== value) throw new Error(APL.t("The screen refused this setting for now"));
             return back;
+        });
+    }
+    function homeAppRead() {
+        return tvExec("vconftool get " + HOME_KEY + " 2>&1; vconftool get " + AUTOSTART_KEY + " 2>&1").then(function (r) {
+            var out = String(r.output || ""), h = /home_appid, value = (\S+)/.exec(out), a = /auto_start, value = (-?[0-9]+)/.exec(out);
+            if (!h || !a) throw new Error(APL.t("Unavailable"));
+            return { home: h[1], autostart: parseInt(a[1], 10) };
+        });
+    }
+    /* On: saves the screen's home app and Autorun as they are, then makes the launcher the home app and
+       turns Autorun on. Off: puts back exactly what was saved; without a saved value, the home app the
+       firmware records in db/first_screen/type, then Samsung's home, and Autorun off. */
+    var APP_ID_RE = /^[A-Za-z0-9._-]{1,120}$/;
+    function homeAppSet(value) {
+        return homeAppRead().then(function (cur) {
+            if (value === 1) {
+                if (cur.home !== "APLauncher.Home") setPref("homeAppSaved", { home: cur.home, autostart: cur.autostart });
+                return tvExec("vconftool set -f -t string " + HOME_KEY + " APLauncher.Home 2>&1; vconftool set -f -t int " + AUTOSTART_KEY + " 1 2>&1");
+            }
+            var saved = pref("homeAppSaved") || {};
+            var home = saved.home && saved.home !== "APLauncher.Home" && APP_ID_RE.test(saved.home) ? saved.home : null;
+            var autostart = saved.autostart === 1 ? 1 : 0;
+            var setHome = home ? "vconftool set -f -t string " + HOME_KEY + " " + home + " 2>&1"
+                : "h=$(vconftool get db/first_screen/type 2>/dev/null | awk '{print $4}'); " +
+                  "if [ -z \"$h\" ] || [ \"$h\" = APLauncher.Home ]; then h=com.samsung.tv.csfs; fi; " +
+                  "vconftool set -f -t string " + HOME_KEY + " \"$h\" 2>&1";
+            return tvExec(setHome + "; vconftool set -f -t int " + AUTOSTART_KEY + " " + autostart + " 2>&1").then(function (r) {
+                setPref("homeAppSaved", null);
+                return r;
+            });
         });
     }
     function nativeReset(method) { return PREVIEW ? Promise.resolve() : tvExec(AVOC + method + " 2>&1"); }
