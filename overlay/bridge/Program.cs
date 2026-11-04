@@ -37,7 +37,7 @@ namespace APL.Bridge
         private static readonly TimeSpan IdleAfter = TimeSpan.FromMinutes(15);
         private static readonly TimeSpan ConnectTimeout = TimeSpan.FromSeconds(5);
         private static readonly TimeSpan RelayTimeout = TimeSpan.FromSeconds(150), ShellTimeout = TimeSpan.FromSeconds(20);
-        private static readonly Regex Allowed = new Regex(@"^/(status|screen|tv-settings|tv-menu|exec|components/action|control|apps)(/|\?|$)");
+        private static readonly Regex Allowed = new Regex(@"^/(status|screen|tv-settings|tv-menu|exec|components/action|control|apps|remap|quick)(/|\?|$)");
 
         // Going to sleep, the screen hides the launcher and sets memory/pm/state (1 = on); about 17 s
         // later it freezes the apps, and the tick then misses its beats (the fallback signal).
