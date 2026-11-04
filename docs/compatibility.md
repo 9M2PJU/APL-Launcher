@@ -121,7 +121,7 @@ Vetro intercepts one device at a time: pick the remote in Vetro › Remapper (se
 
 | Feature | Status | Notes |
 |---|---|---|
-| Apps left 10 minutes in the background close by themselves | ✅ | Never the app in front, the launcher, the TV inputs, AirPlay or The Frame's Art Mode. Samsung's apps that open by themselves and were never used close after 1 minute. |
+| Apps left 10 minutes in the background close by themselves | ✅ | Never the app in front, the launcher, the TV inputs, AirPlay or The Frame's Art Mode. Samsung's apps that open by themselves and were never used close after 1 minute; one the screen starts again right away (its preloaded Netflix and YouTube engine) is left alone. |
 | Optimize and Restore | ✅ | Checked on the screen with the scripts; the new app runs the same scripts. |
 | Back to the launcher after standby | ✅ | The M8 comes back on it by itself. The Frame comes back on the TV input: since 1.0.4 the launcher brings itself back, also when leaving Art Mode (contributor's report). |
 | Full restart (`reboot`) | ✅ | The launcher is back after about a minute; about 80 s on The Frame and the QN92D, where Tizen starts it later. |

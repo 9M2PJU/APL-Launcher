@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.11
+- APL Launcher Setup installs the full package, like Apps2Samsung (#9, thanks exzos28): it downloads the release's package, adds your personal files and signs it with your certificate, so the PC no longer needs the C# compiler or .NET 6. A screen set up before moves by itself: the buttons go to the new APL Overlay first, then the old separate package is removed. Tried on the M8: keys, websites, settings and *Start on APL Launcher* kept.
+- APL Overlay no longer closes Netflix and YouTube's engine over and over: the screen preloads them and starts them again a minute after they are closed, about 15 times an hour. An app that comes back by itself twice in a row is now left alone, until it is used.
+
 ## 1.0.10
 - APL Overlay: Home pressed in the first minute after power-on, before Vetro takes the key, opened Samsung's home and could leave it there. APL Overlay now brings the launcher back without Vetro, also when Samsung's home was already in front when it started. Tried on the M8: five presses before Vetro was up, the launcher back each time in under half a second.
 - Alexa on the microphone button didn't work after a full start once the launcher showed early: APL Overlay asked Vetro once, before it was up. It now tries every 15 s until Vetro runs it (on the M8: about 70 s after power-on).

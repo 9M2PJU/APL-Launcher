@@ -1,8 +1,8 @@
 {
- "version": "1.0.10",
+ "version": "1.0.11",
  "loader": 1,
  "reinstall": "1.0.0",
- "notes": "Home in the first minute after power-on and Alexa's microphone work again (APL Overlay).",
+ "notes": "Setup installs the full package; APL Overlay leaves Netflix and YouTube's engine alone.",
  "scripts": [
   "js/diag.js",
   "js/lang-fr.js",
