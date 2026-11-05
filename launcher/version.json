@@ -1,8 +1,8 @@
 {
- "version": "1.0.15",
+ "version": "1.0.16",
  "loader": 1,
  "reinstall": "1.0.0",
- "notes": "Prime Video and Apple TV in the app list. Setup installs the launcher alone on Tizen 6.",
+ "notes": "Settings reorganised: Appearance, Home Screen, Remote and Devices, one Top Shelf menu, Start on APL Launcher in General. Sheets of Light by default.",
  "scripts": [
   "js/diag.js",
   "js/lang-fr.js",

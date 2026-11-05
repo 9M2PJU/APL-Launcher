@@ -290,6 +290,8 @@
                     info(APL.t("Resolution"), sys.display),
                     info(APL.t("Storage"), sys.storage),
                     info(APL.t("IP Address"), function () { return sys.network().ip; }),
+                    info(APL.t("Link to Vetro"), function () { return sys.vetroLink(); },
+                        APL.t("How the launcher talks to Vetro. Through the bridge it reads the screen's settings; without it, orders still go out but the settings show Unavailable.")),
                     info("APL Launcher", function () { return APL.t("Version {v}", { v: sys.version }); }),
                     info(APL.t("Sources"), function () { return "TMDB, YouTube, App Store, Apple Music"; },
                         APL.t("Movies and shows: This product uses the TMDB API but is not endorsed or certified by TMDB."))

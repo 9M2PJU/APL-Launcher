@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.16
+- Settings are reorganised (#22, thanks skjnldsv): **Appearance** gathers the theme, the Top Shelf, visual effects and background motion; **Home Screen** the apps shown, their order and the way back to the launcher; **Remote and Devices** the play/pause button, Alexa and Bluetooth.
+- One **Top Shelf** menu, in the order the launcher tries things: What You're Watching, What's Popular, then **Otherwise** for apps without artwork. Sheets of Light are now the default there for anyone who never picked a style; Black replaces the old App Backgrounds switch (turned into Black when it was off). Tried on the M8: the new menus in French, Otherwise on Sheets of Light.
+- *Start on APL Launcher* moves to **General & Privacy**, above Close Apps at Start-Up, and Advanced Features goes away (#23, thanks skjnldsv). Autorun Smart Hub leaves the launcher's Settings: Start on APL Launcher turns it on, APL Overlay switches it around standby, and turning it off alone kept the launcher from showing at power-on. It is still in Samsung's own settings.
+- *Settings › Support › About This Screen › Link to Vetro* says how the launcher reaches Vetro: through its bridge, with the time it took, or the bridge's error. Without the bridge, orders still go out but nothing can be read back, so the screen's settings say Unavailable: on a Tizen 6.5 Frame (#21) the picture values came back in under a second from the PC, never in the launcher. On the M8: "Through the bridge (107 ms)".
+- Install guide: on Tizen 6.x with Apps2Samsung, install the launcher alone and map Home to it.
+- Samsung TV Plus is no longer listed through its deep linker on Tizen 6.5: launched alone it doesn't open TV Plus (reported in #21, where Prime Video and Apple TV now work). The Samsung TV Plus app from the store is listed as before.
+
 ## 1.0.15
 - APL Launcher Setup installs the launcher on its own on Tizen 6.x screens. APL Overlay, the bridge and the start-up service of the full package are .NET apps for Tizen 7 and newer: on The Frame 2022 (Tizen 6.5) they don't run, and since the launcher reaches Vetro through that bridge, the settings stayed empty and Bluetooth devices didn't connect (#21). The launcher's own package has a web bridge instead. Setup reads the screen's Tizen version through Vetro; Tizen 7 and newer get the full package as before. Tried from this PC: both packages built and signed, the right one chosen for the M8 (Tizen 9); not tried on a Tizen 6 screen.
 - Prime Video and Apple TV show in the launcher when Samsung preinstalled them: their Samsung ids were filtered out with the screen's own services (Apple TV is com.samsung.tv.aria-video), and on Tizen 6.5 Samsung TV Plus too, through its deep linker (#21). Seen on the M8: Apple TV in the grid.

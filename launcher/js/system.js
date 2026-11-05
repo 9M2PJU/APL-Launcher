@@ -485,6 +485,21 @@
     // Bridge started early: Control Center and Settings respond right away
     if (!PREVIEW) setTimeout(function () { vetroAlive(); }, 4000);
 
+    /* Settings › Support › About This Screen: how the launcher reaches Vetro. Through the bridge it reads the
+       answers; without it orders still go out (Bluetooth connects) but nothing can be read back, so the
+       picture settings say Unavailable. For reports (issue #21, Tizen 6.5). */
+    function vetroLink() {
+        if (PREVIEW) return Promise.resolve(APL.t("Preview"));
+        var t0 = Date.now();
+        return bridgeRequest("POST", "/exec", JSON.stringify({ cmd: "true" })).then(function (r) {
+            var ok = false;
+            try { ok = JSON.parse(r.body).ok !== false; } catch (e) {}
+            return (ok ? APL.t("Through the bridge") : APL.t("Bridge: Vetro refused")) + " (" + (Date.now() - t0) + " ms)";
+        }, function (e) {
+            return APL.t("Bridge: {error}", { error: (e && e.message) || "?" });
+        });
+    }
+
     /* Root command on the screen, through Vetro and the bridge. No backslashes in commands: Vetro doubles them. */
     function tvExec(cmd) {
         return vetroPost("/exec", { cmd: cmd }).then(function (r) {
@@ -842,7 +857,7 @@
         pref: pref, setPref: setPref, onPref: onPref, profiles: profiles,
         audio: audio, network: network, product: product, display: display, storage: storage, hdr: hdr,
         remoteKey: remoteKey, openSamsungSettings: openSamsungSettings, sleepNow: sleepNow,
-        switchSource: switchSource, vetroAlive: vetroAlive,
+        switchSource: switchSource, vetroAlive: vetroAlive, vetroLink: vetroLink,
         registerKeys: registerKeys, armSleepTimer: armSleepTimer, readSleepTimer: readSleepTimer,
         vetroGet: vetroGet, vetroPost: vetroPost, exec: tvExec, game: game, runningApps: runningApps,
         native: { get: nativeGet, set: nativeSet, reset: nativeReset, info: function (id) { return NATIVE[id]; } },
