@@ -84,7 +84,7 @@
       "eyebrow": "STREAMING",
       "accent": "#113ccf",
       "match": [
-        "disney"
+        "disney(?!.*hotstar)"
       ],
       "ids": [
         "3201901017640"
@@ -305,6 +305,82 @@
         "h": 290,
         "text": "Crunchyroll"
       }
+    },
+    {
+      "key": "jiohotstar",
+      "name": "JioHotstar",
+      "eyebrow": "STREAMING",
+      "accent": "#1f80e0",
+      "match": [
+        "hotstar"
+      ],
+      "ids": [
+        "fiZNCxMH9Y.Hotstar"
+      ],
+      "logo": {
+        "src": "file:jiohotstar.png",
+        "crop": true
+      },
+      "tile": {
+        "bg": "linear-gradient(160deg,#16244a 0%,#070b18 100%)",
+        "w": 0.8
+      },
+      "shelf": {
+        "bg": "#070b18",
+        "glow": "#1f80e0"
+      }
+    },
+    {
+      "key": "sonyliv",
+      "name": "Sony LIV",
+      "eyebrow": "STREAMING",
+      "accent": "#f2b11b",
+      "match": [
+        "^sony ?liv"
+      ],
+      "ids": [
+        "EUKHUxrGQA.SonyLIV"
+      ],
+      "logo": {
+        "src": "file:sonyliv.png",
+        "icon": true
+      },
+      "tile": {
+        "bg": "#000000",
+        "h": 0.98
+      },
+      "shelf": {
+        "bg": "#0c0716",
+        "glow": "#7b3fe4"
+      }
+    },
+    {
+      "key": "nuvio",
+      "name": "Nuvio",
+      "eyebrow": "MEDIA LIBRARY",
+      "accent": "#a855f7",
+      "match": [
+        "^nuvio"
+      ],
+      "ids": [
+        "NuvioTV001.NuvioTV",
+        "NuvioTVH01.NuvioTVHosted",
+        "NuvioTV002.NuvioNative",
+        "NuvioTV003.NuvioLite"
+      ],
+      "logo": {
+        "src": "file:nuvio.png",
+        "crop": true
+      },
+      "tile": {
+        "bg": "linear-gradient(160deg,#171a33 0%,#0b0d18 100%)",
+        "w": 0.72
+      },
+      "shelf": {
+        "bg": "#0b0d18",
+        "glow": "#6d5cf0"
+      },
+      "live": "trending"
     },
     {
       "key": "paramountplus",

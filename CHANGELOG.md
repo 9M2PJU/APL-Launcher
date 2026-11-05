@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.18
+- JioHotstar, Sony LIV and Nuvio join the catalog, with their own logo tile and background. They are recognised by their Tizen id (for Nuvio: the official, hosted, native and lite builds) or by their name, and "Disney+ Hotstar" is no longer taken for Disney+. Asked for in #21 and on Reddit.
+- JioHotstar and Sony LIV fill the Top Shelf with what is popular on them in your country (TMDB), like Netflix or Prime Video. Nuvio shows what is trending, like Stremio. Tried in the PC preview set to India: The Mentalist and The Office on JioHotstar, Mob Psycho 100 on Sony LIV. On the M8 the launcher starts as before with the new catalog (none of the three apps is installed there).
+
 ## 1.0.17
 - The online demo (and the PC preview) looks like a real screen: a dock anyone could have (TizenTube, Netflix, Prime Video, Disney+, Apple TV), a live Top Shelf with Blender Studio's open movies (CC BY, pictures from TMDB) when there is no TMDB key, and the Sheets of Light behind catalog apps. It showed this PC's own favourites, TizenTube twice and an empty Top Shelf.
 - *Settings › Support › About This Screen › Link to Vetro* tells more: whether the bridge gets the launcher's requests at all, or gets them but cannot reach Vetro, with the addresses it tried and how each failed (#21: "Bridge: timeout" on a Tizen 6.5 Frame). The detail from the web bridge (Tizen 6) comes with APL Launcher Setup 1.0.17.

@@ -56,7 +56,7 @@ window.APL_CATALOG = [
     "eyebrow": "STREAMING",
     "accent": "#113ccf",
     "match": [
-      "disney"
+      "disney(?!.*hotstar)"
     ],
     "ids": [
       "3201901017640"
@@ -174,6 +174,52 @@ window.APL_CATALOG = [
     "ids": [],
     "tile": "images/apps/crunchyroll-tile.png",
     "bg": "images/apps/crunchyroll-bg.jpg"
+  },
+  {
+    "key": "jiohotstar",
+    "name": "JioHotstar",
+    "eyebrow": "STREAMING",
+    "accent": "#1f80e0",
+    "match": [
+      "hotstar"
+    ],
+    "ids": [
+      "fiZNCxMH9Y.Hotstar"
+    ],
+    "tile": "images/apps/jiohotstar-tile.png",
+    "bg": "images/apps/jiohotstar-bg.jpg"
+  },
+  {
+    "key": "sonyliv",
+    "name": "Sony LIV",
+    "eyebrow": "STREAMING",
+    "accent": "#f2b11b",
+    "match": [
+      "^sony ?liv"
+    ],
+    "ids": [
+      "EUKHUxrGQA.SonyLIV"
+    ],
+    "tile": "images/apps/sonyliv-tile.png",
+    "bg": "images/apps/sonyliv-bg.jpg"
+  },
+  {
+    "key": "nuvio",
+    "name": "Nuvio",
+    "eyebrow": "MEDIA LIBRARY",
+    "accent": "#a855f7",
+    "match": [
+      "^nuvio"
+    ],
+    "ids": [
+      "NuvioTV001.NuvioTV",
+      "NuvioTVH01.NuvioTVHosted",
+      "NuvioTV002.NuvioNative",
+      "NuvioTV003.NuvioLite"
+    ],
+    "tile": "images/apps/nuvio-tile.png",
+    "bg": "images/apps/nuvio-bg.jpg",
+    "live": "trending"
   },
   {
     "key": "paramountplus",

@@ -82,7 +82,8 @@
     /* TMDB (JustWatch) "provider" ids of the services (the same in every country). */
     var TMDB_PROVIDERS = {
         netflix: 8, primevideo: 119, disneyplus: 337, appletv: 350,
-        paramountplus: 531, crunchyroll: 283, rakutentv: 35, plutotv: 300, canalplus: 381
+        paramountplus: 531, crunchyroll: 283, rakutentv: 35, plutotv: 300, canalplus: 381,
+        jiohotstar: 2336, sonyliv: 237
     };
 
     function cacheGet(k, anyAge, ttl) {

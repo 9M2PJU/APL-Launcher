@@ -158,8 +158,8 @@ function logoPx(s, boxW, boxH) { return s.h ? (s.h <= 1 ? s.h * boxH : s.h) : (s
 function tileHtml(app) {
   const t = app.tile;
   if (app.logo.icon) {
-    // Square app icon: extended by its own gradient, with faded edges.
-    return `<div id="tile" style="width:500px;height:300px;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#222">
+    // Square app icon: extended by its own gradient (or by tile.bg), with faded edges.
+    return `<div id="tile" style="width:500px;height:300px;display:flex;align-items:center;justify-content:center;overflow:hidden;background:${t.bg || "#222"}">
       <img id="logo" style="height:${Math.round((t.h || 1.08) * 300)}px;width:auto;-webkit-mask-image:radial-gradient(closest-side,#000 74%,transparent 100%)"></div>`;
   }
   return `<div id="tile" style="width:500px;height:300px;display:flex;align-items:center;justify-content:center;background:${t.bg}">
@@ -224,16 +224,16 @@ for (const app of spec) {
     const raw = await logoDataUrl(app.logo);
     for (const kind of app.shelf ? ["tile", "shelf"] : ["tile"]) {
       await page.setContent(`<html><head><style>${fontCss}body{margin:0}</style></head><body>${kind === "tile" ? tileHtml(app) : shelfHtml(app)}<script>${PREP}</script></body></html>`);
-      await page.evaluate(async ({ raw, ko, crop, rot, icon, kind }) => {
+      await page.evaluate(async ({ raw, ko, crop, rot, icon, kind, tileBg }) => {
         const url = await prep(raw, ko, crop, rot);
         const img = document.getElementById("logo");
         if (img) { img.src = url; await img.decode(); }
-        if (icon && kind === "tile") {
+        if (icon && kind === "tile" && !tileBg) {
           const [tl, br] = await iconColours(url);
           document.getElementById("tile").style.background = `linear-gradient(135deg, ${tl} 0%, ${br} 100%)`;
         }
         await document.fonts.ready;
-      }, { raw, ko: app.logo.knockout || null, crop: !!app.logo.crop, rot: app.logo.rotate || 0, icon: !!app.logo.icon, kind });
+      }, { raw, ko: app.logo.knockout || null, crop: !!app.logo.crop, rot: app.logo.rotate || 0, icon: !!app.logo.icon, kind, tileBg: !!(app.tile && app.tile.bg) });
       const el = await page.$(kind === "tile" ? "#tile" : "#shelf");
       if (kind === "tile") await el.screenshot({ path: join(OUT, `${app.key}-tile.png`) });
       else await el.screenshot({ path: join(OUT, `${app.key}-bg.jpg`), type: "jpeg", quality: 84 });
