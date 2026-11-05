@@ -29,7 +29,7 @@
     var APL = global.APL;
     var KEYS = global.APL_KEYS || {};
     var TTL = 6 * 3600 * 1000;
-    var CACHE_VERSION = 4;              // 3: movies and series carry their title and their rating; 4: Smart Hub items their deep link
+    var CACHE_VERSION = 5;              // 3: movies and series carry their title and their rating; 4: Smart Hub items their deep link; 5: "tv" / "movie", translated when shown
     var MIN_VOTES = 20;                 // below that, a rating doesn't mean anything yet
 
     /* The screen's country, for trending videos, charts, prices and what each service streams there.
@@ -145,7 +145,10 @@
     /* "★ 7.8 IMDb" (with a decimal comma in French) */
     function noteOf(item) { return item.rating ? "★ " + item.rating.toFixed(1).replace(".", APL.lang === "fr" ? "," : ".") + " " + (item.ratingFrom || "TMDB") : ""; }
     /* "★ 7.8 IMDb · 2025 · TV Show" */
-    function metaOf(item) { return [noteOf(item), item.year, item.type].filter(Boolean).join(" · "); }
+    function metaOf(item) {
+        var type = item.type === "tv" ? APL.t("TV Show") : item.type === "movie" ? APL.t("content|Movie") : item.type;
+        return [noteOf(item), item.year, type].filter(Boolean).join(" · ");
+    }
 
     /* Background of each result (Fanart.tv if it has one, else TMDB), its title and its rating. */
     function decorate(list) {
@@ -160,7 +163,7 @@
                     rating: both[1].rating,
                     ratingFrom: both[1].ratingFrom,
                     year: String(r.release_date || r.first_air_date || "").substr(0, 4),
-                    type: r._kind === "tv" ? APL.t("TV Show") : APL.t("content|Movie")
+                    type: r._kind === "tv" ? "tv" : "movie"                // translated when shown (metaOf): kept 6 h, the language may change
                 };
             });
         }));
@@ -412,7 +415,31 @@
             });
         } };
     }
+    /* The online demo (PC preview without keys, GitHub Pages): Blender Studio's open movies (CC BY), with
+       their TMDB pictures and ratings, stand in for what a movie or video app would show on a screen. */
+    var DEMO_FILMS = [
+        ["Sintel", 2010, 7.3, "/msqeiEyIRpPAtrCeRGFNZQ9tkJL.jpg"],
+        ["Agent 327: Operation Barbershop", 2017, 6.9, "/aupI9kV5CawUp02XWnI2l7Ym9SH.jpg"],
+        ["Big Buck Bunny", 2008, 6.5, "/xtdybjRRZ15mCrPOvEld305myys.jpg"],
+        ["Charge", 2022, 7.1, "/hwvuivrtKFA4tPkW81txs7oKJOx.jpg"],
+        ["Cosmos Laundromat", 2015, 6.3, "/f2wABsgj2lIR2dkDEfBZX8p4Iyk.jpg"],
+        ["Sprite Fright", 2021, 7.7, "/aCMT1okuiKFnyKHdCOez66rJKyT.jpg"],
+        ["Tears of Steel", 2012, 5.7, "/fOy6SL5Zs2PFcNXwqEPIDPrLB1q.jpg"],
+        ["Caminandes: Llamigos", 2016, 6.6, "/tIX2BIhkhoFq1iwtHYzTSbHbe82.jpg"]
+    ];
+    function demoSource(app) {
+        var start = 0, id = String(app.id || ""), i;
+        for (i = 0; i < id.length; i++) start = (start + id.charCodeAt(i)) % DEMO_FILMS.length;   // a different film first per app
+        return { id: "demo-" + start, load: function () {
+            return Promise.resolve(DEMO_FILMS.slice(start).concat(DEMO_FILMS.slice(0, start)).map(function (f) {
+                return { bg: IMG + "w1280" + f[3], bgSmall: IMG + "w300" + f[3], card: IMG + "w780" + f[3], title: f[0],
+                         rating: f[2], ratingFrom: "TMDB", year: String(f[1]), type: "movie" };
+            }));
+        } };
+    }
     function publicSource(app) {
+        if (APL.sys.PREVIEW && !KEYS.tmdb && (app.live === "youtube" || app.live === "trending" || app.live === "anime" ||
+                                              TMDB_PROVIDERS[app.key] || app.tmdbProvider)) return demoSource(app);
         if (app.live === "youtube") return KEYS.youtube ? { id: "youtube", load: function () { return youtube(); } } : null;
         if (app.live === "youtube-music") return KEYS.youtube ? { id: "youtube-10", load: function () { return youtube("10"); } }
                                                               : { id: "music-" + REGION, load: appleCharts };

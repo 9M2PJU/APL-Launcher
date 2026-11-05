@@ -96,6 +96,12 @@ function onMessage(data) {
     }
     stopLater();
     var id = field(data, "id"), method = field(data, "method") || "GET", path = field(data, "path"), body = field(data, "body");
+    // Settings › Support › Link to Vetro: answered here, without Vetro, so the launcher can tell a bridge that
+    // gets nothing (or cannot answer) from one that cannot reach Vetro, and which addresses failed how (#21)
+    if (path === "/bridge-info") {
+        answer(id, 200, JSON.stringify({ bridge: "web", hosts: HOSTS, using: HOSTS[hostIndex], reached: reached, errors: hostErrors }));
+        return;
+    }
     if (!ALLOWED.test(path) || (method !== "GET" && method !== "POST")) {
         answer(id, 404, '{"error":"not relayed"}');
         return;
@@ -115,6 +121,9 @@ function lanAddresses() {
     return out;
 }
 
+/* For /bridge-info: the address Vetro last answered on, and the last error on each address tried. */
+var reached = "", hostErrors = {};
+
 /* A request to Vetro; done(status, text) is called once. */
 function vetro(method, path, buf, timeoutMs, done, retries) {
     if (retries === undefined) retries = HOSTS.length - 1;
@@ -123,10 +132,12 @@ function vetro(method, path, buf, timeoutMs, done, retries) {
         if (finished) return;
         finished = true;
         clearTimeout(timer);
+        if (status > 0 && status < 500) reached = host;
         done(status, text);
     }
     function fail(e) {
         if (finished) return;
+        hostErrors[host] = (e.code || "") + " " + String(e.message || "").slice(0, 60);
         // The request did not go out (refused, or no answer to connect): try the next address
         if (retries > 0 && /EHOSTUNREACH|EACCES|ECONNREFUSED|ENETUNREACH|EINVAL|ETIMEDOUT/.test(e.code)) {
             finished = true;
@@ -156,6 +167,7 @@ function vetro(method, path, buf, timeoutMs, done, retries) {
         function connected() {
             clearTimeout(timer);
             timer = setTimeout(function () {
+                hostErrors[host] = "connected, no answer in " + Math.round(timeoutMs / 1000) + " s";
                 finish(504, JSON.stringify({ ok: false, error: "Vetro did not answer in time" }));
                 try { req.abort(); } catch (x) {}
             }, timeoutMs);

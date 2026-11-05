@@ -51,6 +51,7 @@ window.APL_LANG_FR = {
     "Hold OK = app menu": "OK maintenu = menu de l'app",
     "Keyboard: arrows, Enter, Esc, C": "Clavier : flèches, Entrée, Échap, C",
     "Preview: apps don't open": "Aperçu : les apps ne s'ouvrent pas",
+    "Demo films: Blender Studio (CC BY), pictures from TMDB": "Films de démo : Blender Studio (CC BY), images de TMDB",
 
     /* Control Center, Sources, menus, profiles */
     "All Settings": "Tous les paramètres",
@@ -320,6 +321,8 @@ window.APL_LANG_FR = {
     "Through the bridge": "Par le pont",
     "Bridge: Vetro refused": "Pont : Vetro a refusé",
     "Bridge: {error}": "Pont : {error}",
+    "Bridge works, Vetro unreachable": "Le pont marche, Vetro injoignable",
+    "no answer at all": "aucune réponse",
     "MAC Address": "Adresse MAC",
     "Gateway": "Passerelle",
     "DNS Server": "Serveur DNS",

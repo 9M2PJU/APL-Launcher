@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.17
+- The online demo (and the PC preview) looks like a real screen: a dock anyone could have (TizenTube, Netflix, Prime Video, Disney+, Apple TV), a live Top Shelf with Blender Studio's open movies (CC BY, pictures from TMDB) when there is no TMDB key, and the Sheets of Light behind catalog apps. It showed this PC's own favourites, TizenTube twice and an empty Top Shelf.
+- *Settings › Support › About This Screen › Link to Vetro* tells more: whether the bridge gets the launcher's requests at all, or gets them but cannot reach Vetro, with the addresses it tried and how each failed (#21: "Bridge: timeout" on a Tizen 6.5 Frame). The detail from the web bridge (Tizen 6) comes with APL Launcher Setup 1.0.17.
+- The Top Shelf's "Movie" and "TV Show" follow the launcher's language right away: what was kept from before a language change stayed in the old one for up to 6 hours.
+- The "Clock on black" screen saver is centred on the screen (#24, thanks skjnldsv).
+
 ## 1.0.16
 - Settings are reorganised (#22, thanks skjnldsv): **Appearance** gathers the theme, the Top Shelf, visual effects and background motion; **Home Screen** the apps shown, their order and the way back to the launcher; **Remote and Devices** the play/pause button, Alexa and Bluetooth.
 - One **Top Shelf** menu, in the order the launcher tries things: What You're Watching, What's Popular, then **Otherwise** for apps without artwork. Sheets of Light are now the default there for anyone who never picked a style; Black replaces the old App Backgrounds switch (turned into Black when it was off). Tried on the M8: the new menus in French, Otherwise on Sheets of Light.

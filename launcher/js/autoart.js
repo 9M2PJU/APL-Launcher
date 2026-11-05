@@ -192,7 +192,8 @@
     /* All the apps, one after another, in the background. onChange: redraw. */
     var running = false;
     function run(apps, onChange) {
-        if (running || !sys.pref("autoArt") || sys.PREVIEW) return;
+        if (running || !sys.pref("autoArt")) return;
+        if (sys.PREVIEW) { previewArt(apps, onChange); return; }
         running = true;
         var queue = apps.filter(wanted), dirty = false, n = 0;
         (function next() {
@@ -212,6 +213,19 @@
                 if (dirty && ++n % 6 === 0) { onChange(); dirty = false; }
                 setTimeout(next, 250);           // gently: the screen stays smooth
             });
+        })();
+    }
+
+    /* The PC preview and the online demo: no search online, only what genart.js paints from the catalog
+       (the Sheets of Light behind the catalog's apps), so the demo looks like a screen. */
+    function previewArt(apps, onChange) {
+        if (!APL.genArt) return;
+        running = true;
+        var queue = apps.filter(wanted), dirty = false;
+        (function next() {
+            if (!queue.length) { running = false; if (dirty) onChange(); return; }
+            APL.genArt.make(queue.shift(), null).then(function (made) { if (made) dirty = true; }, function () {})
+                .then(function () { setTimeout(next, 30); });
         })();
     }
 

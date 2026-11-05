@@ -1,8 +1,8 @@
 {
- "version": "1.0.16",
+ "version": "1.0.17",
  "loader": 1,
  "reinstall": "1.0.0",
- "notes": "Settings reorganised: Appearance, Home Screen, Remote and Devices, one Top Shelf menu, Start on APL Launcher in General. Sheets of Light by default.",
+ "notes": "A livelier online demo. Settings › Support › Link to Vetro tells where the link fails.",
  "scripts": [
   "js/diag.js",
   "js/lang-fr.js",

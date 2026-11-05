@@ -18,6 +18,10 @@
         "org.tizen.browser"                 // Samsung Internet
     ];
     var OVERSCAN = "org.apps2samsung.overscan";
+    /* The PC preview and the online demo: a dock anyone could have (TizenTube, then these), not the
+       favourites of the screen this launcher was made on. */
+    var DEMO_FAVORITES = ["demo.netflix", "demo.prime", "demo.disney", "demo.appletv"];
+    function favorites() { return hasTizen() ? FAVORITES : DEMO_FAVORITES; }
 
     /* Nicer names + accent colours for known apps. Everything else
        falls back to its Tizen name + a neutral accent. */
@@ -101,10 +105,11 @@
 
     /* Demo set used only when window.tizen is absent (PC preview). */
     var DEMO_APPS = [
-        { id: "xvvl3S1TT1.TizenTubeStandalone", name: "TizenTube", icon: null },
+        // TizenBrew: the launcher shows it as TizenTube (one tile, as on a screen)
         { id: "xvvl3S1bvH.TizenBrewStandalone", name: "TizenBrew", icon: null },
-        { id: "6YLB5zo9te.HotIptv",             name: "Hot IPTV",  icon: null },
         { id: "org.tizen.browser",              name: "Internet",  icon: null },
+        { id: "demo.crunchyroll", name: "Crunchyroll", icon: null },
+        { id: "demo.twitch",      name: "Twitch",      icon: null },
         // Examples for the PC preview
         { id: "IkWsFHtOY9.Stremio",       name: "Stremio",     icon: null },
         { id: "kIciSQlYEM.plex",          name: "Plex",        icon: null },
@@ -152,14 +157,14 @@
             key: m.key || null,
             bgBlur: asset(m.bgBlur || (m.key ? "images/blur/" + m.key + ".jpg" : null)),   // pre-blurred background (grid)               // catalogue key (netflix, primevideo…)
             live: m.live || null,             // "youtube" for TizenTube             // full-frame artwork of the tile (like tvOS icons)
-            favorite: FAVORITES.indexOf(app.id) !== -1 || isTizenTube(app.id, app.name)
+            favorite: favorites().indexOf(app.id) !== -1 || isTizenTube(app.id, app.name)
         };
     }
 
     /* Favourites first (in declared order), then the rest alphabetically. */
     function order(apps) {
         var favRank = {};
-        FAVORITES.forEach(function (id, i) { favRank[id] = i; });
+        favorites().forEach(function (id, i) { favRank[id] = i; });
         apps.forEach(function (a) { if (a.name === "TizenTube") favRank[a.id] = -1; });   // TizenTube first
         return apps.slice().sort(function (a, b) {
             var fa = (a.id in favRank), fb = (b.id in favRank);

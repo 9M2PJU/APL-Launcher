@@ -420,14 +420,14 @@
         });
         return replyPort;
     }
-    function bridgeRequest(method, path, body) {
+    function bridgeRequest(method, path, body, waitMs) {
         if (PREVIEW || !tz || !tz.messageport || Date.now() < bridgeDownUntil) return Promise.reject(new Error("bridge unavailable"));
         function send() {
             return new Promise(function (resolve, reject) {
                 var remote = tz.messageport.requestTrustedRemoteMessagePort(BRIDGE_ID, BRIDGE_PORT);   // throws if not started
                 ensureReplyPort();
                 var id = String(++seq);
-                pending[id] = { resolve: resolve, chunks: [], got: 0, timer: setTimeout(function () { delete pending[id]; reject(new Error("timeout")); }, 60000) };
+                pending[id] = { resolve: resolve, chunks: [], got: 0, timer: setTimeout(function () { delete pending[id]; reject(new Error("timeout")); }, waitMs || 60000) };
                 // No port attached: the service answers through its own trusted port (see bridge/service.js)
                 remote.sendMessage([{ key: "id", value: id }, { key: "method", value: method },
                                     { key: "path", value: path }, { key: "body", value: body || "" }]);
@@ -490,13 +490,26 @@
        picture settings say Unavailable. For reports (issue #21, Tizen 6.5). */
     function vetroLink() {
         if (PREVIEW) return Promise.resolve(APL.t("Preview"));
-        var t0 = Date.now();
-        return bridgeRequest("POST", "/exec", JSON.stringify({ cmd: "true" })).then(function (r) {
-            var ok = false;
-            try { ok = JSON.parse(r.body).ok !== false; } catch (e) {}
-            return (ok ? APL.t("Through the bridge") : APL.t("Bridge: Vetro refused")) + " (" + (Date.now() - t0) + " ms)";
+        // 1. Does the bridge get the request and answer at all? The web bridge answers this one itself,
+        //    without Vetro (bridge/service.js); the .NET bridge says "not relayed", which is an answer too.
+        var t0 = Date.now(), info = null;
+        return bridgeRequest("GET", "/bridge-info", "", 10000).then(function (r) {
+            try { info = JSON.parse(r.body); } catch (e) {}
+            // 2. Then a command through Vetro
+            t0 = Date.now();
+            return bridgeRequest("POST", "/exec", JSON.stringify({ cmd: "true" }), 20000).then(function (x) {
+                var ok = false;
+                try { ok = JSON.parse(x.body).ok !== false; } catch (e) {}
+                return (ok ? APL.t("Through the bridge") : APL.t("Bridge: Vetro refused")) + " (" + (Date.now() - t0) + " ms" +
+                       (info && info.reached ? ", " + info.reached : "") + ")";
+            }, function () {
+                // The bridge answers but Vetro doesn't: the addresses it tried and how they failed
+                var tried = [];
+                if (info && info.errors) Object.keys(info.errors).forEach(function (h) { tried.push(h + " " + info.errors[h]); });
+                return APL.t("Bridge works, Vetro unreachable") + (tried.length ? ": " + tried.join(" · ") : "");
+            });
         }, function (e) {
-            return APL.t("Bridge: {error}", { error: (e && e.message) || "?" });
+            return APL.t("Bridge: {error}", { error: e && e.message === "timeout" ? APL.t("no answer at all") : ((e && e.message) || "?") });
         });
     }
 

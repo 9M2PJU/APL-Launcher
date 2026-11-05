@@ -635,12 +635,13 @@
 
     /* One app: find its logo and paint, only once. */
     function make(app, art) {
-        if (!missing(app) || sys.PREVIEW) return Promise.resolve(false);
-        var r = stored(app);
-        if (r) return Promise.resolve(use(app, r));
+        if (!missing(app)) return Promise.resolve(false);
         // Tile and color known (catalog): the sheets need no logo, nothing to search
         // (its tile is still read, for the logo's second color)
         var tileOnly = (app.tile || app.tileHtml) && hexHsl(app.accent) && bgMode() === SHEETS;
+        if (sys.PREVIEW && !tileOnly) return Promise.resolve(false);      // the preview searches nothing online
+        var r = stored(app);
+        if (r) return Promise.resolve(use(app, r));
         var logoP = tileOnly ? Promise.resolve(null) : findLogo(app, art);
         var tileP = tileOnly && app.tile ? load(app.tile) : Promise.resolve(null);
         return Promise.all([logoP, tileP]).then(function (got) {
