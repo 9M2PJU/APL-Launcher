@@ -49,10 +49,12 @@ def main():
     package = args.package.read_bytes()
     with __import__("zipfile").ZipFile(args.package) as archive:
         config = archive.read("config.xml").decode("utf-8")
-        match = re.search(r'<widget[^>]*\bid="([^"]+)"[^>]*\bversion="([^"]+)"', config)
-        if not match:
-            raise RuntimeError("WGT config.xml does not contain an app ID and version")
-        app_id, version = match.groups()
+        widget = re.search(r'<widget\b[^>]*\bversion="([^"]+)"', config)
+        application = re.search(r'<tizen:application\b[^>]*\bid="([^"]+)"', config)
+        if not widget or not application:
+            raise RuntimeError("WGT config.xml does not contain a Tizen application ID and version")
+        version, = widget.groups()
+        app_id, = application.groups()
         if not re.fullmatch(r"APLauncher(?:\.[A-Za-z0-9_.-]+)?", app_id) or not re.fullmatch(r"[A-Za-z0-9_.+-]+", version):
             raise RuntimeError("WGT contains an unexpected app ID or version")
         if "tizen-manifest.xml" not in archive.namelist():
@@ -62,7 +64,7 @@ def main():
     if not (status.get("agent") or {}).get("connected"):
         raise RuntimeError("Vetro agent is not connected; check Vetro on the TV")
 
-    remote = "/tmp/apl-launcher-macos.wgt"
+    remote = "/tmp/apl-launcher-vetro.wgt"
     encoded = base64.b64encode(package).decode("ascii")
     exec_vetro(base, f": > {remote}.b64")
     for offset in range(0, len(encoded), CHUNK_SIZE):
