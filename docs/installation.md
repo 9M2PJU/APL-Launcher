@@ -31,6 +31,17 @@ Nothing else is installed on the screen. Vetro is required: **Install** stays of
 
 Your keys and websites stay on your PC (`%APPDATA%\APL-Launcher\keys.local.js`) and are never uploaded to GitHub.
 
+### macOS: install the full package through Vetro
+
+On macOS, you can install the full release package directly through Vetro without changing Developer Mode's **Host PC IP** (keep it at `127.0.0.1`) or using TV-Store. This requires Python 3 and a copy of the full package signed with a Partner certificate accepted by your TV. The release download is signed with the Tizen SDK default certificate, so it is **not directly installable**: use Apps2Samsung to sign the package for this TV first. Do not share or paste certificate passwords into the installer or terminal.
+
+1. Download `apl-launcher-full-vX.Y.Z.wgt` from the [latest release](https://github.com/Knikt/APL-Launcher-for-TizenOS/releases/latest), then use Apps2Samsung's package-signing flow to sign it with the Partner certificate already trusted by your TV. Keep the signed output on your Mac. If Apps2Samsung cannot sign an arbitrary local WGT on your setup, use its supported custom-package flow; do not install the default-signed release as-is.
+2. Confirm Vetro is running and its dashboard opens at `http://<screen-ip>:8099`.
+3. In Terminal, run `python3 scripts/install-macos.py <screen-ip> /path/to/signed-apl-launcher-full.wgt` from a downloaded or cloned repository. The script verifies Vetro connectivity and the file transfer checksum, installs the hybrid package, confirms both launcher and overlay are registered, and launches it. Add `--no-launch` to skip the launch.
+4. Follow steps 3 onward below to configure remote buttons and set up the launcher. The package has no personal API keys; trending films and series in the Top Shelf need a TMDB key.
+
+The installer sends the package to Vetro over the local network using bounded base64 chunks and removes its temporary files from the TV after installation. It never reads or prompts for certificate passwords. Tizen 6.x screens should use the launcher-only package instead, as described below.
+
 ### Without a Windows PC: Apps2Samsung
 
 Every release also has the whole package as `apl-launcher-full-vX.Y.Z.wgt`, for [Apps2Samsung](https://github.com/Apps2Samsung/Apps2Samsung): the launcher, APL Overlay, the bridge to Vetro and the start-up service, in one hybrid package. It is signed with the Tizen SDK's default certificate, and Apps2Samsung re-signs it for your screen. Vetro is still required.
