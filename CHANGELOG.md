@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.19
+- *Settings › Remote and Devices › Set Up the Remote Buttons* sets the remote in Vetro from the screen, as APL Launcher Setup does. Home and ⏯ go to APL Overlay (Home to APL Launcher on Tizen 6), and Samsung TV Plus and Prime Video too when AquaPlay and TizenTube are installed and no rule uses them yet. Other Vetro rules are left alone. It also says whether Vetro intercepts the remote, and where to turn that on.
+- So a launcher installed from a phone with Apps2Samsung no longer needs a PC: Vetro's own Remapper does not list APL Overlay, and picking it took a browser console. Asked on Reddit. Tried on the M8: with the ⏯ rule removed in Vetro, the button put it back (the same four rules as before) and ⏯ went to APL Overlay again.
+- Install guide: installing from a phone with Apps2Samsung, step by step. A custom `.wgt` comes without API keys; Apps2Samsung asks for them when APL Launcher is installed from its catalog.
+
 ## 1.0.18
 - JioHotstar, Sony LIV and Nuvio join the catalog, with their own logo tile and background. They are recognised by their Tizen id (for Nuvio: the official, hosted, native and lite builds) or by their name, and "Disney+ Hotstar" is no longer taken for Disney+. Asked for in #21 and on Reddit.
 - JioHotstar and Sony LIV fill the Top Shelf with what is popular on them in your country (TMDB), like Netflix or Prime Video. Nuvio shows what is trending, like Stremio. Tried in the PC preview set to India: The Mentalist and The Office on JioHotstar, Mob Psycho 100 on Sony LIV. On the M8 the launcher starts as before with the new catalog (none of the three apps is installed there).

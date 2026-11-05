@@ -123,6 +123,8 @@
             menu(APL.t("Remote and Devices"), "remote", [
                 choice(APL.t("Play/Pause Button"), "pauseKey", [["controlcenter", APL.t("Control Center")], ["playpause", APL.t("Play and Pause")]],
                     APL.t("What the play/pause button does while an app is in front: open the Control Center over it, or play and pause in the app. On the Home Screen it always opens the Control Center, and holding Home opens it everywhere.")),
+                action(APL.t("Set Up the Remote Buttons"), function () { APL.overlay.setUpButtons(); },
+                    APL.t("Sends Home and ⏯ to APL Launcher in Vetro, as APL Launcher Setup does. For a launcher installed from a phone with Apps2Samsung, or when Home opens Samsung's home again."), "remote"),
                 action(APL.t("Alexa on the Microphone Button"), function () { APL.settings.close(); APL.services.alexaMic(); },
                     APL.t("Do this once: in the Voice menu, choose Amazon Alexa and sign in to your Amazon account. Then hold the microphone button on the remote and talk to Alexa."), "mic"),
                 toggle("Alexa (Echo Dot)", "alexaBridge", APL.t("Say “Alexa, discover my devices” once. Then: “Alexa, turn on TizenTube”, “Alexa, turn off the screen”, “Alexa, turn on the AirPods”, “Alexa, turn on game mode”.")),

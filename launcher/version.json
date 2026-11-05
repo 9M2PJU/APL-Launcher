@@ -1,8 +1,8 @@
 {
- "version": "1.0.18",
+ "version": "1.0.19",
  "loader": 1,
  "reinstall": "1.0.0",
- "notes": "JioHotstar, Sony LIV and Nuvio join the catalog, with their logos, backgrounds and a Top Shelf of what is popular on them",
+ "notes": "Settings › Remote and Devices › Set Up the Remote Buttons sets Home and ⏯ in Vetro from the screen, no PC needed",
  "scripts": [
   "js/diag.js",
   "js/lang-fr.js",

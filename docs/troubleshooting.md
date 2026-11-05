@@ -21,7 +21,7 @@
 
 | Symptom | Fix |
 |---|---|
-| Home still opens Samsung's home | In Vetro › Remapper, check the Home rule points to *APL Overlay* (or *APL Launcher* without it) and **Remote interception** is on (*filter* mode in older versions). Turn Vetro's *Launcher (Beta)* off. |
+| Home still opens Samsung's home | In APL Launcher, *Settings › Remote and Devices › Set Up the Remote Buttons* sends Home back to APL Overlay (or APL Launcher without it) and says whether Vetro intercepts the remote. If not, in Vetro › Remapper, turn on **Remote interception** (*filter* mode in older versions). Turn Vetro's *Launcher (Beta)* off. |
 | After a full restart, Home opens Samsung's home | Normal for up to two minutes: Vetro starts and takes over the remote. If it lasts longer, open Vetro once from *Apps*, and check that Developer Mode's *Host PC IP* is `127.0.0.1` (Vetro needs it to restart by itself). Prefer sleep to unplugging. |
 | Samsung's home is empty | Normal after Optimize: its ads and recommendations are turned off. Press Home once Vetro is ready. |
 | TizenTube freezes or opens Samsung's YouTube | Open it from the launcher: it closes Samsung's YouTube first, as TizenTube needs. Then run **Repair TizenBrew** in APL Launcher Setup › Tools. |
