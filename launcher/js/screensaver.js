@@ -186,11 +186,21 @@
 
     setInterval(function () {
         var delay = sys.pref("screensaverDelay");
-        if (!active && delay && document.visibilityState !== "hidden" && Date.now() - lastInput > delay * 60000) start();
+        // Only with the launcher really in front: an app over it can leave the page "visible", and the
+        // screen saver would then greet the return to the Home Screen
+        var front = document.visibilityState !== "hidden" && (!document.hasFocus || document.hasFocus());
+        if (!active && delay && front && Date.now() - lastInput > delay * 60000) start();
         if (active) clock();
     }, 10000);
 
-    document.addEventListener("visibilitychange", function () { if (document.visibilityState === "hidden") stop(); });
+    // Back from an app, or Home (an app control, not a key): the Home Screen, never the screen saver.
+    // The idle time starts again from there, not from the last key pressed in the launcher.
+    function back() { if (active) stop(); lastInput = Date.now(); }
+    document.addEventListener("visibilitychange", function () {
+        if (document.visibilityState === "hidden") stop();
+        else back();
+    });
+    global.addEventListener("appcontrol", back);
 
     APL.screensaver = { start: start, stop: stop, isActive: function () { return active; } };
 })(window);
