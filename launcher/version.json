@@ -1,8 +1,8 @@
 {
- "version": "1.0.12",
+ "version": "1.0.13",
  "loader": 1,
  "reinstall": "1.0.0",
- "notes": "Sources: Add to Home Screen comes first. Top Shelf: one dark wallpaper for every app.",
+ "notes": "Top Shelf: your own content first. Sheets of Light in the logo's colors. Liquid Glass dock. Home always brings the Home Screen back.",
  "scripts": [
   "js/diag.js",
   "js/lang-fr.js",

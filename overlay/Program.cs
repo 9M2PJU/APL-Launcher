@@ -344,20 +344,24 @@ namespace APL
             catch (Exception ex) { samsungHomeWanted = false; Note("Smart Hub: " + ex.Message); }
         }
 
+        /// <summary>
+        /// The platform's own launch request first (appmanager.launch, in both manifests): it needs neither Vetro
+        /// nor the network. Right after a wake Vetro's agent restarts and the Wi-Fi is not back yet, and going
+        /// through Vetro first left Samsung's home on screen for several seconds. Vetro only if that fails.
+        /// </summary>
         public static async void OpenLauncher(string action = "")
         {
-            string data = string.IsNullOrEmpty(action) ? "" : " apl_action " + action;
-            try { await Vetro.ExecWhenReady("/usr/bin/app_launcher -s " + Launcher + data + " >/dev/null 2>&1"); return; }
-            catch (Exception ex) { Note("launcher: " + ex.Message + ", opening it directly"); }
-            // Vetro not up yet (the minute after a full start, when Home still opens Samsung's home): the platform's
-            // own launch request, which needs the appmanager.launch privilege (tizen-manifest.xml)
             try
             {
                 var request = new AppControl { ApplicationId = Launcher, Operation = AppControlOperations.Default };
                 if (!string.IsNullOrEmpty(action)) request.ExtraData.Add("apl_action", action);
                 AppControl.SendLaunchRequest(request);
+                return;
             }
-            catch (Exception ex) { Note("launcher directly: " + ex.Message); }
+            catch (Exception ex) { Note("launcher directly: " + ex.Message + ", through Vetro"); }
+            string data = string.IsNullOrEmpty(action) ? "" : " apl_action " + action;
+            try { await Vetro.ExecWhenReady("/usr/bin/app_launcher -s " + Launcher + data + " >/dev/null 2>&1"); }
+            catch (Exception ex) { Note("launcher: " + ex.Message); }
         }
 
         private void OnKey(object sender, Window.KeyEventArgs e)

@@ -157,14 +157,17 @@
     /* The blurred background is only prepared when entering the grid: computing it on
        every move in the dock was what made navigation stutter. */
     var blurWanted = null;
-    function wantBlur(src, app) {
-        frost(src);
+    /* glass: the picture for the frosted dock, when it differs from the grid's (see frost). */
+    function wantBlur(src, app, glass) {
+        frost(glass === undefined ? src : glass);
         blurWanted = { src: src, app: app };
         if (mode === "grid") flushBlur();
     }
-    /* Liquid Glass with no live blur: the dock shows the same soft copy of the picture behind it (the
-       pre-blurred or small one, as for the grid), lined up with it (layout), so the picture looks frosted
-       through the glass. A static image, drawn once when the picture changes. */
+    /* Liquid Glass with no live blur: the dock shows a soft copy of the picture behind it (the catalog's
+       pre-blurred one, or the sheets and wallpaper, soft already), lined up with it (layout), so the
+       picture looks frosted through the glass. A static image, drawn once when the picture changes.
+       Not the small copy of live content: enlarged 6 times without a blur, it showed as big pixels in
+       the dock (seen on the M8); the dock is then clear glass over the picture. */
     var frostSrc, frostToken = 0;
     function frost(src) {
         if (!dom.dock || src === frostSrc) return;           // the same picture (the APL wallpaper on every app): nothing to repaint
@@ -249,7 +252,7 @@
     var backdropToken = 0;
     function setBackdrop(app) {
         var image = artOf(app);
-        wantBlur(image && (image === app.bg ? app.bgBlur || app.bg : image), app);
+        wantBlur(image && (image === app.bg ? app.bgBlur || app.bg : image), app, image && (image === app.bg ? app.bgBlur || null : image));
         var token = ++backdropToken;
         if (apps.indexOf(app) < DOCK_SIZE) { showLayer(layerFor(app), app); return; }
         if (bgActive.dataset.app === app.id) return;
@@ -404,7 +407,7 @@
         next.style.background = "#000 center / cover no-repeat url('" + item.bg + "')";
         next.dataset.app = tag;
         motion(next);
-        wantBlur(item.bgSmall || null, app);
+        wantBlur(item.bgSmall || null, app, null);
         fadeTo(next);
         shelfInfo(item);
     }

@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.13
+- Top Shelf: your own content first. Apps that fill Samsung's home with rows (Plex's Continue Watching, Spotify's mixes) now fill the Top Shelf the same way, and ▲ then OK opens the item itself (#14, thanks skjnldsv). *Settings › Apps › Top Shelf Content* sets what comes first.
+- Sheets of Light, a new *Top Shelf Background* choice: soft sheets of light in the app's colors (#13, thanks skjnldsv). Their colors now follow the logo: as bright as the logo's color (yellows no longer turn olive, orange no longer brown or red), and a logo with two colors (Samsung TV Plus, Pluto TV) gets both.
+- Liquid Glass for the dock, the Control Center and the status pill, with no live blur (#18, thanks skjnldsv). Over live Top Shelf content the dock is clear glass: the frosted copy showed big pixels there on the M8.
+- Home always brings the Home Screen back to rest, from deep in Settings or full screen, and the screen saver no longer greets you on the way back (#17, thanks skjnldsv).
+- *Settings › ⏯ in Apps*: Control Center (as before) or Play and Pause (#16, thanks skjnldsv).
+- Sources fits five inputs or more on screen (#19), and with a single profile the status pill shows the time alone (#15, thanks skjnldsv).
+- APL Overlay opens the launcher through the screen itself first, Vetro only if that fails: after a wake, Samsung's home showed for several seconds while Vetro restarted, now for under a second.
+
 ## 1.0.12
 - Sources: *Add to Home Screen* (hold OK on an input) was the last of 16 cards, below the bottom of the screen. It now comes first, and the cards are smaller so all of them fit. Reported on Reddit.
 - *Settings › Apps › Top Shelf Background* (was *Background for Other Apps*): a new choice, *APL Wallpaper for Every App*, puts the same wallpaper behind every app, including those with artwork of their own. Continue Watching and the Dynamic Top Shelf then sit on it too. The other choices only change the apps without artwork, and now say so. The APL wallpaper itself is now a plain dark gradient.
