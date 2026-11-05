@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.14
+- *Start on APL Launcher* no longer brings Samsung's home at every wake. It needs Autorun Smart Hub on for the launcher to show a second after a full start, but with it on the screen also opened Samsung's home after each standby. APL Overlay now turns Autorun off while the screen sleeps and back on once it is awake: a wake goes back to the app you were watching, and a full start still shows the launcher at once. Only on screens that really come back from standby, learned at the first wake (The Frame's deep standby is a full start and is left as it was). Tried on the M8: two wakes with Autorun off by hand (back on the launcher, back on AquaPlay) and two with APL Overlay switching it (back on AquaPlay, no Samsung home; Autorun on again 16 s after the wake); a full start, the launcher in front 1.5 s after power-on.
+- Home pressed in the minute after a wake, while Vetro restarts, still reaches the screen, which opens its home: APL Overlay now replaces it at once (half a second on screen on the M8) instead of after a check that the busy screen delayed to 3 s.
+- APL Boot also puts the launcher in front of Samsung TV Plus after a full start: with Autorun off (after a power cut during standby) the M8 showed TV Plus until then.
+- The Top Shelf follows the screen's country: trending videos, top albums, game prices and what each streaming service offers were those of France on every screen. The country is the one Samsung's store uses on the screen, read through Vetro once and kept (#21, reported from India).
+
 ## 1.0.13
 - Top Shelf: your own content first. Apps that fill Samsung's home with rows (Plex's Continue Watching, Spotify's mixes) now fill the Top Shelf the same way, and ▲ then OK opens the item itself (#14, thanks skjnldsv). *Settings › Apps › Top Shelf Content* sets what comes first.
 - Sheets of Light, a new *Top Shelf Background* choice: soft sheets of light in the app's colors (#13, thanks skjnldsv). Their colors now follow the logo: as bright as the logo's color (yellows no longer turn olive, orange no longer brown or red), and a logo with two colors (Samsung TV Plus, Pluto TV) gets both.

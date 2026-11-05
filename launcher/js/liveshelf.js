@@ -8,16 +8,16 @@
    Sources:
      Smart Hub        the app's own rows for Samsung's home (Plex's Continue Watching,
                       Spotify's mixes…), first when there are some — Vetro
-     TMDB             current movies and series per service, for France
+     TMDB             current movies and series per service, in the screen's country
                       (Netflix, Prime Video, Disney+, CANAL+, TF1+, M6+…) — key
-     YouTube Data API trending videos in France, for TizenTube — key
-     Apple (RSS feed) Top albums in France for music apps — no key
+     YouTube Data API trending videos in the screen's country, for TizenTube — key
+     Apple (RSS feed) Top albums in the screen's country for music apps — no key
      Fanart.tv        textless HD backgrounds — key (optional)
      Cinemeta         IMDb ratings (Stremio's public service) — no key
      Steam            top sellers (Steam Link, Moonlight, GeForce NOW…) — no key
      Xbox Game Pass   Game Pass games, with their large pictures — no key
      TheSportsDB      next Ligue 1 / Champions League matches — no key
-     Dailymotion      trending videos in France — no key
+     Dailymotion      trending videos in the screen's country — no key
    Websites (keys.local.js): trending titles of the week or popular anime, depending on the site.
 
    Responses are kept 6 h on the screen to limit calls.
@@ -31,9 +31,46 @@
     var TTL = 6 * 3600 * 1000;
     var CACHE_VERSION = 4;              // 3: movies and series carry their title and their rating; 4: Smart Hub items their deep link
     var MIN_VOTES = 20;                 // below that, a rating doesn't mean anything yet
-    var REGION = "FR";
 
-    /* TMDB (JustWatch) "provider" ids of the services, for France. */
+    /* The screen's country, for trending videos, charts, prices and what each service streams there.
+       France for every screen before 1.0.14 (issue #21, from India). Samsung's own country for its store
+       (db/comss/countrycode, read through Vetro) once known, and kept; until then the language's country
+       (fr-FR), else the United States. */
+    var REGION = savedRegion() || langRegion() || "US";
+    function savedRegion() {
+        try { var r = global.localStorage.getItem("apl.region") || ""; return /^[A-Z]{2}$/.test(r) ? r : ""; } catch (e) { return ""; }
+    }
+    function langRegion() {
+        var m = /[-_]([A-Za-z]{2})$/.exec(String(global.navigator.language || ""));
+        return m ? m[1].toUpperCase() : "";
+    }
+    function readRegion(tries) {
+        if (!APL.sys || APL.sys.PREVIEW) return;
+        function later() { if (tries > 0) setTimeout(function () { readRegion(tries - 1); }, 30000); }
+        APL.sys.exec("vconftool get db/comss/countrycode 2>/dev/null").then(function (r) {
+            var m = /value = ([A-Za-z]{2})\b/.exec(String((r && r.output) || ""));
+            if (!m) { if (!r || r.ok === false) later(); return; }       // Vetro not up yet; an empty value: kept as is
+            var cc = m[1].toUpperCase();
+            if (cc === REGION && savedRegion()) return;
+            try { global.localStorage.setItem("apl.region", cc); } catch (e) {}
+            if (cc === REGION) return;
+            REGION = cc;
+            clearCache();                                                  // fetched for the other country
+        }).catch(later);
+    }
+    function clearCache() {
+        try {
+            var del = [], i;
+            for (i = 0; i < global.localStorage.length; i++) {
+                var k = global.localStorage.key(i);
+                if (k && k.indexOf("apl.live.") === 0) del.push(k);
+            }
+            del.forEach(function (k) { global.localStorage.removeItem(k); });
+        } catch (e) {}
+    }
+    setTimeout(function () { readRegion(6); }, 20000);
+
+    /* TMDB (JustWatch) "provider" ids of the services (the same in every country). */
     var TMDB_PROVIDERS = {
         netflix: 8, primevideo: 119, disneyplus: 337, appletv: 350,
         paramountplus: 531, crunchyroll: 283, rakutentv: 35, plutotv: 300, canalplus: 381
@@ -127,7 +164,7 @@
     }
     function kind(k) { return function (r) { r._kind = r._kind || k; return r; }; }
 
-    /* Popular movies and series on a service (Netflix, Prime Video…) in France. */
+    /* Popular movies and series on a service (Netflix, Prime Video…) in the screen's country. */
     function tmdb(providerId) {
         var common = "api_key=" + KEYS.tmdb + "&language=" + APL.locale + "&watch_region=" + REGION +
                      "&with_watch_providers=" + providerId + "&sort_by=popularity.desc";
@@ -158,7 +195,7 @@
         });
     }
 
-    /* Music: Top albums in France, live (Apple's official feed, no key). */
+    /* Music: Top albums in the screen's country, live (Apple's official feed, no key). */
     var MUSIC_KEYS = { applemusic: 1, spotify: 1, deezer: 1, amazonmusic: 1, youtubemusic: 1, tidal: 1, qobuz: 1 };
     function appleCharts() {
         var path = "/api/v2/" + REGION.toLowerCase() + "/music/most-played/12/albums.json";
@@ -173,13 +210,13 @@
                         bgSmall: art.replace(/\/\d+x\d+[a-z]*\.(jpg|png)$/i, "/300x300bb.jpg"),
                         logo: null,
                         title: a.name || "",
-                        sub: (a.artistName ? a.artistName + " · " : "") + APL.t("Top albums in France")
+                        sub: (a.artistName ? a.artistName + " · " : "") + APL.t("Top albums")
                     };
                 }).filter(Boolean);
             });
     }
 
-    /* YouTube: trending videos in France (cat = category, e.g. "10" for music). */
+    /* YouTube: trending videos in the screen's country (cat = category, e.g. "10" for music). */
     function youtube(cat) {
         var url = "https://www.googleapis.com/youtube/v3/videos?part=snippet&chart=mostPopular&maxResults=10&regionCode=" +
                   REGION + (cat ? "&videoCategoryId=" + cat : "") + "&key=" + KEYS.youtube;
@@ -192,7 +229,7 @@
         });
     }
 
-    /* Games: Steam top sellers in France (no key). Background = a screenshot of the game at
+    /* Games: Steam top sellers in the screen's country (no key). Background = a screenshot of the game at
        1920×1080, title = the game's official logo (else its name). */
     var STEAM_CDN = "https://cdn.akamai.steamstatic.com/steam/apps/";
     var STEAM_LANG = APL.lang === "fr" ? "french" : "english";       // language of the genres
@@ -281,10 +318,10 @@
         });
     }
 
-    /* Dailymotion: trending videos in France (no key). */
+    /* Dailymotion: trending videos in the screen's country (no key). */
     function dailymotion() {
         return getJson("https://api.dailymotion.com/videos?fields=title,thumbnail_1080_url,thumbnail_240_url,owner.screenname" +
-                       "&flags=no_live&sort=trending&country=fr&localization=fr_FR&limit=10").then(function (j) {
+                       "&flags=no_live&sort=trending&country=" + REGION.toLowerCase() + "&localization=" + APL.locale.replace("-", "_") + "&limit=10").then(function (j) {
             return (j.list || []).map(function (v) {
                 return v.thumbnail_1080_url ? { bg: v.thumbnail_1080_url, bgSmall: v.thumbnail_240_url || v.thumbnail_1080_url,
                                                 logo: null, title: v.title || "", sub: v["owner.screenname"] || "Dailymotion" } : null;
@@ -471,6 +508,7 @@
         noteOf: noteOf,
         metaOf: metaOf,
         hasSource: function (app) { return !!sourceFor(app); },
-        keys: function () { return { tmdb: !!KEYS.tmdb, youtube: !!KEYS.youtube, fanart: !!KEYS.fanart }; }
+        keys: function () { return { tmdb: !!KEYS.tmdb, youtube: !!KEYS.youtube, fanart: !!KEYS.fanart }; },
+        region: function () { return REGION; }                           // the screen's country (autoart.js too)
     };
 })(window);

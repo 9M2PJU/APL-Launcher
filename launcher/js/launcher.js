@@ -1100,6 +1100,7 @@
         return "";
     }
     function runAction(action) {
+        if (action === "boot") return;           // APL Boot putting the launcher on screen after a start-up: nothing to open
         if (action === "controlcenter") { if (APL.controlCenter) APL.controlCenter.toggle(); return; }
         if (APL.controlCenter && APL.controlCenter.isOpen()) APL.controlCenter.close();
         if (action === "switcher") {

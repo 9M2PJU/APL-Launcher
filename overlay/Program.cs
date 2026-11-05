@@ -48,6 +48,8 @@ namespace APL
         private string alexaFile, alexaList;
         private readonly KeyGuard keyGuard = new KeyGuard();
         private readonly IdleApps idleApps = new IdleApps();
+        private Autorun autorun;                     // Autorun Smart Hub off while the screen sleeps (Autorun.cs)
+        private const double WakeWindowS = 120;      // Vetro's agent is back within ~90 s of a wake
 
         public Program() : base("", WindowMode.Transparent) { }
 
@@ -74,6 +76,8 @@ namespace APL
             keyGuard.Start();
             idleApps.Front(FullscreenApp());
             idleApps.Start();
+            autorun = new Autorun(DirectoryInfo.Data);
+            autorun.Start();
             // Samsung's home may already be in front when this app starts: Home pressed in the first seconds after
             // power-on, before Vetro takes the key and before the launcher opens this app. Handled like a change.
             OnFullscreenChanged();
@@ -173,6 +177,16 @@ namespace APL
             }
             if (!returnToLauncher || !IsSamsungHome(front)) return;
             Note("Samsung's home in front (" + front + ")");
+            // Just after a wake, Vetro's agent restarts and Home reaches the screen, which opens its home; nothing
+            // opens it by itself then (Autorun Smart Hub is off for the standby, Autorun.cs). The screen is busy
+            // waking up and the 350 ms check fired 3 s late on the M8: the launcher goes on screen at once.
+            if (autorun != null && (DateTime.UtcNow - autorun.WokeAt).TotalSeconds < WakeWindowS)
+            {
+                Note("just after a wake: launcher");
+                homeCheck?.Stop();
+                OpenLauncher();
+                return;
+            }
             if (homeCheck == null)
             {
                 homeCheck = new Timer(350);

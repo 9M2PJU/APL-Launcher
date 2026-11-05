@@ -445,7 +445,7 @@ window.APL_LANG_FR = {
     "{n} min left": "{n} min restantes",
     "TV Show": "Série",
     "content|Movie": "Film",
-    "Top albums in France": "Top albums France",
+    "Top albums": "Top albums",
     "Steam top sellers": "Meilleures ventes Steam",
     "Champions League": "Ligue des champions",
     "Upcoming matches": "Prochains matchs",

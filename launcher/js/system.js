@@ -639,8 +639,10 @@
         smartHub:   { vconf: "db/menu/smart_hub/ontvsetting/auto_start" },
         /* The screen's home app (db/appfw/home_appid). At power-on the screen puts either the TV input or the
            home app in front, and Autorun Smart Hub chooses the home app: with the launcher as home app, it is
-           on screen about a second after power-on instead of after the start-up service (~1 min). Off: the
-           screen's own home app again, as the firmware records it in db/first_screen/type. */
+           on screen about a second after power-on instead of after the start-up service (~1 min). Autorun
+           also opened Samsung's home at every wake: APL Overlay turns it off while the screen sleeps and
+           on again once it is awake (overlay/Autorun.cs). Off: the screen's own home app again, as the
+           firmware records it in db/first_screen/type. */
         homeApp:    { home: true }
     };
     var HOME_KEY = "db/appfw/home_appid", AUTOSTART_KEY = "db/menu/smart_hub/ontvsetting/auto_start";

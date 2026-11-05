@@ -9,7 +9,7 @@
      2. TMDB (with your key): recognises the streaming service (TF1+, M6+,
         france.tv, Molotov, ARTE…) to show its current movies and series
         in the Top Shelf, and its official logo as a fallback.
-     3. Music apps are spotted (live Top albums in France).
+     3. Music apps are spotted (live Top albums in the screen's country).
    Results are kept 30 days on the screen (3 days if nothing is
    found): a single search per app, in the background, without slowing down.
    The App Store only counts if the name matches exactly: "Overscan" and
@@ -112,14 +112,15 @@
         }).catch(function () { return null; });
     }
 
-    /* ---------- 2. TMDB: streaming services in France ---------- */
+    /* ---------- 2. TMDB: streaming services in the screen's country ---------- */
     var providersP = null;
     function providers() {
         if (!KEYS.tmdb) return Promise.resolve([]);
         if (providersP) return providersP;
-        var c = cacheGet("__providers");
+        var region = APL.live ? APL.live.region() : "FR";                // a list per country (what streams there)
+        var c = cacheGet("__providers" + region);
         if (c && !c.miss && Date.now() - c.t < 7 * DAY) return (providersP = Promise.resolve(c.list));
-        var q = "?api_key=" + KEYS.tmdb + "&watch_region=FR&language=" + APL.locale;
+        var q = "?api_key=" + KEYS.tmdb + "&watch_region=" + region + "&language=" + APL.locale;
         providersP = Promise.all([
             getJson(TMDB + "/watch/providers/tv" + q).catch(function () { return { results: [] }; }),
             getJson(TMDB + "/watch/providers/movie" + q).catch(function () { return { results: [] }; })
@@ -130,7 +131,7 @@
                 seen[p.provider_id] = true;
                 list.push({ id: p.provider_id, name: p.provider_name, logo: p.logo_path });
             });
-            if (list.length) cachePut("__providers", { list: list });
+            if (list.length) cachePut("__providers" + region, { list: list });
             return list;
         });
         return providersP;
