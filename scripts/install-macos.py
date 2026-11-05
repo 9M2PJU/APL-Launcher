@@ -36,8 +36,11 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("tv_ip", help="TV IPv4 address (Vetro must be reachable on port 8099)")
     parser.add_argument("package", type=Path, help="Partner-signed full .wgt package")
+    parser.add_argument("--vetro-port", type=int, default=8099, help="Vetro HTTP port (default: 8099)")
     parser.add_argument("--no-launch", action="store_true", help="Do not launch after installation")
     args = parser.parse_args()
+    if not 1 <= args.vetro_port <= 65535:
+        parser.error("Vetro port must be between 1 and 65535")
     if not re.fullmatch(r"(?:[0-9]{1,3}\.){3}[0-9]{1,3}", args.tv_ip):
         parser.error("TV address must be an IPv4 address")
     if not args.package.is_file() or args.package.suffix.lower() != ".wgt":
@@ -54,7 +57,7 @@ def main():
             raise RuntimeError("WGT contains an unexpected app ID or version")
         if "tizen-manifest.xml" not in archive.namelist():
             raise RuntimeError("Use the full hybrid package (not the launcher-only WGT)")
-    base = f"http://{args.tv_ip}:8099"
+    base = f"http://{args.tv_ip}:{args.vetro_port}"
     status = request(base, "/status", timeout=10)
     if not (status.get("agent") or {}).get("connected"):
         raise RuntimeError("Vetro agent is not connected; check Vetro on the TV")
