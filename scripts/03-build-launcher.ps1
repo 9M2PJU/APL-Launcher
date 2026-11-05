@@ -10,13 +10,16 @@
 # checked against its SHA256SUMS-wgt.txt.
 # Personal files (never published) go into res\wgt\: js\keys.local.js, js\avatars.local.js, your
 # avatars and Memoji, the SF Pro fonts and your sounds.
+# -WebOnly: the launcher's own package instead (apl-launcher-v<version>.wgt, its files at the root, a web
+# bridge), for screens where the full package's .NET apps don't run (Tizen 6.x: install.ps1 decides).
 param(
     [string]$ProfileName = "APLauncher",
     [string]$TizenCli,
     [string]$LauncherDir = (Join-Path (Split-Path $PSScriptRoot -Parent) "launcher"),
     [string]$OutFile = (Join-Path (Split-Path $PSScriptRoot -Parent) "dist\APL-Launcher.wgt"),
     [string]$SfProDir,   # optional: copies the SF Pro fonts before building
-    [string]$Repo = "Knikt/APL-Launcher-for-TizenOS"
+    [string]$Repo = "Knikt/APL-Launcher-for-TizenOS",
+    [switch]$WebOnly
 )
 . "$PSScriptRoot\lib.ps1"
 $ErrorActionPreference = 'Stop'
@@ -47,13 +50,14 @@ if (-not ($profiles -match [regex]::Escape($ProfileName))) {
     Write-Host (Tr "Warning: '$ProfileName' is not in the list of profiles, trying anyway." "Attention : '$ProfileName' n'apparaît pas dans la liste des profils, on tente quand même.") -ForegroundColor DarkYellow
 }
 
-# ---------- the hybrid package ----------
+# ---------- the hybrid package (or the launcher's own, -WebOnly) ----------
 $dist = Split-Path -Parent $OutFile
 if ($dist -and -not (Test-Path -LiteralPath $dist)) { New-Item -ItemType Directory -Force -Path $dist | Out-Null }
-$name = "apl-launcher-full-v$version.wgt"
+$kind = if ($WebOnly) { "apl-launcher-v" } else { "apl-launcher-full-v" }
+$name = "$kind$version.wgt"
 $source = Join-Path $dist $name
 
-# The release's full package and its SHA256SUMS-wgt.txt, or $null when that release (or the asset) does not exist
+# The release's package and its SHA256SUMS-wgt.txt, or $null when that release (or the asset) does not exist
 function Get-FullRelease([string]$Tag) {
     $api = "https://api.github.com/repos/$Repo/releases/" + $(if ($Tag) { "tags/$Tag" } else { "latest" })
     try { $rel = Invoke-RestMethod -UseBasicParsing -Uri $api -Headers @{ 'User-Agent' = 'APL-Launcher-Setup' } -TimeoutSec 60 }
@@ -61,7 +65,7 @@ function Get-FullRelease([string]$Tag) {
         if ($_.Exception.Response -and [int]$_.Exception.Response.StatusCode -eq 404) { return $null }
         throw (Tr "Could not reach GitHub ($api): $($_.Exception.Message)" "GitHub injoignable ($api) : $($_.Exception.Message)")
     }
-    $pkg = @($rel.assets) | Where-Object { $_.name -match '^apl-launcher-full-v.+[.]wgt$' } | Select-Object -First 1
+    $pkg = @($rel.assets) | Where-Object { $_.name -match ('^' + [regex]::Escape($kind) + '.+[.]wgt$') } | Select-Object -First 1
     $sum = @($rel.assets) | Where-Object { $_.name -eq 'SHA256SUMS-wgt.txt' } | Select-Object -First 1
     if (-not $pkg -or -not $sum) { return $null }
     [pscustomobject]@{ Tag = $rel.tag_name; Name = $pkg.name; Url = $pkg.browser_download_url; Sums = $sum.browser_download_url }
@@ -78,7 +82,7 @@ if (Test-Path -LiteralPath $source) {
     $rel = Get-FullRelease "v$version"
     if (-not $rel) {
         $rel = Get-FullRelease ""
-        if (-not $rel) { throw (Tr "No GitHub release of $Repo has the full package (apl-launcher-full-v*.wgt)." "Aucune version GitHub de $Repo n'a le paquet complet (apl-launcher-full-v*.wgt).") }
+        if (-not $rel) { throw (Tr "No GitHub release of $Repo has the package ($kind*.wgt)." "Aucune version GitHub de $Repo n'a le paquet ($kind*.wgt).") }
         Write-Host (Tr "        No release v$version with the full package: installing the latest release, $($rel.Tag). The launcher updates itself afterwards, APL Overlay stays at $($rel.Tag) until the next install." "        Pas de version v$version avec le paquet complet : installation de la dernière version, $($rel.Tag). Le launcher se met à jour ensuite, APL Overlay reste en $($rel.Tag) jusqu'à la prochaine installation.") -ForegroundColor DarkYellow
     }
     $name = $rel.Name
@@ -112,8 +116,8 @@ if (Test-Path -LiteralPath $work) { Remove-Item -LiteralPath $work -Recurse -For
 [IO.Compression.ZipFile]::ExtractToDirectory($source, $work)
 # The CI's signature (Tizen SDK default certificate) goes: the package is signed again with yours
 Get-ChildItem -LiteralPath $work -Filter "*signature*.xml" | Remove-Item -Force
-$web = Join-Path $work "res\wgt"
-if (-not (Test-Path -LiteralPath (Join-Path $web "config.xml"))) { throw (Tr "$name is not a hybrid package (no res\wgt\config.xml)." "$name n'est pas un paquet hybride (pas de res\wgt\config.xml).") }
+$web = if ($WebOnly) { $work } else { Join-Path $work "res\wgt" }   # where the launcher's files are
+if (-not (Test-Path -LiteralPath (Join-Path $web "config.xml"))) { throw (Tr "$name has no launcher in it (no config.xml where expected)." "$name ne contient pas de launcher (pas de config.xml à l'endroit attendu).") }
 $personal = @("js\keys.local.js", "js\avatars.local.js")
 foreach ($p in $personal) {
     $src = Join-Path $LauncherDir $p

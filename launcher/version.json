@@ -1,8 +1,8 @@
 {
- "version": "1.0.14",
+ "version": "1.0.15",
  "loader": 1,
  "reinstall": "1.0.0",
- "notes": "A wake from standby no longer opens Samsung's home: back to the app you were watching. The Top Shelf follows the screen's country.",
+ "notes": "Prime Video and Apple TV in the app list. Setup installs the launcher alone on Tizen 6.",
  "scripts": [
   "js/diag.js",
   "js/lang-fr.js",

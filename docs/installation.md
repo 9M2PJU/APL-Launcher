@@ -61,6 +61,8 @@ The installer downloads 58 Memoji faces once from [wimell/tapback-memojis](https
 
 To use **your own Memoji**, put PNG images in the `APL Launcher avatars` folder inside your *Pictures* folder, then install again. They come first in the avatar list. On an iPhone: send your Memoji sticker in Messages, open it, then *Share › Save Image*.
 
+**Tizen 6.x screens** (The Frame 2022, for example): APL Launcher Setup installs the launcher on its own, with its own bridge to Vetro. APL Overlay and the other parts of the full package need Tizen 7 or newer: the Home Screen, Home, Sources and the settings work, the Control Center over videos and Alexa on the microphone don't.
+
 ## 3. Replace Samsung's home screen
 
 The app shows these last two steps when the installation is done.

@@ -72,8 +72,16 @@
        internal screens (Channel-list, SAFCommonPlugin, Setting…). */
     var SYSTEM_ID = /^(com\.samsung\.|org\.tizen\.|com\.tizen\.|tizen\.|dir\.|org\.volt\.|samsung\.)/i;
     var TECH_NAME = /plugin|provider|service|display|daemon|agent|widget|^setting$|channel-?list|multifunction/i;
+    /* Samsung's preinstalled streaming apps, under Samsung ids and so filtered out with its services: the
+       real apps, not the "-dummy" entries that stand for them in Samsung's home. Apple TV is aria-video.
+       Reported on Tizen 6.5 (issue #21); the same ids on the M8. */
+    var PRELOADED = ["org.tizen.primevideo", "com.samsung.tv.aria-video"];
+    /* Samsung TV Plus where it is built into the screen (Tizen 6.5): only its deep linker opens it, and the
+       screen keeps that one out of its own list. Not where the TV Plus app is installed (the M8 hides it). */
+    var TVPLUS_LINK = "com.samsung.tv.tvPlusDeeplinker", TVPLUS_APP = /\.tvplusstandalone$/;
     function isRealApp(id, name) {
         if (FAVORITES.indexOf(id) !== -1 || isTizenTube(id, name)) return true;
+        if (PRELOADED.indexOf(id) !== -1) return true;
         if (/^org\.tizen\.browser/.test(id)) return true;
         if (/^vetrotvapp/i.test(id) || /^vetro$/i.test(String(name || "").trim())) return true;
         if (STORE_ID.test(id)) return true;                                // Samsung App Store
@@ -181,11 +189,12 @@
             try {
                 global.tizen.application.getAppsInfo(function (list) {
                     var apps = [];
+                    var tvPlusApp = list.some(function (a) { return TVPLUS_APP.test(a.id); });
                     for (var i = 0; i < list.length; i++) {
                         var a = list[i];
                         // `show:true` == meant to appear in the real Samsung menu.
                         // This is what strips the ~250 internal services.
-                        if (!a.show) continue;
+                        if (!a.show && !(a.id === TVPLUS_LINK && !tvPlusApp)) continue;
                         if (BLOCKLIST[a.id]) continue;
                         if (!isRealApp(a.id, a.name)) continue;
                         apps.push(decorate({ id: a.id, name: a.name, icon: a.iconPath }));

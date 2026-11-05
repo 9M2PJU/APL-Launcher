@@ -53,10 +53,18 @@
             var cc = m[1].toUpperCase();
             if (cc === REGION && savedRegion()) return;
             try { global.localStorage.setItem("apl.region", cc); } catch (e) {}
-            if (cc === REGION) return;
             REGION = cc;
-            clearCache();                                                  // fetched for the other country
+            cacheFor(cc);
         }).catch(later);
+    }
+    /* What is kept (6 h) was fetched for one country: another one empties it. Before 1.0.14 that was France
+       on every screen, whose trending videos then stayed on a screen in India for hours (#21). */
+    function cacheFor(cc) {
+        var was = "";
+        try { was = global.localStorage.getItem("apl.liveRegion") || ""; } catch (e) {}
+        if (was === cc) return;
+        clearCache();
+        try { global.localStorage.setItem("apl.liveRegion", cc); } catch (e) {}
     }
     function clearCache() {
         try {
@@ -68,6 +76,7 @@
             del.forEach(function (k) { global.localStorage.removeItem(k); });
         } catch (e) {}
     }
+    cacheFor(REGION);
     setTimeout(function () { readRegion(6); }, 20000);
 
     /* TMDB (JustWatch) "provider" ids of the services (the same in every country). */

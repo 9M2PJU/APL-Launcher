@@ -415,14 +415,29 @@ Write-Host (Tr "        Profile: $signProfile" "        Profil : $signProfile") 
 
 # ---------- 4. build ----------
 Step 4 (Tr "Building the launcher…" "Compilation du launcher…")
+# Tizen 6.x: the full package's .NET apps (APL Overlay, the bridge, the start-up service) don't run there, and
+# the launcher reaches Vetro through that bridge (The Frame 2022, issue #21): the launcher's own package then,
+# with its web bridge. Without APL Overlay the launcher keeps Home and gives the other buttons back to Samsung.
+$webOnly = $false
+if (Test-Vetro $TvIp) {
+    $platform = Get-ScreenPlatform "http://$TvIp`:8099"
+    if ($platform) {
+        $webOnly = ($platform.Tizen -ge 1 -and $platform.Tizen -lt 7) -or ($platform.Tizen -eq 0 -and -not $platform.DotNet6)
+        $seen = if ($platform.Tizen) { "Tizen $($platform.Tizen)" } else { Tr "an unknown Tizen version" "une version de Tizen inconnue" }
+        if ($webOnly) {
+            Write-Host (Tr "        The screen runs $($seen): APL Overlay needs Tizen 7 or newer, so the launcher is installed on its own." "        L'écran est sous $seen : APL Overlay demande Tizen 7 ou plus, le launcher est donc installé seul.") -ForegroundColor Yellow
+            Write-Host (Tr "        Home, the Home Screen and the settings work; the Control Center over videos and Alexa need APL Overlay." "        Home, l'écran d'accueil et les réglages marchent ; le Centre de contrôle sur les vidéos et Alexa demandent APL Overlay.") -ForegroundColor Yellow
+        }
+    }
+}
 if ($certPwdFile -and $signProfile -eq 'APLPartner') {
     Write-Host (Tr "        If you are asked for 'Author password' or 'Distributor password':" "        Si on te demande « Author password » ou « Distributor password » :") -ForegroundColor Yellow
     Write-Host (Tr "        open $certPwdFile with Notepad, copy its content, right-click to paste, Enter." "        ouvre $certPwdFile avec le Bloc-notes, copie son contenu, clic droit pour coller, Entrée.") -ForegroundColor Yellow
 }
 $sf = "$env:USERPROFILE\Downloads\sf-pro-display_2"
 try {
-    if (Test-Path $sf) { & "$PSScriptRoot\03-build-launcher.ps1" -ProfileName $signProfile -TizenCli $tizen -SfProDir $sf }
-    else { & "$PSScriptRoot\03-build-launcher.ps1" -ProfileName $signProfile -TizenCli $tizen }
+    if (Test-Path $sf) { & "$PSScriptRoot\03-build-launcher.ps1" -ProfileName $signProfile -TizenCli $tizen -SfProDir $sf -WebOnly:$webOnly }
+    else { & "$PSScriptRoot\03-build-launcher.ps1" -ProfileName $signProfile -TizenCli $tizen -WebOnly:$webOnly }
 } catch { Fail ((Tr "the build failed: " "la compilation a échoué : ") + $_.Exception.Message) }
 
 # An expired certificate signs without a word, then the screen refuses the package: say it here.
@@ -452,7 +467,11 @@ if (Test-Vetro $TvIp) {
     }
 }
 
-if (Test-Vetro $TvIp) {
+if ($webOnly) {
+    # No APL Overlay: the launcher puts the Home rule back on itself at start-up and frees the other buttons
+    # (launcher/js/overlay.js), also when this replaces a full package that had them.
+    Write-Host (Tr "        Without APL Overlay: the launcher keeps the Home button itself." "        Sans APL Overlay : le launcher garde lui-même la touche Home.")
+} elseif (Test-Vetro $TvIp) {
     Write-Host (Tr "        Control Center over videos (APL Overlay)…" "        Centre de contrôle sur les vidéos (APL Overlay)…")
     try { & "$PSScriptRoot\05-build-overlay.ps1" -TvIp $TvIp -ProfileName $signProfile -TizenCli $tizen }
     catch { Write-Host ((Tr "        The remote's buttons were not set up: " "        Les boutons de la télécommande n'ont pas été configurés : ") + $_.Exception.Message + (Tr " The launcher works anyway." " Le launcher marche quand même.")) -ForegroundColor DarkYellow }

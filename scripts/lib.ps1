@@ -168,6 +168,21 @@ function Get-VconfValue {
     return ''
 }
 
+# What the screen runs, read through Vetro: its Tizen version (/etc/info.ini, "Model=Tizen9/TV;", 0 when
+# unknown) and whether .NET 6 or newer is there. APL Overlay, the .NET bridge and the start-up service of the
+# full package need it: on Tizen 6.5 (The Frame 2022, issue #21) they don't run, and with them goes everything
+# the launcher asks Vetro. $null when Vetro does not answer.
+function Get-ScreenPlatform {
+    param([string]$Base)
+    try {
+        $o = Invoke-VetroExec $Base ("grep -o -E 'Tizen[0-9]+' /etc/info.ini 2>/dev/null | head -1; " +
+                                     "ls -d /usr/share/dotnet/shared/Microsoft.NETCore.App/[6-9].* /usr/share/dotnet/shared/Microsoft.NETCore.App/[1-9][0-9].* 2>/dev/null | head -1; true")
+    } catch { return $null }
+    $tizen = 0
+    if ($o -match 'Tizen(\d+)') { $tizen = [int]$Matches[1] }
+    [pscustomobject]@{ Tizen = $tizen; DotNet6 = [bool]($o -match 'Microsoft\.NETCore\.App/\d') }
+}
+
 # "Start on APL Launcher" undone: when the launcher is the screen's home app (db/appfw/home_appid, opened at
 # power-on with Autorun Smart Hub), the firmware's own home app goes back (db/first_screen/type, else
 # Samsung's home), read back. Returns the app set back, '' when nothing needed it.
