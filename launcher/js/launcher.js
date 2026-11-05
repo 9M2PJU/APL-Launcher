@@ -41,6 +41,10 @@
         dom.shelfInfo = $("shelfInfo");
         dom.shelfTitle = $("shelfTitle");
         dom.shelfMeta = $("shelfMeta");
+        var open = document.createElement("div");                          // "OK to open", in full screen (openHint)
+        open.className = "shelfinfo__open";
+        open.textContent = APL.t("OK to Open");
+        dom.shelfInfo.appendChild(open);
         dom.clock = $("clock");
         dom.toast = $("toast");
         dom.boot = $("boot");
@@ -61,15 +65,20 @@
     function brandColour(app) { return app.edge || app.accent || "#3a4a8a"; }
 
     /* The Top Shelf image: the app's artwork, or the APL wallpaper behind every app
-       (Settings › Apps › Top Shelf Background › APL Wallpaper for Every App). */
+       (Settings › Apps › Top Shelf Content › Top Shelf Background › APL Wallpaper for Every App). */
     function shelfImage(app) {
         if (APL.sys.pref("shelfArt") === "all" && APL.genArt && APL.genArt.wallpaper) return APL.genArt.wallpaper();
         return app.bg;
     }
+    /* Settings › Apps › Top Shelf Content › App Backgrounds off: a plain dark background instead of the
+       app's artwork (the launcher's own Settings and Sources keep their large icon). */
+    function artOf(app) { return APL.sys.pref("appBackgrounds") ? shelfImage(app) : null; }
+    function plain(app) { return !APL.sys.pref("appBackgrounds") && !app.shelfHtml; }
 
     function backdropFor(app) {
-        var bg = shelfImage(app);
+        var bg = artOf(app);
         if (bg) return "#000 center / cover no-repeat url('" + bg + "')";
+        if (plain(app)) return "#07080c";
         // No artwork provided: a generated brand card (same style as the
         // catalog backgrounds) — a glow in the app's colour on a dark background.
         var a = brandColour(app);
@@ -175,7 +184,7 @@
         var l = document.createElement("div");
         l.className = "bg";
         l.style.background = backdropFor(app);
-        if (!shelfImage(app)) l.appendChild(brandCard(app));
+        if (!artOf(app) && !plain(app)) l.appendChild(brandCard(app));
         l.dataset.app = app.id;
         dom.bgA.parentNode.insertBefore(l, dom.bgA);
         layers[app.id] = l;
@@ -192,7 +201,7 @@
     function showLayer(next, app) {
         next.dataset.app = app.id;
         if (next === bgActive) return;
-        if (shelfImage(app)) motion(next); else next.classList.remove("is-motion");
+        if (artOf(app)) motion(next); else next.classList.remove("is-motion");
         fadeTo(next);
     }
     /* Crossfade without a dip to black (two half-faded pictures over black): of the two layers, the
@@ -223,8 +232,8 @@
 
     var backdropToken = 0;
     function setBackdrop(app) {
-        var image = shelfImage(app);
-        wantBlur(image === app.bg ? app.bgBlur || app.bg : image, app);
+        var image = artOf(app);
+        wantBlur(image && (image === app.bg ? app.bgBlur || app.bg : image), app);
         var token = ++backdropToken;
         if (apps.indexOf(app) < DOCK_SIZE) { showLayer(layerFor(app), app); return; }
         if (bgActive.dataset.app === app.id) return;
@@ -233,7 +242,7 @@
             var next = (bgActive === dom.bgA) ? dom.bgB : dom.bgA;
             next.innerHTML = "";
             next.style.background = backdropFor(app);
-            if (!image) next.appendChild(brandCard(app));
+            if (!image && !plain(app)) next.appendChild(brandCard(app));
             showLayer(next, app);
         });
     }
@@ -326,6 +335,7 @@
         dom.body.classList.remove("mode-shelf", "mode-grid", "mode-full");
         dom.body.classList.add("mode-" + m);
         layout();
+        if (dom.shelfInfo && nav) openHint();
     }
 
     function layout() {
@@ -359,8 +369,18 @@
         im.onerror = function () { item.bad = true; if (apps[nav.index] === app) setLiveBackdrop(app, item, n, items, tries); };
         im.src = item.bg;
     }
+    var liveShown = null;                                 // the Top Shelf item on screen: in full screen, OK opens it if it can
+    function openable(app) {
+        var shown = mode === "full" && liveShown && liveShown.app === app && bgActive.dataset.app === liveShown.tag ? liveShown.item : null;
+        return shown && shown.link && APL.launchDeepLink ? shown : null;
+    }
+    /* Full screen on an item that opens directly: say so under its title. */
+    function openHint() {
+        dom.shelfInfo.classList.toggle("can-open", !!openable(apps[nav.index]));
+    }
     function swapLive(app, item, n) {
         var tag = app.id + "#" + n;
+        liveShown = { app: app, item: item, tag: tag };
         if (bgActive.dataset.app === tag) return;
         var next = (bgActive === dom.bgA) ? dom.bgB : dom.bgA;
         next.innerHTML = "";
@@ -379,6 +399,7 @@
         if (!has) return;
         dom.shelfTitle.textContent = item.title;
         dom.shelfMeta.textContent = APL.live.metaOf(item);
+        openHint();
     }
 
     /* A new full-screen image costs 100 ms: as rarely as possible, and never while navigating. */
@@ -387,6 +408,12 @@
         clearTimeout(liveTimer); clearInterval(liveRotate);
         liveTimer = liveRotate = null;
     }
+
+    /* New sources found (Smart Hub rows read late): the app in the dock starts over with them. */
+    APL.onLiveSources = function () {
+        var app = apps[nav.index];
+        if (app && mode !== "grid" && nav.index < DOCK_SIZE) startLive(app);
+    };
 
     /* After a short pause on the app, its current content is loaded. */
     function startLive(app) {
@@ -420,7 +447,7 @@
         // the blurred background; it no longer changes from one app to the next (and nothing to decode).
         if (!inDock) { clearTimeout(bgTimer); return; }
         var live = APL.live && APL.live.hasSource(app);
-        dom.hint.classList.toggle("is-visible", (!!app.bg || live) && APL.sys.pref("showHint"));
+        dom.hint.classList.toggle("is-visible", (!!artOf(app) || live) && APL.sys.pref("showHint"));
         if (live && bgActive.dataset.app && bgActive.dataset.app.indexOf(app.id + "#") === 0) return;   // already shown
         if (bgActive.dataset.app === app.id) return;
         shelfInfo(null);
@@ -441,6 +468,13 @@
         if (APL.sys.PREVIEW) { toast(APL.t("Preview: on your TV, “{name}” would open now", { name: apps[i].name })); return; }
         showVeil();
         var id = apps[i].id;
+        // Your own item, enlarged with ▲ (Plex's Continue Watching, a Spotify mix): straight to it.
+        // From the dock, OK opens the app as usual.
+        var shown = openable(apps[i]);
+        if (shown) {
+            APL.launchDeepLink(id, shown.link).catch(function () { APL.launchApp(id).catch(function (err) { hideVeil(); toast(err.message || APL.t("Couldn't open the app")); }); });
+            return;
+        }
         if (TUBE.test(apps[i].name)) { launchTube(id); return; }
         APL.launchApp(id).catch(function (err) { hideVeil(); toast(err.message || APL.t("Couldn't open the app")); });
     }
@@ -976,6 +1010,7 @@
     };
 
     APL.refreshArt = function () { if (APL.autoArt) APL.autoArt.refresh(allApps, render); };
+    APL.sys.onPref("appBackgrounds", function () { render(); });
     // render() too: with the wallpaper for every app, no made background changes, yet every layer must be redrawn
     APL.restyleArt = function () { if (APL.autoArt) APL.autoArt.restyle(allApps, render); render(); };
 
