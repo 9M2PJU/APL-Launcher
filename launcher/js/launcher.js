@@ -81,8 +81,7 @@
         var bg = artOf(app);
         if (bg) return "#000 center / cover no-repeat url('" + bg + "')";
         if (plain(app)) return "#07080c";
-        // No artwork provided: a generated brand card (same style as the
-        // catalog backgrounds) — a glow in the app's colour on a dark background.
+        // No artwork yet (genart.js draws it once): a glow in the app's colour on a dark background.
         var a = brandColour(app);
         return "radial-gradient(60% 70% at 50% 44%, " + rgba(a, 0.42) + ", rgba(0,0,0,0) 70%)," +
                "radial-gradient(110% 80% at 50% 115%, " + rgba(a, 0.22) + ", rgba(0,0,0,0) 60%)," +
@@ -164,8 +163,8 @@
         blurWanted = { src: src, app: app };
         if (mode === "grid") flushBlur();
     }
-    /* Liquid Glass with no live blur: the dock shows a soft copy of the picture behind it (the catalog's
-       pre-blurred one, or the sheets and wallpaper, soft already), lined up with it (layout), so the
+    /* Liquid Glass with no live blur: the dock shows a soft copy of the picture behind it (the sheets
+       and wallpaper, soft already), lined up with it (layout), so the
        picture looks frosted through the glass. A static image, drawn once when the picture changes.
        Not the small copy of live content: enlarged 6 times without a blur, it showed as big pixels in
        the dock (seen on the M8); the dock is then clear glass over the picture. */
@@ -702,12 +701,11 @@
         return [
             // TizenTube: its own tile, without going through TizenBrew's screen
             { id: "apl.tizentube", name: "TizenTube", virtual: true, needs: "xvvl3S1bvH.TizenBrewStandalone", accent: "#1fb6e6", eyebrow: "VIDÉO",
-              tile: APL.TIZENTUBE_ART.tile, bg: APL.TIZENTUBE_ART.bg, bgBlur: APL.TIZENTUBE_ART.bgBlur, live: "youtube",
+              tile: APL.TIZENTUBE_ART.tile, live: "youtube",
               run: function () { showVeil(); launchTube(null); } },
             // Apple's Settings icon (images/apps/settings-*, made by tools/art)
             { id: "apl.settings", name: APL.t("Settings"), virtual: true, accent: "#8e8e93", eyebrow: "SYSTÈME",
-              tile: asset("images/apps/settings-tile.png"), bg: asset("images/apps/settings-bg.jpg"),
-              bgBlur: asset("images/blur/settings.jpg"),
+              tile: asset("images/apps/settings-tile.png"),
               run: function () { APL.settings.open(); } },
             { id: "apl.sources", name: "Sources", virtual: true, accent: "#2c5cc5", eyebrow: "SYSTÈME",
               tileHtml: '<div class="vtile vtile--sources">' + APL.icon("source", 92, 1.6) + '</div>',

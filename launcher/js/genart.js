@@ -1,21 +1,21 @@
 /* ============================================================
    genart.js — a logo and a background for apps with no artwork.
 
-   For an app the catalog doesn't know (sideloaded, app installed later),
-   the launcher makes by itself, only once, what the catalog gives the
-   others:
-     tile        500×300    the sharp logo, cut out from its background, on the app's color
-     background  1920×1080, the logo on large shapes in the app's colors, or when chosen,
-                 light sheets in the app's colors for dark and light themes (then also
-                 instead of the catalog's painted backgrounds)
+   The launcher makes by itself, only once per app:
+     tile        500×300    for an app the catalog doesn't know (sideloaded, installed later):
+                            the sharp logo, cut out from its background, on the app's color
+     background  1920×1080  for every app without artwork of its own, catalog apps included
+                            (no background is shipped): light sheets in the app's colors for
+                            dark and light themes, or the logo on large shapes in its colors
 
    The logo comes, in this order: from the app's icon if it is big enough,
    from the App Store if the name matches exactly, from TMDB, from public icon
    catalogs, then from the app's icon even if small. With none of these,
    the app's name serves as the logo.
 
-   Kept on the screen (a few tens of KB per app): tiles and backgrounds then
-   cost no more than the catalog's.
+   A catalog app's logo is its catalog tile, cut out the same way: nothing to search.
+
+   Kept on the screen (a few tens of KB per app).
    ============================================================ */
 (function (global) {
     "use strict";
@@ -515,17 +515,13 @@
         return c && c.s >= 35 ? c : null;
     }
 
-    /* Settings › Appearance › Top Shelf › Otherwise: light sheets in the app's colors (also instead of the
-       catalog's painted backgrounds), the logo enlarged on the app's colors (a small icon gets blurry),
+    /* Settings › Appearance › Top Shelf › Otherwise: light sheets in the app's colors, the logo
+       enlarged on the app's colors (a small icon gets blurry),
        the colors alone, or one wallpaper for all of them. "all": the wallpaper behind every app. */
     var WALLPAPER = "wallpaper", SHEETS = "sheets", wallpaperUrl = null;
     // Black (plain dark Top Shelf, launcher.js) still needs the tiles: made as for the sheets, the default
     function bgMode() { var m = sys.pref("shelfArt"); return m === SHEETS || m === "colors" || m === WALLPAPER || m === "logo" ? m : m === "all" ? WALLPAPER : SHEETS; }
     function lightTheme() { return !!(document.body && document.body.classList.contains("theme-light")); }
-    /* The catalog's painted backgrounds (not a real picture of the app): replaced by the sheets. */
-    function paintedBg(app) {
-        return !!app.bg && !app.madeBg && !app.shelfHtml && /(^|\/)images\/(apps\/[a-z0-9-]+-bg|bg-[a-z0-9-]+)\.jpg$/.test(app.bg);
-    }
     /* A plain dark gradient, as on Apple TV: no shapes, so the dock and the cards stand out on it. */
     function wallpaper() {
         if (wallpaperUrl) return wallpaperUrl;
@@ -596,7 +592,6 @@
     function use(app, r) {
         var changed = false;
         if (!app.tile && !app.tileHtml && r.tile) { app.tile = r.tile; app.madeTile = true; changed = true; }
-        if (r.bgDark && paintedBg(app)) { app.paintedBg = app.bg; app.paintedBgBlur = app.bgBlur; app.bg = null; }   // kept to put back (undo)
         if (!app.bg && !app.shelfHtml && (r.bg || r.bgDark)) {
             app.bg = bgOf(r); app.madeBg = true; changed = true;
             if (r.bgDark) { app.bgBlur = app.bg; app.sheets = r; }                     // already blurred: the grid uses it as is
@@ -605,14 +600,14 @@
         return changed;
     }
     function missing(app) {
-        return !app.folder && ((!app.tile && !app.tileHtml) || (!app.bg && !app.shelfHtml) || (bgMode() === SHEETS && paintedBg(app)));
+        return !app.folder && ((!app.tile && !app.tileHtml) || (!app.bg && !app.shelfHtml));
     }
-    /* Before painting again: what this file gave the app goes, the catalog's background comes back. */
+    /* Before painting again: what this file gave the app goes. */
     function undo(app) {
         if (!app.madeBg) return;
-        app.bg = app.paintedBg || null;
-        if (app.paintedBg || app.sheets) app.bgBlur = app.paintedBgBlur || null;
-        app.paintedBg = app.paintedBgBlur = app.sheets = null;
+        app.bg = null;
+        if (app.sheets) app.bgBlur = null;
+        app.sheets = null;
         app.madeBg = false;
     }
     /* The theme changed: the sheets of the other theme, already made. */
@@ -639,10 +634,12 @@
         // Tile and color known (catalog): the sheets need no logo, nothing to search
         // (its tile is still read, for the logo's second color)
         var tileOnly = (app.tile || app.tileHtml) && hexHsl(app.accent) && bgMode() === SHEETS;
-        if (sys.PREVIEW && !tileOnly) return Promise.resolve(false);      // the preview searches nothing online
+        // A catalog app in the other styles: its tile is the logo, cut out like an icon (no search)
+        var ownTile = !tileOnly && app.tile && !app.madeTile;
+        if (sys.PREVIEW && !tileOnly && !ownTile) return Promise.resolve(false);      // the preview searches nothing online
         var r = stored(app);
         if (r) return Promise.resolve(use(app, r));
-        var logoP = tileOnly ? Promise.resolve(null) : findLogo(app, art);
+        var logoP = tileOnly ? Promise.resolve(null) : ownTile ? load(app.tile) : findLogo(app, art);
         var tileP = tileOnly && app.tile ? load(app.tile) : Promise.resolve(null);
         return Promise.all([logoP, tileP]).then(function (got) {
             var out = paint(app, got[0], got[1]);
