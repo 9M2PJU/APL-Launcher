@@ -117,6 +117,8 @@
                 }, APL.t("Puts the apps back in their original order (your apps, Settings, Sources, then the others)."), "reset"),
                 choice(APL.t("Apps per Row"), "appsPerRow", [[5, "5"], [6, "6"], [7, "7"]],
                     APL.t("In the dock and in every row below. 5: bigger tiles, 7: more apps with a Top Shelf.")),
+                toggle(APL.t("Search Hidden Apps"), "searchHidden",
+                    APL.t("Search also finds the apps hidden from the Home Screen. Off: only what the Home Screen and its folders show.")),
                 toggle(APL.t("Full Screen Hint"), "showHint", APL.t("Shows “Press ▲ for full screen” on the Home Screen.")),
                 toggle(APL.t("Return to the Launcher"), "homeReturn", APL.t("When an app closes, the screen comes back here instead of the Samsung home screen."))
             ], APL.t("The apps shown, their order, and coming back here.")),

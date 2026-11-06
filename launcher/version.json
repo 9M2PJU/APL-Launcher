@@ -24,6 +24,7 @@
   "js/profiles.js",
   "js/devices.js",
   "js/sources.js",
+  "js/search.js",
   "js/appmenu.js",
   "js/aerials.js",
   "js/screensaver.js",

@@ -700,9 +700,9 @@
             onKey: function (code) {
                 if (editing) return editKey(code);
                 if (mode !== "full") return false;
-                // In full screen: ◀ ▶ change app, ▼ / Back return, OK opens.
+                // In full screen: ◀ ▶ change app, ▼ / Back return, OK opens, ▲ Search (search.js).
                 if (code === K.DOWN || code === K.RETURN || code === K.ESC || code === K.BACKSPACE) { setMode("shelf"); return true; }
-                if (code === K.UP) return true;
+                if (code === K.UP) { if (APL.search) APL.search.open(); return true; }
                 return false;
             },
             onBack: function () {
@@ -1013,6 +1013,7 @@
         if (APL.alert && APL.alert.isOpen && APL.alert.isOpen()) { APL.alert.close(); closed = true; }
         if (APL.contextMenu && APL.contextMenu.isOpen()) { APL.contextMenu.close(); closed = true; }
         if (APL.sources && APL.sources.isOpen()) { APL.sources.close(); closed = true; }
+        if (APL.search && APL.search.isOpen()) { APL.search.close(); closed = true; }
         if (APL.profilesUI && APL.profilesUI.isOpen()) { APL.profilesUI.close(); closed = true; }
         if (APL.settings && APL.settings.isOpen()) { APL.settings.close(); closed = true; }
         if (APL.controlCenter && APL.controlCenter.isOpen()) { APL.controlCenter.close(); closed = true; }
