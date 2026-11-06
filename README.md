@@ -84,7 +84,7 @@ One Windows app, in English, or in French when Windows is. Nothing to install to
 
 | Page | What it does |
 |---|---|
-| **Install** | Finds the screen, checks the PC, builds, signs and installs the launcher and APL Overlay, then guides you through the last two settings. |
+| **Install** | Finds the screen, checks the PC, builds, signs and installs the launcher and APL Overlay, then guides you through the last two settings. Optionally installs [APL TV](https://github.com/Knikt/APL-TV-for-TizenOS) too, the IPTV player in the same style for your own playlists. |
 | **Optimize** | Removes unused apps, silences ads, tracking and Bixby, blocks ad domains. Shows everything first; reversible. |
 | **Restore** | Gives the Home button back to Samsung and undoes the optimizer; can also uninstall the launcher. |
 | **Tools** | Preview the launcher on the PC with an on-screen remote, repair TizenBrew and TizenTube, read-only diagnostics of the inputs and of the screen, open Vetro. |

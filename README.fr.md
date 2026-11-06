@@ -77,7 +77,7 @@ installer pour le lancer.
 
 | Page | Rôle |
 |---|---|
-| **Installer** | Trouve l'écran, vérifie le PC, compile, signe, installe le launcher et APL Overlay, puis guide les deux derniers réglages. |
+| **Installer** | Trouve l'écran, vérifie le PC, compile, signe, installe le launcher et APL Overlay, puis guide les deux derniers réglages. Peut aussi installer [APL TV](https://github.com/Knikt/APL-TV-for-TizenOS), le lecteur IPTV dans le même style pour tes propres playlists. |
 | **Optimiser** | Allège l'écran (apps, pubs, pistage, Bixby). Montre tout avant ; réversible. |
 | **Restaurer** | Rend le bouton Home à Samsung et annule l'optimisation ; peut aussi désinstaller le launcher. |
 | **Outils** | Aperçu du launcher sur le PC, réparation de TizenBrew et TizenTube, diagnostics en lecture seule, ouvrir Vetro. |

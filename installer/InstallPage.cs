@@ -24,7 +24,7 @@ namespace APL.Setup
         private readonly StackPanel formView, progressView, finishView;
         private readonly TextBox ipBox, tmdbBox, youTubeBox, fanartBox, logBox;
         private readonly Button findButton, checkAgain, addSite, installButton, retryButton, backButton, openVetro, remapButton, continueButton, newInstall;
-        private readonly CheckBox optimizeAfter;
+        private readonly CheckBox optimizeAfter, aplTvToggle;
         private readonly Grid vetroMark, footerMark, failMark, doneMark;
         private readonly TextBlock vetroText, vetroHelp, footerHint, overallText, overallPercent, failText;
         private readonly StackPanel scanPanel, pcRows, sitesList, remapStatus;
@@ -66,6 +66,7 @@ namespace APL.Setup
             continueButton = F<Button>("ContinueButton");
             newInstall = F<Button>("NewInstall");
             optimizeAfter = F<CheckBox>("OptimizeAfter");
+            aplTvToggle = F<CheckBox>("AplTvToggle");
             vetroMark = F<Grid>("VetroMark");
             footerMark = F<Grid>("FooterMark");
             failMark = F<Grid>("FailMark");
@@ -576,13 +577,14 @@ namespace APL.Setup
             string sitesJson = "[" + string.Join(",", Sites().Select(s => "{\"name\":" + Json.Quote(s.Name) + ",\"url\":" + Json.Quote(s.Url) + "}")) + "]";
             // Base64: JSON quotes do not survive powershell.exe's command line reliably.
             string sitesArg = Convert.ToBase64String(Encoding.UTF8.GetBytes(sitesJson));
-            var args = new[] { "-Unattended", "-TvIp", Main.Ip, "-Tmdb", tmdb, "-YouTube", yt, "-Fanart", fanart, "-Sites", sitesArg };
+            var args = new List<string> { "-Unattended", "-TvIp", Main.Ip, "-Tmdb", tmdb, "-YouTube", yt, "-Fanart", fanart, "-Sites", sitesArg };
+            if (aplTvToggle.IsChecked == true) args.Add("-AplTv");
 
             BeginProgress();
             ScriptResult r;
             try
             {
-                r = await Main.Runner.Run("install.ps1", args, T("Installing…"), OnLine, new[] { tmdb, yt, fanart }, true);
+                r = await Main.Runner.Run("install.ps1", args.ToArray(), T("Installing…"), OnLine, new[] { tmdb, yt, fanart }, true);
             }
             catch (Exception ex)
             {

@@ -4,13 +4,15 @@
 #  2. saves the TMDB (and YouTube) key if you have one
 #  3. finds your Samsung certificate
 #  4. builds the launcher
-#  5. installs the launcher and APL Overlay on the screen (through Vetro), and opens the launcher
+#  5. installs the launcher and APL Overlay on the screen (through Vetro), and opens the launcher;
+#     with -AplTv (or a yes), APL TV too, the IPTV player in the launcher's style
 #  Nothing else is installed.
 # ============================================================
 param(
     [string]$TvIp,
     [string]$Tmdb, [string]$YouTube, [string]$Fanart,
     [string]$Sites,       # websites as apps: JSON [{"name":"…","url":"https://…"}], or that JSON in base64
+    [switch]$AplTv,       # also installs APL TV, the IPTV player (06-install-apltv.ps1)
     [switch]$Unattended,  # started by APL Launcher Setup: no questions
     [switch]$CheckOnly    # only says what this PC has (APL-CHECK); changes nothing
 )
@@ -475,6 +477,17 @@ if ($webOnly) {
     Write-Host (Tr "        Control Center over videos (APL Overlay)…" "        Centre de contrôle sur les vidéos (APL Overlay)…")
     try { & "$PSScriptRoot\05-build-overlay.ps1" -TvIp $TvIp -ProfileName $signProfile -TizenCli $tizen }
     catch { Write-Host ((Tr "        The remote's buttons were not set up: " "        Les boutons de la télécommande n'ont pas été configurés : ") + $_.Exception.Message + (Tr " The launcher works anyway." " Le launcher marche quand même.")) -ForegroundColor DarkYellow }
+}
+
+# APL TV, the IPTV player in the launcher's style (your own M3U playlists and Xtream accounts): only when asked.
+if (-not $Quiet -and -not $AplTv) {
+    $a = Ask (Tr "Also install APL TV, the IPTV player for your own playlists? (y/N)" "Installer aussi APL TV, le lecteur IPTV pour tes propres playlists ? (o/N)") ""
+    $AplTv = [bool]($a -match '^(y|yes|o|oui)$')
+}
+if ($AplTv) {
+    Write-Host (Tr "        APL TV (IPTV player)…" "        APL TV (lecteur IPTV)…")
+    try { & "$PSScriptRoot\06-install-apltv.ps1" -TvIp $TvIp -ProfileName $signProfile -TizenCli $tizen -Sdb $sdb -NoLaunch }
+    catch { Write-Host ((Tr "        APL TV was not installed: " "        APL TV n'a pas été installé : ") + $_.Exception.Message + (Tr " The launcher works anyway." " Le launcher marche quand même.")) -ForegroundColor DarkYellow }
 }
 
 Write-Host ""
