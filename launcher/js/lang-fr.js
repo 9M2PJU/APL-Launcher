@@ -385,6 +385,8 @@ window.APL_LANG_FR = {
     "Space": "Espace",
     "Recently Used": "Utilisées récemment",
     "No apps found for “{q}”": "Aucune app trouvée pour « {q} »",
+    "Search Hidden Apps": "Rechercher les apps masquées",
+    "Search also finds the apps hidden from the Home Screen. Off: only what the Home Screen and its folders show.": "La recherche trouve aussi les apps masquées de l'écran d'accueil. Désactivé : seulement ce que l'écran d'accueil et ses dossiers montrent.",
     "Search for Artwork Again": "Rechercher à nouveau les visuels",
     "Searching for artwork in the background…": "Recherche des visuels en arrière-plan…",
     "Clears the artwork found and searches again for all apps.": "Efface les visuels trouvés et relance la recherche pour toutes les apps.",

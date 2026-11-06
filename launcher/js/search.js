@@ -4,7 +4,8 @@
    A row of letters at the top, the matching apps below, updated at every
    letter. OK on a letter types it, OK on an app opens it. The remote's
    digits and a keyboard (PC preview) type too. Opened from its tile on the
-   Home Screen. Apps only for now: hidden ones and those in folders too.
+   Home Screen. Apps only for now: those in folders too, and the hidden ones
+   with Settings › Home Screen › Search Hidden Apps.
    ============================================================ */
 (function (global) {
     "use strict";
@@ -27,7 +28,10 @@
     }
 
     function candidates() {
-        return ((APL.allApps && APL.allApps()) || []).filter(function (a) { return !a.folder && a.id !== "apl.search"; });
+        var hidden = APL.sys.pref("searchHidden") ? [] : APL.sys.pref("hiddenApps") || [];
+        return ((APL.allApps && APL.allApps()) || []).filter(function (a) {
+            return !a.folder && a.id !== "apl.search" && hidden.indexOf(a.id) === -1;
+        });
     }
     /* The name's start first, then the start of a word in it, then anywhere. Nothing typed: the recent apps. */
     function match(q) {
