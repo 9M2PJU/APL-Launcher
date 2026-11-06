@@ -83,9 +83,8 @@
                     toggle(APL.t("What's Popular"), "liveShelf",
                         APL.t("Trending films, series and videos on each service, top albums, games, sports. Films and series need a TMDB key, videos a YouTube key (see Online Services).")),
                     choice(APL.t("Otherwise"), "shelfArt",
-                        [["sheets", APL.t("Sheets of Light")], ["logo", APL.t("Large Logo")], ["colors", APL.t("App Colors")],
-                         ["wallpaper", APL.t("APL Wallpaper")], ["all", APL.t("APL Wallpaper, Always")], ["black", APL.t("Black")]],
-                        APL.t("Apps with their own artwork keep it (YouTube, Netflix, Steam…). For the others: soft sheets of light in their colors, their logo enlarged on their colors, their colors alone, the APL wallpaper, or plain black. APL Wallpaper, Always: behind every app, artwork and content included."),
+                        [["sheets", APL.t("Sheets of Light")], ["logo", APL.t("Large Logo")], ["black", APL.t("Black")]],
+                        APL.t("Apps with their own artwork keep it (YouTube, Netflix, Steam…). For the others: soft sheets of light in their colors, or their logo on a halo of their color. Black: plain dark behind every app, artwork included."),
                         function () { if (APL.restyleArt) APL.restyleArt(); }),
                     menu(APL.t("Online Services"), "globe", [
                         info(APL.t("TMDB Key"), function () { return APL.live && APL.live.keys().tmdb ? APL.t("Configured") : APL.t("Missing"); },

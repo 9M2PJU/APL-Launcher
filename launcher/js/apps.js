@@ -25,15 +25,15 @@
 
     /* Nicer names + accent colours for known apps. Everything else
        falls back to its Tizen name + a neutral accent. */
-    var TIZENTUBE = { name: "TizenTube", accent: "#1fb6e6", eyebrow: "VIDEO", bg: "images/bg-tizentube.jpg", tile: "images/tile-tizentube.png", bgBlur: "images/blur/tizentube.jpg", live: "youtube" };
+    var TIZENTUBE = { name: "TizenTube", accent: "#1fb6e6", eyebrow: "VIDEO", tile: "images/tile-tizentube.png", live: "youtube" };
     /* TizenTube: by its name (TizenTube, TizenTube Cobalt…) or its package xvvl3S1TT1. */
     function isTizenTube(id, name) { return /tizen ?tube/i.test(String(name || "")) || /^xvvl3S1TT1\./.test(id); }
     var META = {
         "AquaPlay02.AquaPlay":            { eyebrow: "TELEVISION", live: "trending" },
-        "xvvl3S1bvH.TizenBrewStandalone": { name: "TizenBrew",  accent: "#1fb6e6", eyebrow: "APPS", bg: "images/bg-tizenbrew.jpg", tile: "images/tile-tizenbrew.png", bgBlur: "images/blur/tizenbrew.jpg", live: "youtube" },
-        "6YLB5zo9te.HotIptv":             { name: "Hot IPTV",   accent: "#ff7a1a", eyebrow: "TELEVISION",   bg: "images/bg-hotiptv.jpg", tile: "images/tile-hotiptv.png", bgBlur: "images/blur/hotiptv.jpg", live: "trending" },
+        "xvvl3S1bvH.TizenBrewStandalone": { name: "TizenBrew",  accent: "#1fb6e6", eyebrow: "APPS", tile: "images/tile-tizenbrew.png", live: "youtube" },
+        "6YLB5zo9te.HotIptv":             { name: "Hot IPTV",   accent: "#ff7a1a", eyebrow: "TELEVISION",   bg: "images/bg-hotiptv.jpg", tile: "images/tile-hotiptv.png", live: "trending" },
         "org.apps2samsung.overscan":      { name: "Overscan",   accent: "#2b6fff", eyebrow: "BROWSER" },
-        "org.tizen.browser":              { name: "Internet",   accent: "#2b6fff", eyebrow: "BROWSER",      bg: "images/bg-internet.jpg", tile: "images/tile-internet.png", bgBlur: "images/blur/internet.jpg" },
+        "org.tizen.browser":              { name: "Internet",   accent: "#2b6fff", eyebrow: "BROWSER",      bg: "images/bg-internet.jpg", tile: "images/tile-internet.png" },
         "org.tizen.browser.wrt":          { name: "Internet",   accent: "#2b6fff", eyebrow: "BROWSER",      bg: "images/bg-internet.jpg", tile: "images/tile-internet.png" }
     };
 
@@ -152,10 +152,8 @@
             icon: app.icon || null,
             accent: m.accent || app.accent || null,
             eyebrow: global.APL.t(m.eyebrow || "APP"),
-            bg: asset(m.bg) || null,          // full-frame picture for the top shelf
             tile: asset(m.tile) || null,
             key: m.key || null,
-            bgBlur: asset(m.bgBlur || (m.key ? "images/blur/" + m.key + ".jpg" : null)),   // pre-blurred background (grid)               // catalogue key (netflix, primevideo…)
             live: m.live || null,             // "youtube" for TizenTube             // full-frame artwork of the tile (like tvOS icons)
             favorite: favorites().indexOf(app.id) !== -1 || isTizenTube(app.id, app.name)
         };
@@ -352,7 +350,7 @@
     global.APL.launchApp = launchApp;
     global.APL.launchDeepLink = launchDeepLink;
     global.APL.launchTizenTube = launchTizenTube;
-    global.APL.TIZENTUBE_ART = { tile: asset(TIZENTUBE.tile), bg: asset(TIZENTUBE.bg), bgBlur: asset(TIZENTUBE.bgBlur) };
+    global.APL.TIZENTUBE_ART = { tile: asset(TIZENTUBE.tile) };
     global.APL.FAVORITES = FAVORITES;
 
 })(window);
