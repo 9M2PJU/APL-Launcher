@@ -40,8 +40,16 @@ def exec_vetro(base, command, timeout=60):
 
 
 def collect_settings():
+    print("Optional API keys (press Return at a prompt to skip it):")
+    print("  TMDB: use the API Key (v3 auth), not the API Read Access Token.")
+    print("        https://www.themoviedb.org/settings/api")
+    print("  YouTube: enable YouTube Data API v3 in Google Cloud, then create an API key.")
+    print("        https://console.cloud.google.com/apis/library/youtube.googleapis.com")
+    print("        https://console.cloud.google.com/apis/credentials")
+    print("  Fanart.tv: copy the API key from your account profile.")
+    print("        https://fanart.tv/get-an-api-key/")
     keys = {}
-    for field, label in (("tmdb", "TMDB"), ("youtube", "YouTube Data API"), ("fanart", "Fanart.tv")):
+    for field, label in (("tmdb", "TMDB API Key (v3 auth)"), ("youtube", "YouTube Data API v3 key"), ("fanart", "Fanart.tv API key")):
         value = getpass(f"{label} API key (press Enter to skip): ").strip()
         if value and not re.fullmatch(r"[A-Za-z0-9._-]{1,512}", value):
             raise ValueError(f"{label} key contains unsupported characters")

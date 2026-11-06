@@ -59,9 +59,9 @@ After a full restart, the screen comes back on its last input or on Smart Hub; t
 
 | Key | What it adds | Where to get it |
 |---|---|---|
-| TMDB | Live Top Shelf: trending films and series for each streaming service | themoviedb.org › Settings › API |
-| YouTube Data API v3 | Trending videos in TizenTube's Top Shelf | console.cloud.google.com › Credentials |
-| Fanart.tv | Textless HD backgrounds | fanart.tv › your profile › API Key |
+| TMDB API Key (v3 auth) | Live Top Shelf: trending films and series for each streaming service | [TMDB API settings](https://www.themoviedb.org/settings/api) — use the **API Key (v3 auth)**, not the API Read Access Token |
+| YouTube Data API v3 key | Trending videos in TizenTube's Top Shelf | In [Google Cloud Credentials](https://console.cloud.google.com/apis/credentials), create a project, enable [YouTube Data API v3](https://console.cloud.google.com/apis/library/youtube.googleapis.com), then create an API key |
+| Fanart.tv API key | Textless HD backgrounds | [Fanart.tv API key](https://fanart.tv/get-an-api-key/) — copy it from your account profile |
 
 Without keys, everything else still works: logos, App Store icons and backgrounds, music charts.
 
