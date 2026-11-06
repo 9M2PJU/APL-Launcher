@@ -83,6 +83,7 @@ namespace APL
             autorun.Start();
             memoryGuard = new MemoryGuard();
             memoryGuard.Start();
+            WatchVetroHold();
             // Samsung's home may already be in front when this app starts: Home pressed in the first seconds after
             // power-on, before Vetro takes the key and before the launcher opens this app. Handled like a change.
             OnFullscreenChanged();
@@ -200,31 +201,55 @@ namespace APL
                 OpenLauncher();
                 return;
             }
-            // The same in the minutes after a full start, as long as Vetro does not hold Home yet
-            if (Uptime() < StartWindowS)
+            // In the minutes after a full start, Home reaches the screen until Vetro's input helper takes the remote
+            // (about 70 s on the M8), and the screen opens its home: no 350 ms on Samsung's home then, the launcher
+            // goes over it at once (APL Boot does the same, more slowly). Once Vetro holds Home, Samsung's home in
+            // front is something else, a flash while an app starts: the usual check.
+            if (Uptime() < StartWindowS && !vetroHoldsHome)
             {
-                HomeAfterStart();
+                Note("just after a start, before Vetro holds Home: launcher");
+                homeCheck?.Stop();
+                OpenLauncher();
                 return;
             }
             CheckHomeStays();
         }
 
         /// <summary>
-        /// In the minutes after a full start, Home reaches the screen until Vetro's input helper takes the remote
-        /// (about 70 s on the M8), and the screen opens its home: no 350 ms on Samsung's home then, the launcher
-        /// goes over it at once (APL Boot does the same). Once Vetro holds Home, Samsung's home in front is
-        /// something else, a flash while an app starts: the usual check.
+        /// Whether Vetro's input helper holds the remote, asked every 5 s during the minutes after a full start. Known
+        /// in advance: asked when Samsung's home shows, Vetro took 5 s to answer at that time (the network was
+        /// still coming up on the M8), and APL Boot had put the launcher back by then.
         /// </summary>
-        private async void HomeAfterStart()
+        private volatile bool vetroHoldsHome;
+        private Timer holdWatch;
+        private bool holdAsking;
+        private void WatchVetroHold()
         {
-            bool held = false;
-            try { held = (await Vetro.Exec("pgrep -f '[S]amsungTvRemoteInputAgent' >/dev/null && echo held")).Trim() == "held"; }
-            catch (Exception) { }                          // Vetro not up yet: Home reached the screen
-            if (held) { CheckHomeStays(); return; }
-            if (!returnToLauncher || samsungHomeWanted || !IsSamsungHome(FullscreenApp())) return;
-            Note("just after a start, before Vetro holds Home: launcher");
-            homeCheck?.Stop();
-            OpenLauncher();
+            if (Uptime() >= StartWindowS) { vetroHoldsHome = true; return; }
+            holdWatch = new Timer(5000);
+            holdWatch.Tick += delegate
+            {
+                if (vetroHoldsHome || Uptime() >= StartWindowS) { vetroHoldsHome = true; return false; }
+                AskVetroHold();
+                return true;
+            };
+            holdWatch.Start();
+            AskVetroHold();
+        }
+        private async void AskVetroHold()
+        {
+            if (holdAsking) return;
+            holdAsking = true;
+            try
+            {
+                if ((await Vetro.Exec("pgrep -f '[S]amsungTvRemoteInputAgent' >/dev/null && echo held")).Trim() == "held")
+                {
+                    vetroHoldsHome = true;
+                    Note("Vetro holds Home (uptime " + Uptime().ToString("F0") + " s)");
+                }
+            }
+            catch (Exception) { }                          // Vetro not up yet
+            finally { holdAsking = false; }
         }
 
         /// <summary>Samsung's home counts only if it is still in front 350 ms later.</summary>
