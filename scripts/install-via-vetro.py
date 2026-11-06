@@ -1,16 +1,23 @@
 #!/usr/bin/env python3
-"""Install an already Partner-signed APL Launcher WGT through Vetro on macOS."""
+"""Configure and install the full APL Launcher WGT through Vetro."""
 
 import argparse
+import atexit
 import base64
 import hashlib
 import json
 import re
+import shutil
+import subprocess
 import sys
+import tempfile
 import time
 import urllib.error
 import urllib.request
+import zipfile
+from getpass import getpass
 from pathlib import Path
+from urllib.parse import urlsplit
 
 CHUNK_SIZE = 36_000
 
@@ -32,11 +39,62 @@ def exec_vetro(base, command, timeout=60):
     return str(result.get("output", ""))
 
 
+def collect_settings():
+    keys = {}
+    for field, label in (("tmdb", "TMDB"), ("youtube", "YouTube Data API"), ("fanart", "Fanart.tv")):
+        value = getpass(f"{label} API key (press Enter to skip): ").strip()
+        if value and not re.fullmatch(r"[A-Za-z0-9._-]{1,512}", value):
+            raise ValueError(f"{label} key contains unsupported characters")
+        keys[field] = value
+
+    sites = []
+    while True:
+        name = input("Website name (press Enter when finished): ").strip()
+        if not name:
+            break
+        url = input("Website URL (http:// or https://): ").strip()
+        parsed = urlsplit(url)
+        if not name or len(name) > 80 or any(ord(c) < 32 for c in name):
+            raise ValueError("Website name must be 1–80 printable characters")
+        if parsed.scheme not in ("http", "https") or not parsed.hostname or parsed.username or parsed.password or any(c.isspace() for c in url):
+            raise ValueError("Website URL must be an http(s) URL without whitespace or credentials")
+        sites.append({"name": name, "url": url})
+        if len(sites) >= 30:
+            break
+    keys["webApps"] = sites
+    return keys
+
+
+def create_configured_wgt(source, destination, settings):
+    with zipfile.ZipFile(source, "r") as original, zipfile.ZipFile(destination, "w", zipfile.ZIP_DEFLATED) as output:
+        entries = original.namelist()
+        config_path = "res/wgt/js/keys.local.js"
+        if config_path not in entries:
+            raise RuntimeError("Full WGT is missing res/wgt/js/keys.local.js")
+        for entry in original.infolist():
+            if entry.filename != config_path:
+                output.writestr(entry, original.read(entry.filename))
+        contents = "window.APL_KEYS = " + json.dumps(settings, ensure_ascii=False) + ";\n"
+        output.writestr(config_path, contents.encode("utf-8"))
+
+
+def sign_package(source, destination, duid, signer):
+    command = [signer, "sign", str(source), "-o", str(destination), "--duids", duid, "--partner"]
+    result = subprocess.run(command, text=True, capture_output=True)
+    if result.returncode:
+        detail = (result.stderr or result.stdout).strip()
+        raise RuntimeError(f"Apps2Samsung could not sign the customized package: {detail or 'signing failed'}")
+    print("Customized package signed with the Partner certificate.")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("tv_ip", help="TV IPv4 address (Vetro must be reachable on port 8099)")
-    parser.add_argument("package", type=Path, help="Partner-signed full .wgt package")
+    parser.add_argument("package", type=Path, help="Full hybrid release .wgt package (default-signed or Partner-signed)")
     parser.add_argument("--vetro-port", type=int, default=8099, help="Vetro HTTP port (default: 8099)")
+    parser.add_argument("--configure", action="store_true", help="Privately enter API keys and personal websites before signing and installing")
+    parser.add_argument("--duid", help="TV DUID covered by the Partner certificate (required with --configure)")
+    parser.add_argument("--apps2samsung-cli", help="Apps2Samsung CLI executable (default: apps2samsung-cli on PATH)")
     parser.add_argument("--no-launch", action="store_true", help="Do not launch after installation")
     args = parser.parse_args()
     if not 1 <= args.vetro_port <= 65535:
@@ -46,8 +104,27 @@ def main():
     if not args.package.is_file() or args.package.suffix.lower() != ".wgt":
         parser.error("package must be an existing .wgt file")
 
-    package = args.package.read_bytes()
-    with __import__("zipfile").ZipFile(args.package) as archive:
+    package_path = args.package
+    temporary = None
+    if args.configure:
+        if not args.duid:
+            parser.error("--duid is required with --configure")
+        if not re.fullmatch(r"[A-Za-z0-9_-]{5,64}", args.duid):
+            parser.error("--duid has an invalid format")
+        signer = args.apps2samsung_cli or shutil.which("apps2samsung-cli")
+        if not signer:
+            parser.error("Apps2Samsung CLI was not found; install it or pass --apps2samsung-cli")
+        settings = collect_settings()
+        temporary = tempfile.TemporaryDirectory(prefix="apl-vetro-install-")
+        atexit.register(temporary.cleanup)
+        customized = Path(temporary.name) / "customized.wgt"
+        signed = Path(temporary.name) / "signed.wgt"
+        create_configured_wgt(args.package, customized, settings)
+        sign_package(customized, signed, args.duid, signer)
+        package_path = signed
+
+    package = package_path.read_bytes()
+    with zipfile.ZipFile(package_path) as archive:
         config = archive.read("config.xml").decode("utf-8")
         widget = re.search(r'<widget\b[^>]*\bversion="([^"]+)"', config)
         application = re.search(r'<tizen:application\b[^>]*\bid="([^"]+)"', config)
@@ -118,6 +195,9 @@ def main():
 if __name__ == "__main__":
     try:
         main()
-    except (OSError, RuntimeError, urllib.error.URLError, KeyError, ValueError) as error:
+    except (
+        OSError, RuntimeError, urllib.error.URLError, zipfile.BadZipFile,
+        subprocess.SubprocessError, KeyError, ValueError, EOFError,
+    ) as error:
         print(f"Installation failed: {error}", file=sys.stderr)
         sys.exit(1)
