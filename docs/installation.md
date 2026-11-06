@@ -31,7 +31,18 @@ Nothing else is installed on the screen. Vetro is required: **Install** stays of
 
 Your keys and websites stay on your PC (`%APPDATA%\APL-Launcher\keys.local.js`) and are never uploaded to GitHub.
 
-### Without a Windows PC: Apps2Samsung
+### No Windows PC: install through Vetro with Python
+
+The Python installer works on macOS, Linux, and Windows with Python 3. It installs the full release package directly through Vetro without changing Developer Mode's **Host PC IP** (keep it at `127.0.0.1`) or using TV-Store. By default, use a WGT already signed with a Partner certificate accepted by your TV. To privately enter API keys and websites during installation, use `--configure`: it prompts for keys without echoing them, adds the values to a temporary local package, signs that package with Apps2Samsung CLI, then installs it. Settings are not saved in a local keys file; the resulting installed package contains them on the TV. Do not paste certificate passwords into the terminal.
+
+1. Download `apl-launcher-full-vX.Y.Z.wgt` from the [latest release](https://github.com/Knikt/APL-Launcher-for-TizenOS/releases/latest). This release is signed with the Tizen SDK's default certificate, so it must be Partner-signed for your TV before installation. Either sign it separately with `apps2samsung-cli sign apl-launcher-full-vX.Y.Z.wgt -o apl-launcher-full-signed.wgt --duids <TV-DUID> --partner`, or let the installer sign it as part of `--configure` (requires the Apps2Samsung CLI and the TV's DUID). If you do not know the DUID, `apps2samsung-cli cert --tv <screen-ip>` lists DUIDs already covered by local certificates; with Host PC IP `127.0.0.1`, the CLI may not be able to query the TV itself.
+2. Confirm Vetro is running and note the port used by its dashboard. The default is `8099`; if it differs, pass `--vetro-port <port>`.
+3. From a downloaded or cloned repository, run `python3 scripts/install-via-vetro.py <screen-ip> /path/to/apl-launcher-full.wgt`. To enter the API keys and personal websites, add `--configure --duid <TV-DUID>`; if Apps2Samsung CLI is not on PATH, also pass `--apps2samsung-cli /path/to/apps2samsung-cli`. The script verifies Vetro connectivity and the file-transfer checksum, installs the hybrid package, confirms both launcher and overlay are registered, and launches it. Add `--no-launch` to skip launching.
+4. Follow steps 3 onward below to configure remote buttons and set up the launcher. Without keys, everything works except trending films and series in the Top Shelf.
+
+The installer sends the package to Vetro over the local network using bounded base64 chunks and removes its temporary files from the TV after installation. It does not print API keys or save them to disk outside its temporary package, which is deleted when the script exits. Tizen 6.x screens should use the launcher-only package instead, as described below.
+
+### Alternative: Apps2Samsung or TV-Store
 
 Every release also has the whole package as `apl-launcher-full-vX.Y.Z.wgt`, for [Apps2Samsung](https://github.com/Apps2Samsung/Apps2Samsung): the launcher, APL Overlay, the bridge to Vetro and the start-up service, in one hybrid package. It is signed with the Tizen SDK's default certificate, and Apps2Samsung re-signs it for your screen. Vetro is still required.
 
@@ -48,9 +59,9 @@ After a full restart, the screen comes back on its last input or on Smart Hub; t
 
 | Key | What it adds | Where to get it |
 |---|---|---|
-| TMDB | Live Top Shelf: trending films and series for each streaming service | themoviedb.org › Settings › API |
-| YouTube Data API v3 | Trending videos in TizenTube's Top Shelf | console.cloud.google.com › Credentials |
-| Fanart.tv | Textless HD backgrounds | fanart.tv › your profile › API Key |
+| TMDB API Key (v3 auth) | Live Top Shelf: trending films and series for each streaming service | [TMDB API settings](https://www.themoviedb.org/settings/api) — use the **API Key (v3 auth)**, not the API Read Access Token |
+| YouTube Data API v3 key | Trending videos in TizenTube's Top Shelf | In [Google Cloud Credentials](https://console.cloud.google.com/apis/credentials), create a project, enable [YouTube Data API v3](https://console.cloud.google.com/apis/library/youtube.googleapis.com), then create an API key |
+| Fanart.tv API key | Textless HD backgrounds | [Fanart.tv API key](https://fanart.tv/get-an-api-key/) — copy it from your account profile |
 
 Without keys, everything else still works: logos, App Store icons and backgrounds, music charts.
 
