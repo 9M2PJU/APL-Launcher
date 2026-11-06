@@ -22,6 +22,7 @@
 | Symptom | Fix |
 |---|---|
 | Home still opens Samsung's home | In APL Launcher, *Settings › Remote and Devices › Set Up the Remote Buttons* sends Home back to APL Overlay (or APL Launcher without it) and says whether Vetro intercepts the remote. If not, in Vetro › Remapper, turn on **Remote interception** (*filter* mode in older versions). Turn Vetro's *Launcher (Beta)* off. |
+| Screen settings show *Unavailable*, or *Settings › Support › About This Screen › Link to Vetro* says "Bridge: no answer at all" | The launcher gets no answer from its bridge. On Tizen 6 screens the bridge keeps a log since 1.0.20: run `cat /opt/usr/home/owner/apps_rw/APLauncher/data/bridge.log` through Vetro (`POST http://<screen-ip>:8099/exec` with `{"cmd": "..."}`) and attach it to an issue. |
 | After a full restart, Home opens Samsung's home | Normal for up to two minutes: Vetro starts and takes over the remote. If it lasts longer, open Vetro once from *Apps*, and check that Developer Mode's *Host PC IP* is `127.0.0.1` (Vetro needs it to restart by itself). Prefer sleep to unplugging. |
 | Samsung's home is empty | Normal after Optimize: its ads and recommendations are turned off. Press Home once Vetro is ready. |
 | TizenTube freezes or opens Samsung's YouTube | Open it from the launcher: it closes Samsung's YouTube first, as TizenTube needs. Then run **Repair TizenBrew** in APL Launcher Setup › Tools. |

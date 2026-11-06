@@ -83,9 +83,10 @@ Rows marked with an arrow-out icon open the matching Samsung page.
 
 ## Sources
 
-The *Sources* tile shows one tile per input (HDMI, USB-C) plus AirPlay.
-- **OK** switches straight to the input.
+The *Sources* tile shows one tile per input (Live TV on TVs, HDMI, USB-C) plus AirPlay.
+- **OK** switches straight to the input. *Live TV* is the screen's own tuner: antenna, cable or satellite.
 - **OK held** lets you choose what is plugged in: Nintendo Switch 2, Switch, Steam Deck, PlayStation 5/4, Xbox, PC, Mac, Apple TV, NVIDIA Shield, Fire TV, Chromecast, Freebox, Orange box. The input then shows that device's logo.
+- **OK held › Add to Home Screen** pins the input to the Home Screen as a tile, like an app: a *Live TV* tile, for example. Hold OK on the tile to move it.
 
 USB-C has no direct key on Samsung screens, so it opens Samsung's source list as a last resort.
 

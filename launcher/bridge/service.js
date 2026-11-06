@@ -58,6 +58,29 @@ var STATE = "vconftool get memory/pm/state; vconftool get memory/appfw/current_f
 var port = null, idle = null, openedAtBoot = false;
 var launcherFront = false, hiddenAt = 0, lastTick = Date.now(), ticking = null, sleeping = false, waking = false, inArt = false;
 
+/* The bridge's own log, in the package's data folder (bridge.log, like the .NET bridge's). Screens can have
+   app logs turned off (dlogutil: enable_apps 0), and on The Frame 2022 (Tizen 6.5, #21) the launcher never
+   got an answer with nothing to say why. Read it through Vetro: cat <that folder>/bridge.log.
+   No request bodies, only paths: an /exec command can carry anything. */
+var LOG_FILES = [(process.env.HOME || "/home/owner") + "/apps_rw/APLauncher/data/bridge.log",
+                 "/opt/usr/home/owner/apps_rw/APLauncher/data/bridge.log", "/tmp/apl-bridge-web.log"];
+var LOG_MAX = 32768, logged = {}, requestsSeen = 0;
+function note(msg) {
+    var line = new Date().toISOString().slice(11, 23) + " " + msg + "\n";
+    for (var i = 0; i < LOG_FILES.length; i++) {
+        try {
+            try { if (fs.statSync(LOG_FILES[i]).size > LOG_MAX) fs.unlinkSync(LOG_FILES[i]); } catch (e) {}
+            fs.appendFileSync(LOG_FILES[i], line);
+            return;
+        } catch (e) {}
+    }
+}
+/* The same failure over and over: written the first 3 times only. */
+function noteOnce(key, msg) {
+    logged[key] = (logged[key] || 0) + 1;
+    if (logged[key] <= 3) note(msg + (logged[key] === 3 ? " (not written again)" : ""));
+}
+
 function stopLater() {
     clearTimeout(idle);
     // Stays while the launcher is in front or the screen sleeps on it, to bring it back at wake-up
@@ -72,21 +95,43 @@ function field(data, key) {
     return "";
 }
 
-function answer(id, status, body) {
-    var back;
-    try { back = tizen.messageport.requestTrustedRemoteMessagePort(APP_ID, REPLY_PORT); } catch (e) { return; }
+/* The answer goes back through the launcher's trusted port (Tizen 9 refuses a port attached to the request).
+   If that fails, through the port the launcher attached to its request (older screens), then through its
+   plain port (APL_BRIDGE_REPLY_PLAIN, only opened on screens before Tizen 7). The way that worked is tried
+   first next time, and every change of way is written in the log. */
+var PLAIN_REPLY_PORT = "APL_BRIDGE_REPLY_PLAIN", route = "";
+function replyRoutes(attached) {
+    var all = [
+        ["trusted", function () { return tizen.messageport.requestTrustedRemoteMessagePort(APP_ID, REPLY_PORT); }],
+        ["attached", function () { if (!attached) throw new Error("no port attached"); return attached; }],
+        ["plain", function () { return tizen.messageport.requestRemoteMessagePort(APP_ID, PLAIN_REPLY_PORT); }]
+    ];
+    return all.filter(function (r) { return r[0] === route; }).concat(all.filter(function (r) { return r[0] !== route; }));
+}
+function answer(id, status, body, attached) {
     body = String(body || "");
-    var parts = Math.max(1, Math.ceil(body.length / CHUNK));
-    for (var i = 0; i < parts; i++) {
+    var parts = Math.max(1, Math.ceil(body.length / CHUNK)), routes = replyRoutes(attached), errors = [];
+    for (var r = 0; r < routes.length; r++) {
         try {
-            back.sendMessage([{ key: "id", value: id }, { key: "status", value: String(status) },
-                              { key: "part", value: String(i) }, { key: "parts", value: String(parts) },
-                              { key: "body", value: body.substr(i * CHUNK, CHUNK) }]);
-        } catch (e) {}
+            var back = routes[r][1]();
+            for (var i = 0; i < parts; i++) {
+                back.sendMessage([{ key: "id", value: id }, { key: "status", value: String(status) },
+                                  { key: "part", value: String(i) }, { key: "parts", value: String(parts) },
+                                  { key: "body", value: body.substr(i * CHUNK, CHUNK) }]);
+            }
+            if (route !== routes[r][0]) {
+                note("answers go through the " + routes[r][0] + " port" + (errors.length ? " (" + errors.join("; ") + ")" : ""));
+                route = routes[r][0];
+            }
+            return;
+        } catch (e) {
+            errors.push(routes[r][0] + ": " + ((e && (e.name + " " + e.message)) || e));
+        }
     }
+    noteOnce("answer", "could not answer request " + id + ": " + errors.join("; "));
 }
 
-function onMessage(data) {
+function onMessage(data, attached) {
     var front = field(data, "front");
     if (front) {                        // the launcher came in front ("1") or left it ("0")
         launcherFront = front === "1";
@@ -96,17 +141,18 @@ function onMessage(data) {
     }
     stopLater();
     var id = field(data, "id"), method = field(data, "method") || "GET", path = field(data, "path"), body = field(data, "body");
+    if (++requestsSeen <= 20) note("request " + id + ": " + method + " " + path.split("?")[0] + (attached ? " (port attached)" : ""));
     // Settings › Support › Link to Vetro: answered here, without Vetro, so the launcher can tell a bridge that
     // gets nothing (or cannot answer) from one that cannot reach Vetro, and which addresses failed how (#21)
     if (path === "/bridge-info") {
-        answer(id, 200, JSON.stringify({ bridge: "web", hosts: HOSTS, using: HOSTS[hostIndex], reached: reached, errors: hostErrors }));
+        answer(id, 200, JSON.stringify({ bridge: "web", hosts: HOSTS, using: HOSTS[hostIndex], reached: reached, errors: hostErrors, route: route }), attached);
         return;
     }
     if (!ALLOWED.test(path) || (method !== "GET" && method !== "POST")) {
-        answer(id, 404, '{"error":"not relayed"}');
+        answer(id, 404, '{"error":"not relayed"}', attached);
         return;
     }
-    vetro(method, path, Buffer.from(body || "", "utf8"), 150000, function (status, text) { answer(id, status, text); });
+    vetro(method, path, Buffer.from(body || "", "utf8"), 150000, function (status, text) { answer(id, status, text, attached); });
 }
 
 /* The screen's IPv4 addresses on the network, tried after the two loopback forms. */
@@ -138,6 +184,7 @@ function vetro(method, path, buf, timeoutMs, done, retries) {
     function fail(e) {
         if (finished) return;
         hostErrors[host] = (e.code || "") + " " + String(e.message || "").slice(0, 60);
+        noteOnce("vetro " + host, "Vetro at " + host + ": " + hostErrors[host]);
         // The request did not go out (refused, or no answer to connect): try the next address
         if (retries > 0 && /EHOSTUNREACH|EACCES|ECONNREFUSED|ENETUNREACH|EINVAL|ETIMEDOUT/.test(e.code)) {
             finished = true;
@@ -275,8 +322,17 @@ function start() {
     stopLater();
     if (!ticking) ticking = setInterval(tick, TICK_MS);
     if (port) return;
-    port = tizen.messageport.requestTrustedLocalMessagePort(PORT_NAME);
-    port.addMessagePortListener(onMessage);
+    try {
+        port = tizen.messageport.requestTrustedLocalMessagePort(PORT_NAME);
+        port.addMessagePortListener(onMessage);
+    } catch (e) {
+        port = null;
+        noteOnce("port", "could not open port " + PORT_NAME + ": " + ((e && (e.name + " " + e.message)) || e));
+        throw e;
+    }
+    var up = "?";
+    try { up = Math.round(parseFloat(fs.readFileSync("/proc/uptime", "utf8"))); } catch (e) {}
+    note("started (Node " + process.version + ", screen up for " + up + " s), port " + PORT_NAME + " open");
 }
 
 /* Full start-up (power cut, restart): the screen comes back on its last input and,

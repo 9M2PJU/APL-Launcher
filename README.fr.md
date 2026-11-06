@@ -4,6 +4,8 @@ Un écran d'accueil **façon Apple TV** pour les TV et Smart Monitors Samsung
 (Tizen) : Top Shelf, dock en verre, Centre de contrôle, Réglages, Sources… et
 plus aucun menu Samsung.
 
+Créé par Knikt (Gero Corp.)
+
 ![Accueil](docs/images/home.jpg)
 
 **[▶ L'essayer dans le navigateur](https://knikt.github.io/APL-Launcher-for-TizenOS/)** : rien à télécharger, rien ne touche à ta TV.
@@ -108,8 +110,30 @@ les apps et les menus n'a que ce mode. Seules les vidéos passent en 4K.
 
 Guide complet (en anglais) : [docs/user-guide.md](docs/user-guide.md).
 
+## APL TV
+
+**[APL TV](https://github.com/Knikt/APL-TV-for-TizenOS)** est le lecteur IPTV fait pour aller avec APL Launcher, par le
+même créateur : TV en direct, films et séries depuis tes propres playlists M3U et comptes Xtream, dans le
+même style Apple TV.
+
+[![APL TV : l'accueil, la page d'un titre, la TV en direct et le lecteur](https://raw.githubusercontent.com/Knikt/APL-TV-for-TizenOS/main/docs/images/home.jpg)](https://github.com/Knikt/APL-TV-for-TizenOS)
+
+- **TV en direct** avec la chaîne qui joue derrière l'interface, un **guide des programmes** en grille et le
+  **multi-écran** (jusqu'à 4 chaînes à la fois).
+- **Films et séries** avec le résumé en français, le casting, les notes IMDb, les saisons et les épisodes, et
+  les âges conseillés à la française (-12, -16…).
+- **Reprendre la lecture**, chaînes favorites, **recherche** au clavier ou avec **Alexa**, et réglage depuis
+  le téléphone avec un QR code.
+- **Fait pour APL Launcher** : sur l'accueil, le Top Shelf d'APL TV montre ce que tu regardais et ta dernière
+  chaîne, et OK l'ouvre directement au bon endroit.
+- **S'installe** avec APL Launcher Setup (page *Installer* › *Installer aussi APL TV*) ou depuis ses
+  [versions](https://github.com/Knikt/APL-TV-for-TizenOS/releases/latest). Pas besoin de root, Tizen 6 ou plus récent.
+
+APL TV n'est qu'un lecteur : aucune chaîne, aucune playlist, aucun fournisseur. À utiliser avec des contenus
+que tu as le droit de regarder.
+
 ## Licence
 
-Code sous [licence MIT](LICENSE). APL Launcher est un projet indépendant, sans lien
+APL Launcher est créé par Knikt (Gero Corp.). Code sous [licence MIT](LICENSE). APL Launcher est un projet indépendant, sans lien
 avec Apple, Samsung ou Amazon ; leurs marques et logos appartiennent à leurs
 propriétaires.

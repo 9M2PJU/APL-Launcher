@@ -408,21 +408,43 @@
         bridgeStarting.then(done, done);
         return bridgeStarting;
     }
+    /* Before Tizen 7 (The Frame 2022 on 6.5, #21) the bridge's answers never came back through the trusted
+       port alone. There the launcher also attaches its port to each request, and opens a plain port the
+       bridge can answer through (bridge/service.js tries them in turn and logs which one works). Never on
+       Tizen 9: its service router crashes when a request carries a port. */
+    var oldTizen = null;
+    function isOldTizen() {
+        if (oldTizen === null) {
+            oldTizen = safe(function () {
+                return parseFloat(tz.systeminfo.getCapability("http://tizen.org/feature/platform.version")) < 7;
+            }, false) === true;
+        }
+        return oldTizen;
+    }
+    var plainReplyPort = null;
+    function onReply(data) {
+        var m = {};
+        for (var i = 0; i < data.length; i++) m[data[i].key] = data[i].value;
+        var p = pending[m.id];
+        if (!p) return;
+        // Large answers arrive in several pieces (a piece sent again by another port counts once)
+        var part = parseInt(m.part, 10) || 0;
+        if (p.chunks[part] === undefined) p.got++;
+        p.chunks[part] = m.body || "";
+        if (p.got < (parseInt(m.parts, 10) || 1)) return;
+        delete pending[m.id]; clearTimeout(p.timer);
+        p.resolve({ status: parseInt(m.status, 10) || 0, body: p.chunks.join("") });
+    }
     function ensureReplyPort() {
         if (replyPort) return replyPort;
         replyPort = tz.messageport.requestTrustedLocalMessagePort("APL_BRIDGE_REPLY");
-        replyPort.addMessagePortListener(function (data) {
-            var m = {};
-            for (var i = 0; i < data.length; i++) m[data[i].key] = data[i].value;
-            var p = pending[m.id];
-            if (!p) return;
-            // Large answers arrive in several pieces
-            p.chunks[parseInt(m.part, 10) || 0] = m.body || "";
-            p.got++;
-            if (p.got < (parseInt(m.parts, 10) || 1)) return;
-            delete pending[m.id]; clearTimeout(p.timer);
-            p.resolve({ status: parseInt(m.status, 10) || 0, body: p.chunks.join("") });
-        });
+        replyPort.addMessagePortListener(onReply);
+        if (isOldTizen() && !plainReplyPort) {
+            try {
+                plainReplyPort = tz.messageport.requestLocalMessagePort("APL_BRIDGE_REPLY_PLAIN");
+                plainReplyPort.addMessagePortListener(onReply);
+            } catch (e) {}
+        }
         return replyPort;
     }
     function bridgeRequest(method, path, body, waitMs) {
@@ -433,9 +455,13 @@
                 ensureReplyPort();
                 var id = String(++seq);
                 pending[id] = { resolve: resolve, chunks: [], got: 0, timer: setTimeout(function () { delete pending[id]; reject(new Error("timeout")); }, waitMs || 60000) };
-                // No port attached: the service answers through its own trusted port (see bridge/service.js)
-                remote.sendMessage([{ key: "id", value: id }, { key: "method", value: method },
-                                    { key: "path", value: path }, { key: "body", value: body || "" }]);
+                // No port attached on Tizen 7 and newer: the service answers through its own trusted port (see bridge/service.js)
+                var msg = [{ key: "id", value: id }, { key: "method", value: method },
+                           { key: "path", value: path }, { key: "body", value: body || "" }];
+                if (isOldTizen()) {
+                    try { remote.sendMessage(msg, replyPort); return; } catch (e) {}
+                }
+                remote.sendMessage(msg);
             });
         }
         return send().catch(function (e) {
@@ -503,10 +529,12 @@
             // 2. Then a command through Vetro
             t0 = Date.now();
             return bridgeRequest("POST", "/exec", JSON.stringify({ cmd: "true" }), 20000).then(function (x) {
-                var ok = false;
-                try { ok = JSON.parse(x.body).ok !== false; } catch (e) {}
+                var ok = false, why = "";
+                try { var j = JSON.parse(x.body); ok = j.ok !== false; why = String(j.error || j.stderr || "").slice(0, 80); } catch (e) {}
+                // Vetro answers but runs nothing (an S95C on Tizen 9, Reddit): most often its root agent is not
+                // connected, which Vetro says ("no root agent connected"). Shown as it is.
                 return (ok ? APL.t("Through the bridge") : APL.t("Bridge: Vetro refused")) + " (" + (Date.now() - t0) + " ms" +
-                       (info && info.reached ? ", " + info.reached : "") + ")";
+                       (info && info.reached ? ", " + info.reached : "") + (!ok && why ? ", " + why : "") + ")";
             }, function () {
                 // The bridge answers but Vetro doesn't: the addresses it tried and how they failed
                 var tried = [];

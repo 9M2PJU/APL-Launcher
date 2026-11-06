@@ -332,6 +332,7 @@ namespace APL.Setup
 
             // ---------- About ----------
             { "An Apple TV–style home screen for Samsung Tizen screens.", "Un écran d'accueil façon Apple TV pour les écrans Samsung sous Tizen." },
+            { "Created by Knikt (Gero Corp.)", "Créé par Knikt (Gero Corp.)" },
             { "APL Launcher on GitHub", "APL Launcher sur GitHub" },
             { "What works (compatibility)", "Ce qui marche (compatibilité)" },
             { "MIT License", "Licence MIT" },

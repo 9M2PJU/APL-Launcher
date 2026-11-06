@@ -5,11 +5,13 @@
 **An Apple TV–style home screen for Samsung Tizen TVs and Smart Monitors.**
 Top Shelf, glass dock, Control Center, Settings, Sources — and no more Samsung menus.
 
+Created by Knikt (Gero Corp.)
+
 ![Home screen](docs/images/home.jpg)
 
 **[▶ Try it in your browser](https://knikt.github.io/APL-Launcher-for-TizenOS/)** — no download, nothing touches your TV. Arrows, Enter and Esc (or the on-screen remote).
 
-[Requirements](#requirements) · [Install](#quick-start) · [Features](#features) · [Compatibility](docs/compatibility.md) · [User guide](docs/user-guide.md) · [Troubleshooting](docs/troubleshooting.md) · [Français](README.fr.md)
+[Requirements](#requirements) · [Install](#quick-start) · [Features](#features) · [APL TV](#apl-tv) · [Compatibility](docs/compatibility.md) · [User guide](docs/user-guide.md) · [Troubleshooting](docs/troubleshooting.md) · [Français](README.fr.md)
 
 </div>
 
@@ -42,6 +44,20 @@ Nothing else is installed: the installer puts APL Launcher and its small helper 
 | ![Grid](docs/images/grid.jpg) | ![Control Center](docs/images/control-center.jpg) | ![Audio](docs/images/audio.jpg) |
 | ![Settings](docs/images/settings.jpg) | ![Sources](docs/images/sources.jpg) | ![App menu](docs/images/app-menu.jpg) |
 | ![Profiles](docs/images/profiles.jpg) | | |
+
+## APL TV
+
+**[APL TV](https://github.com/Knikt/APL-TV-for-TizenOS)** is the IPTV player made to go with APL Launcher, by the same maker: Live TV, movies and series from your own M3U playlists and Xtream accounts, in the same Apple TV style.
+
+[![APL TV: Home, a title's page, Live TV and the player](https://raw.githubusercontent.com/Knikt/APL-TV-for-TizenOS/main/docs/images/home.jpg)](https://github.com/Knikt/APL-TV-for-TizenOS)
+
+- **Live TV** with the channel playing behind the interface, a **TV guide** grid and **Multiview** (up to 4 channels at once).
+- **Movies and series** with their plot in your language, cast, IMDb ratings, seasons and episodes, and age ratings in your country's own scale.
+- **Continue Watching**, favourite channels, **search** by keyboard or with **Alexa**, and setup from your phone with a QR code.
+- **Made for APL Launcher:** on the Home Screen, APL TV's Top Shelf shows what you were watching and your last channel, and OK opens it right there.
+- **Install** it with APL Launcher Setup (*Install* page › *Also install APL TV*) or from its [releases](https://github.com/Knikt/APL-TV-for-TizenOS/releases/latest). No root needed, Tizen 6 or newer.
+
+APL TV is only a player: it comes with no channels, no playlists and no provider. Use it with content you have the right to watch.
 
 ## Requirements
 
@@ -127,5 +143,7 @@ The source code is released under the [MIT License](LICENSE).
 APL Launcher is an independent project. It is not affiliated with, endorsed by or sponsored by Apple, Samsung or Amazon. Apple, Apple TV, tvOS, AirPlay, AirPods, Siri and Memoji are trademarks of Apple Inc. Samsung, Tizen and Smart Hub are trademarks of their owners. Amazon and Alexa are trademarks of Amazon.com, Inc. App, service and device logos belong to their owners and are shown only to identify them.
 
 ## Credits
+
+APL Launcher is created by Knikt (Gero Corp.).
 
 Vetro by andrearicci93 · TizenBrew and TizenTube by reisxd · icons from [dashboard-icons](https://github.com/homarr-labs/dashboard-icons), [Simple Icons](https://simpleicons.org), [selfh.st/icons](https://github.com/selfhst/icons) and [tv-logos](https://github.com/tv-logo/tv-logos) · aerial video list from [OrangeJedi/Aerial](https://github.com/OrangeJedi/Aerial) · film and series data from [TMDB](https://www.themoviedb.org) (*this product uses the TMDB API but is not endorsed or certified by TMDB*) and ratings from Stremio's public Cinemeta service · artwork from [Fanart.tv](https://fanart.tv) · sports data from [TheSportsDB](https://www.thesportsdb.com) · 3D avatars from [Fluent Emoji](https://github.com/microsoft/fluentui-emoji) (MIT) · Memoji downloaded at install time from [wimell/tapback-memojis](https://github.com/wimell/tapback-memojis) (not included in this repository).

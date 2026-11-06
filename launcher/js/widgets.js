@@ -13,6 +13,8 @@
                  picture from TMDB, with the title drawn on it; channel logo from tv-logos
      Stremio     keeps its recent library: picture and rating from the IMDb
                  ID. Only the useful fields are read, never the account or its key
+     Nuvio       keeps its progress (watchProgressItems), most recent first: the
+                 same, from the IMDb ID
      APL TV      writes its own Top Shelf (/tmp/apltv-shelf.json): what you were
                  watching at its minute, and the last channel; OK opens it there
      Hot Player  keeps only the episode and the progress, without the name of the
@@ -333,6 +335,75 @@
         });
     }
 
+    /* ---------- Nuvio ---------- */
+    /* Nuvio's TV app keeps its progress in its local storage, "watchProgressItems": one array, rewritten at
+       each save, most recent first (NuvioMedia/NuvioTVSmart, js/data/local/watchProgressStore.js). Only the
+       start of its last write is read: the most recent items. Nothing else of the app is read, and no account.
+       Its own thresholds: started from 2 %, finished from 90 %. Asked on Reddit, again and again. */
+    var NUVIO_APPS = { "NuvioTV001.NuvioTV": "NuvioTV001", "NuvioTVH01.NuvioTVHosted": "NuvioTVH01" };
+    var NUVIO_STARTED = 0.02, NUVIO_DONE = 0.9;
+    function nuvioReader(pkg) {
+        var store = HOME + pkg + "/data/Local Storage/leveldb";
+        return function () {
+            // Cut at the array's end ("}]"): what the app wrote after it (its account, for one) stays on the screen
+            return sys.exec("export LC_ALL=C; cat '" + store + "'/*.log 2>/dev/null | tr -d '[:cntrl:]' | grep -a 'watchProgressItems' | " +
+                            "sed -E 's/.*watchProgressItems//' | sed -E 's/[}][]].*/}]/' | head -c 30000").then(function (r) {
+                return Promise.all(nuvioRecent(readable(r.output)).slice(0, 2).map(nuvioCard));
+            });
+        };
+    }
+    /* The complete objects at the start of the array: the read stops in the middle of one. */
+    function topObjects(text, max) {
+        var out = [], i = text.indexOf("["), depth = 0, start = -1, inText = false, escaped = false, c;
+        if (i < 0) return out;
+        for (i = i + 1; i < text.length && out.length < max; i++) {
+            c = text.charAt(i);
+            if (inText) {
+                if (escaped) escaped = false;
+                else if (c === "\\") escaped = true;
+                else if (c === "\"") inText = false;
+                continue;
+            }
+            if (c === "\"") inText = true;
+            else if (c === "{") { if (depth === 0) start = i; depth++; }
+            else if (c === "}") {
+                depth--;
+                if (depth === 0 && start >= 0) { try { out.push(JSON.parse(text.slice(start, i + 1))); } catch (e) {} start = -1; }
+            } else if (c === "]" && depth === 0) break;
+        }
+        return out;
+    }
+    function nuvioFraction(item) {
+        var at = Number(item.positionMs) || 0, total = Number(item.durationMs) || 0;
+        if (at > 0 && total > 0) return Math.min(1, at / total);
+        var pct = Number(item.progressPercent);
+        return isFinite(pct) && pct > 0 ? Math.min(1, pct / 100) : 0;
+    }
+    /* Started, not finished, one card per film or series (its latest episode), most recent first. */
+    function nuvioRecent(text) {
+        var seen = {};
+        return topObjects(text, 60).filter(function (item) {
+            var f = nuvioFraction(item), id = String(item.contentId || "");
+            if (!id || seen[id] || f < NUVIO_STARTED || f >= NUVIO_DONE) return false;
+            seen[id] = true;
+            return true;
+        });
+    }
+    function nuvioCard(item) {
+        var id = String(item.contentId), imdb = /^(?:imdb:)?(tt[0-9]+)/.exec(id), key = "nuvio:" + id;
+        var found = art[key] ? Promise.resolve(art[key])
+            : imdb ? APL.live.findImdb(imdb[1]).then(function (a) { return a ? saveArt(key, a) : null; }, function () { return null; })
+            : Promise.resolve(null);
+        return found.then(function (a) {
+            var at = (Number(item.positionMs) || 0) / 1000, total = (Number(item.durationMs) || 0) / 1000;
+            var sub = [a ? APL.live.noteOf(a) : "", item.season != null && item.episode != null ? "S" + item.season + " E" + item.episode : "",
+                       total ? minutesLeft(at, total) : ""].filter(Boolean).join(" · ");
+            return { kind: "video", label: APL.t("Continue Watching"), title: (a && a.title) || item.title || item.name || "Nuvio",
+                     image: a ? a.image : (item.poster || item.background || ""), titled: !!(a && a.titled), logo: a ? a.logo || "" : "",
+                     progress: nuvioFraction(item), sub: sub };
+        });
+    }
+
     /* ---------- APL TV ---------- */
     /* APL TV writes its Top Shelf itself, in /tmp/apltv-shelf.json (APL TV's helper service, js/app.js
        pushShelf): titles, pictures, progress and the data to open each one in APL TV. No addresses and no
@@ -375,6 +446,7 @@
     READERS[AQUA] = aquaCards;
     READERS[HOT] = hotCards;
     READERS[STREMIO] = stremioCards;
+    Object.keys(NUVIO_APPS).forEach(function (id) { READERS[id] = nuvioReader(NUVIO_APPS[id]); });
 
     /* The cards show at once, in their last known version. Reading the data takes only
        10 to 30 ms, but goes through the relay (bridge/service.js): stopped after 15 min without requests,

@@ -53,7 +53,7 @@ Every release also has the whole package as `apl-launcher-full-vX.Y.Z.wgt`, for 
 
 After a full restart, the screen comes back on its last input or on Smart Hub; the start-up service puts the launcher on screen about 80 s after power-on. No personal websites, Memoji or SF Pro fonts in this package. Automatic updates work the same way. (`apl-launcher-vX.Y.Z.wgt`, next to it, is the launcher alone, without the overlay.)
 
-**Tizen 6.x screens**: APL Overlay and the other .NET parts of the full package don't run there. Install `apl-launcher-vX.Y.Z.wgt` instead, the launcher alone with its own bridge, and in Vetro's Remapper map Home to **APL Launcher** (`APLauncher.Home`).
+**Tizen 6.x screens**: APL Overlay and the other .NET parts of the full package don't run there. Install `apl-launcher-vX.Y.Z.wgt` instead, the launcher alone with its own bridge (in Apps2Samsung's catalog: the *Tizen 6* variant of APL Launcher, from 1.0.20), and map Home to **APL Launcher** with *Set Up the Remote Buttons*.
 
 ### Optional API keys
 

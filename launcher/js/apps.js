@@ -78,8 +78,9 @@
     var TECH_NAME = /plugin|provider|service|display|daemon|agent|widget|^setting$|channel-?list|multifunction/i;
     /* Samsung's preinstalled streaming apps, under Samsung ids and so filtered out with its services: the
        real apps, not the "-dummy" entries that stand for them in Samsung's home. Apple TV is aria-video.
-       Reported on Tizen 6.5 (issue #21); the same ids on the M8. */
-    var PRELOADED = ["org.tizen.primevideo", "com.samsung.tv.aria-video"];
+       Reported on Tizen 6.5 (issue #21); the same ids on the M8. Netflix too (org.tizen.netflix-app, on the
+       M8 and an S95C reported on Reddit): it was missing from the Home Screen and from Show on Home Screen. */
+    var PRELOADED = ["org.tizen.primevideo", "com.samsung.tv.aria-video", "org.tizen.netflix-app"];
     /* Not com.samsung.tv.tvPlusDeeplinker, Samsung TV Plus's entry on Tizen 6.5: launched alone it doesn't
        open TV Plus (#21). The Samsung TV Plus app from the store (HEPsqFNie0.tvplusstandalone) is listed. */
     function isRealApp(id, name) {

@@ -27,19 +27,63 @@
     "use strict";
 
     var APL = global.APL;
-    var KEYS = global.APL_KEYS || {};
+    /* Apps2Samsung writes the API keys into res/wgt/js/keys.local.js: this launcher's own keys file in the
+       full (hybrid) package. The launcher-only package (Tizen 6) carries a second copy at that path
+       (tools/make-package.sh), read here when js/keys.local.js has no key. Only the three keys, never run. */
+    (function altKeys() {
+        var K = global.APL_KEYS = global.APL_KEYS || {};
+        if (K.tmdb || K.youtube || K.fanart || !global.tizen || !global.XMLHttpRequest) return;
+        try {
+            var x = new global.XMLHttpRequest(), m, re = /\b(tmdb|youtube|fanart)\s*:\s*"([A-Za-z0-9_-]+)"/g;
+            x.open("GET", "res/wgt/js/keys.local.js", false);
+            x.send(null);
+            var text = String(x.responseText || "");
+            while ((m = re.exec(text))) { if (!K[m[1]]) K[m[1]] = m[2]; }
+        } catch (e) {}
+    })();
+    var KEYS = global.APL_KEYS;
     var TTL = 6 * 3600 * 1000;
     var CACHE_VERSION = 5;              // 3: movies and series carry their title and their rating; 4: Smart Hub items their deep link; 5: "tv" / "movie", translated when shown
     var MIN_VOTES = 20;                 // below that, a rating doesn't mean anything yet
 
     /* The screen's country, for trending videos, charts, prices and what each service streams there.
        France for every screen before 1.0.14 (issue #21, from India). Samsung's own country for its store
-       (db/comss/countrycode, read through Vetro) once known, and kept; until then the language's country
-       (fr-FR), else the United States. */
-    var REGION = savedRegion() || langRegion() || "US";
+       (db/comss/countrycode, read through Vetro) once known, and kept; until then the screen's time zone,
+       then the language's country (fr-FR), else the United States. Without the bridge (The Frame 2022 on
+       Tizen 6.5, #21) the country is never read, and the language says en-US on screens all over the world:
+       a screen in India got American results, where JioHotstar and Sony LIV have none. */
     function savedRegion() {
         try { var r = global.localStorage.getItem("apl.region") || ""; return /^[A-Z]{2}$/.test(r) ? r : ""; } catch (e) { return ""; }
     }
+    /* The screen sets its time zone from its country: the common ones, by country. */
+    var ZONES = {
+        IN: "Asia/Kolkata Asia/Calcutta", PK: "Asia/Karachi", BD: "Asia/Dhaka", LK: "Asia/Colombo", NP: "Asia/Kathmandu",
+        AE: "Asia/Dubai", SA: "Asia/Riyadh", QA: "Asia/Qatar", KW: "Asia/Kuwait", IL: "Asia/Jerusalem Asia/Tel_Aviv",
+        SG: "Asia/Singapore", MY: "Asia/Kuala_Lumpur", ID: "Asia/Jakarta", PH: "Asia/Manila", TH: "Asia/Bangkok",
+        VN: "Asia/Ho_Chi_Minh Asia/Saigon", HK: "Asia/Hong_Kong", TW: "Asia/Taipei", JP: "Asia/Tokyo", KR: "Asia/Seoul",
+        AU: "Australia/Sydney Australia/Melbourne Australia/Brisbane Australia/Perth Australia/Adelaide Australia/Hobart Australia/Darwin",
+        NZ: "Pacific/Auckland", ZA: "Africa/Johannesburg", EG: "Africa/Cairo", NG: "Africa/Lagos", KE: "Africa/Nairobi", MA: "Africa/Casablanca",
+        GB: "Europe/London", IE: "Europe/Dublin", FR: "Europe/Paris", DE: "Europe/Berlin", ES: "Europe/Madrid Atlantic/Canary",
+        IT: "Europe/Rome", NL: "Europe/Amsterdam", BE: "Europe/Brussels", LU: "Europe/Luxembourg", CH: "Europe/Zurich",
+        AT: "Europe/Vienna", PT: "Europe/Lisbon", PL: "Europe/Warsaw", CZ: "Europe/Prague", SE: "Europe/Stockholm",
+        NO: "Europe/Oslo", DK: "Europe/Copenhagen", FI: "Europe/Helsinki", GR: "Europe/Athens", RO: "Europe/Bucharest",
+        HU: "Europe/Budapest", TR: "Europe/Istanbul", UA: "Europe/Kiev Europe/Kyiv", RU: "Europe/Moscow",
+        US: "America/New_York America/Chicago America/Denver America/Los_Angeles America/Phoenix America/Anchorage America/Detroit Pacific/Honolulu",
+        CA: "America/Toronto America/Vancouver America/Edmonton America/Winnipeg America/Halifax America/Regina America/St_Johns",
+        MX: "America/Mexico_City America/Monterrey America/Tijuana", BR: "America/Sao_Paulo", AR: "America/Argentina/Buenos_Aires America/Buenos_Aires",
+        CL: "America/Santiago", CO: "America/Bogota", PE: "America/Lima"
+    };
+    function zoneRegion() {
+        var zone = "";
+        try { zone = global.tizen && global.tizen.time ? global.tizen.time.getLocalTimezone() : ""; } catch (e) {}
+        try { if (!zone && global.Intl) zone = global.Intl.DateTimeFormat().resolvedOptions().timeZone || ""; } catch (e) {}
+        if (!zone) return "";
+        for (var cc in ZONES) {
+            if (ZONES.hasOwnProperty(cc) && (" " + ZONES[cc] + " ").indexOf(" " + zone + " ") !== -1) return cc;
+        }
+        return "";
+    }
+    var REGION = savedRegion() || zoneRegion() || langRegion() || "US";      // after ZONES, which zoneRegion reads
     function langRegion() {
         var m = /[-_]([A-Za-z]{2})$/.exec(String(global.navigator.language || ""));
         return m ? m[1].toUpperCase() : "";
@@ -81,7 +125,7 @@
 
     /* TMDB (JustWatch) "provider" ids of the services (the same in every country). */
     var TMDB_PROVIDERS = {
-        netflix: 8, primevideo: 119, disneyplus: 337, appletv: 350,
+        netflix: 8, primevideo: "9|119", disneyplus: 337, appletv: 350,
         paramountplus: 531, crunchyroll: 283, rakutentv: 35, plutotv: 300, canalplus: 381,
         jiohotstar: 2336, sonyliv: 237
     };
@@ -180,7 +224,7 @@
     /* Popular movies and series on a service (Netflix, Prime Video…) in the screen's country. */
     function tmdb(providerId) {
         var common = "api_key=" + KEYS.tmdb + "&language=" + APL.locale + "&watch_region=" + REGION +
-                     "&with_watch_providers=" + providerId + "&sort_by=popularity.desc";
+                     "&with_watch_providers=" + encodeURIComponent(providerId) + "&sort_by=popularity.desc";
         return Promise.all([
             getJson(TMDB + "/discover/tv?" + common).catch(function () { return { results: [] }; }),
             getJson(TMDB + "/discover/movie?" + common).catch(function () { return { results: [] }; })
