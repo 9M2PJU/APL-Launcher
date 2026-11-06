@@ -13,6 +13,8 @@
                  picture from TMDB, with the title drawn on it; channel logo from tv-logos
      Stremio     keeps its recent library: picture and rating from the IMDb
                  ID. Only the useful fields are read, never the account or its key
+     APL TV      writes its own Top Shelf (/tmp/apltv-shelf.json): what you were
+                 watching at its minute, and the last channel; OK opens it there
      Hot Player  keeps only the episode and the progress, without the name of the
                  series or of the channel: a "Continue" card with the app's
                  artwork, no "Last Channel" card
@@ -331,8 +333,45 @@
         });
     }
 
+    /* ---------- APL TV ---------- */
+    /* APL TV writes its Top Shelf itself, in /tmp/apltv-shelf.json (APL TV's helper service, js/app.js
+       pushShelf): titles, pictures, progress and the data to open each one in APL TV. No addresses and no
+       account in it. Read as it is; OK on a card opens APL TV at that title or channel (app control
+       "resume" / "channel"). */
+    var APLTV = "APLTVMedia.TV";
+    function apltvCards() {
+        return sys.exec("head -c 60000 /tmp/apltv-shelf.json 2>/dev/null").then(function (r) {
+            var shelf;
+            try { shelf = JSON.parse(String(r.output || "")); } catch (e) { throw new Error("nothing to read"); }
+            if (!shelf || shelf.app !== APLTV) throw new Error("nothing to read");
+            var cards = [];
+            (shelf.continueWatching || []).slice(0, 1).forEach(function (c) {
+                if (!c || !c.title) return;
+                cards.push({ kind: "video", label: APL.t("Continue Watching"), title: String(c.title), image: safeUrl(c.image) || safeUrl(c.poster),
+                             sub: String(c.sub || ""), progress: c.progress > 0 ? Math.min(1, Number(c.progress)) : undefined, launch: pick(c.data, "resume") });
+            });
+            var last = shelf.lastChannel;
+            if (last && last.name) cards.push({ kind: "channel", label: APL.t("Last Channel"), title: String(last.name), image: safeUrl(last.logo),
+                                                sub: String(last.now || ""), progress: last.progress > 0 ? Math.min(1, Number(last.progress)) : undefined, launch: pick(last.data, "channel") });
+            return cards;
+        });
+    }
+    function safeUrl(u) { return /^https?:\/\/[^\s'"<>]+$/.test(String(u || "")) ? String(u) : ""; }
+    function pick(data, key) { var v = data && data[key]; return v && /^[A-Za-z0-9_.:|-]{1,80}$/.test(String(v)) ? { key: key, value: String(v) } : null; }
+    /* Opens the app with one piece of app control data (APL TV: resume=<title>, channel=<channel>) */
+    function launchWith(app, launch) {
+        try {
+            var T = global.tizen;
+            var ctl = new T.ApplicationControl("http://tizen.org/appcontrol/operation/default", null, null, null,
+                                               [new T.ApplicationControlData(launch.key, [launch.value])]);
+            if (APL.sys.profiles) APL.sys.profiles.noteLaunch(app.id);
+            T.application.launchAppControl(ctl, app.id, function () {}, function () { APL.openApp(app); });
+        } catch (e) { APL.openApp(app); }
+    }
+
     /* ---------- cards ---------- */
     var READERS = {};
+    READERS[APLTV] = apltvCards;
     READERS[AQUA] = aquaCards;
     READERS[HOT] = hotCards;
     READERS[STREMIO] = stremioCards;
@@ -494,6 +533,7 @@
 
     function render(cards) {
         row.innerHTML = "";
+        row._cards = cards;
         cards.forEach(addCard);
         var video = cards.filter(function (c) { return c.kind === "video" && c.image; })[0];
         // A blurred logo shows nothing: for a channel, the colours of the app's background
@@ -562,7 +602,11 @@
         if (!tiles.length) return false;
         if (!nav) {
             nav = new APL.Nav({
-                onSelect: function () { var a = shownApp; leaveCards(); if (a) APL.openApp(a); },
+                onSelect: function (i) {
+                    var a = shownApp, c = row && row._cards && row._cards[i];
+                    leaveCards();
+                    if (a && c && c.launch) launchWith(a, c.launch); else if (a) APL.openApp(a);
+                },
                 onBack: leaveCards,
                 onEdge: function (dir) { if (dir === "down") leaveCards(); }
             });

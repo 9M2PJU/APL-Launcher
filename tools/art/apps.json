@@ -200,6 +200,26 @@
       "live": "trending"
     },
     {
+      "key": "apltv",
+      "name": "APL TV",
+      "eyebrow": "TELEVISION",
+      "accent": "#4c7dff",
+      "match": [
+        "^apl tv"
+      ],
+      "ids": [
+        "APLTVMedia.TV"
+      ],
+      "logo": {
+        "src": "file:apltv.png"
+      },
+      "tile": {
+        "bg": "#141a2c",
+        "h": 0.42
+      },
+      "live": "trending"
+    },
+    {
       "key": "samsungtvplus",
       "name": "Samsung TV Plus",
       "eyebrow": "TELEVISION",

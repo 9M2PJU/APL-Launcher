@@ -139,6 +139,20 @@ window.APL_CATALOG = [
     "live": "trending"
   },
   {
+    "key": "apltv",
+    "name": "APL TV",
+    "eyebrow": "TELEVISION",
+    "accent": "#4c7dff",
+    "match": [
+      "^apl tv"
+    ],
+    "ids": [
+      "APLTVMedia.TV"
+    ],
+    "tile": "images/apps/apltv-tile.png",
+    "live": "trending"
+  },
+  {
     "key": "samsungtvplus",
     "name": "Samsung TV Plus",
     "eyebrow": "TELEVISION",
