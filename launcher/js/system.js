@@ -116,6 +116,34 @@
     var listeners = {};
     function onPref(k, fn) { (listeners[k] = listeners[k] || []).push(fn); }
 
+    /* Is Vetro on the screen at all (vetrotvapp.app, vetrotvapp.svc)? Installed from Apps2Samsung's TV-Store
+       without root (a Q72D on Reddit), the Home key stays Samsung's: Return to the Launcher, which needs no
+       Vetro, then replaced Samsung's home as soon as Home showed it, with no way back to Samsung's menus. Without
+       Vetro it is off unless chosen, and the settings that need Vetro say so (settings.js). Asked again at every
+       start; any doubt (the list can't be read) counts as Vetro there, so nothing changes. */
+    var noVetro = false;
+    function markNoVetro() {
+        if (noVetro) return;
+        noVetro = true;
+        var before = pref("homeReturn");
+        DEFAULTS.homeReturn = false;
+        if (pref("homeReturn") !== before) (listeners.homeReturn || []).forEach(function (fn) { fn(false); });
+    }
+    function detectVetro() {
+        if (PREVIEW) {
+            // The PC preview has no Vetro to look for: ?novetro shows the screen without it
+            if (global.location && /[?&]novetro\b/.test(global.location.search)) markNoVetro();
+            return;
+        }
+        try {
+            tz.application.getAppsInfo(function (list) {
+                for (var i = 0; i < list.length; i++) if (/^vetrotvapp\./.test(list[i].id)) return;
+                markNoVetro();
+            }, function () {});
+        } catch (e) {}
+    }
+    detectVetro();
+
     /* ---------- profiles ---------- */
     var profileListeners = [];
     var profiles = {
@@ -904,6 +932,7 @@
         audio: audio, network: network, product: product, display: display, storage: storage, hdr: hdr,
         remoteKey: remoteKey, openSamsungSettings: openSamsungSettings, sleepNow: sleepNow,
         switchSource: switchSource, vetroAlive: vetroAlive, vetroLink: vetroLink,
+        noVetro: function () { return noVetro; },
         registerKeys: registerKeys, armSleepTimer: armSleepTimer, readSleepTimer: readSleepTimer,
         vetroGet: vetroGet, vetroPost: vetroPost, exec: tvExec, game: game, runningApps: runningApps,
         native: { get: nativeGet, set: nativeSet, reset: nativeReset, info: function (id) { return NATIVE[id]; } },
