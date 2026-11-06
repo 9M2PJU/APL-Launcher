@@ -3,8 +3,9 @@
 
    A row of letters at the top, the matching apps below, updated at every
    letter. OK on a letter types it, OK on an app opens it. The remote's
-   digits and a keyboard (PC preview) type too. Opened from its tile on the
-   Home Screen. Apps only for now: those in folders too, and the hidden ones
+   digits and a keyboard (PC preview) type too. Opened with ▲ from the full
+   screen Top Shelf (▲ from the dock, then ▲ again), shown by a small pill at
+   the top of the screen. Apps only for now: those in folders too, and the hidden ones
    with Settings › Home Screen › Search Hidden Apps.
    ============================================================ */
 (function (global) {
@@ -30,7 +31,7 @@
     function candidates() {
         var hidden = APL.sys.pref("searchHidden") ? [] : APL.sys.pref("hiddenApps") || [];
         return ((APL.allApps && APL.allApps()) || []).filter(function (a) {
-            return !a.folder && a.id !== "apl.search" && hidden.indexOf(a.id) === -1;
+            return !a.folder && hidden.indexOf(a.id) === -1;
         });
     }
     /* The name's start first, then the start of a word in it, then anywhere. Nothing typed: the recent apps. */
@@ -129,6 +130,15 @@
         APL.popNav(nav);
         isOpen = false;
     }
+
+    /* The pill at the top of the full screen Top Shelf: ▲ opens Search (launcher.js). Shown by the CSS in mode-full. */
+    function addHint() {
+        var h = el("div", "search-hint");
+        h.appendChild(el("span", "search-hint__chevron"));
+        h.appendChild(el("span", "", APL.t("Search")));
+        document.body.appendChild(h);
+    }
+    if (document.body) addHint(); else document.addEventListener("DOMContentLoaded", addHint);
 
     APL.search = { open: open, close: close, isOpen: function () { return isOpen; } };
 })(window);

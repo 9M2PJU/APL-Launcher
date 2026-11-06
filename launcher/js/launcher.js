@@ -682,9 +682,9 @@
             onKey: function (code) {
                 if (editing) return editKey(code);
                 if (mode !== "full") return false;
-                // In full screen: ◀ ▶ change app, ▼ / Back return, OK opens.
+                // In full screen: ◀ ▶ change app, ▼ / Back return, OK opens, ▲ Search (search.js).
                 if (code === K.DOWN || code === K.RETURN || code === K.ESC || code === K.BACKSPACE) { setMode("shelf"); return true; }
-                if (code === K.UP) return true;
+                if (code === K.UP) { if (APL.search) APL.search.open(); return true; }
                 return false;
             },
             onBack: function () {
@@ -713,11 +713,6 @@
               tileHtml: '<div class="vtile vtile--sources">' + APL.icon("source", 92, 1.6) + '</div>',
               shelfHtml: '<div class="brandcard__glyph vtile--sources">' + APL.icon("source", 180, 1.3) + '</div>',
               run: function () { APL.openSources(); } },
-            // Search: the apps by name (search.js), like Apple TV's Search app
-            { id: "apl.search", name: APL.t("Search"), virtual: true, accent: "#5e5ce6", eyebrow: "SYSTÈME",
-              tileHtml: '<div class="vtile vtile--search">' + APL.icon("search", 92, 1.8) + '</div>',
-              shelfHtml: '<div class="brandcard__glyph vtile--search">' + APL.icon("search", 180, 1.4) + '</div>',
-              run: function () { if (APL.search) APL.search.open(); } },
             // Samsung's own home: the way out now that Vetro keeps the Home key for the launcher.
             // Hidden like any app (Settings › Apps › Show on Home Screen, or hold OK › Hide App).
             { id: SAMSUNG_HOME_TILE, name: "Smart Hub", virtual: true, accent: "#1428a0", eyebrow: "SYSTÈME",

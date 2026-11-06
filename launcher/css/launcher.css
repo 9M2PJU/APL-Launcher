@@ -319,7 +319,6 @@ html, body {
 }
 .vtile--settings { background: linear-gradient(180deg, #e4e4e9 0%, #a3a3ab 100%); color: #3a3a3f; }
 .vtile--sources  { background: linear-gradient(180deg, #3d7bf0 0%, #1d47b5 100%); color: #fff; }
-.vtile--search   { background: linear-gradient(180deg, #7d7bf2 0%, #4441c4 100%); color: #fff; }
 .vtile--samsunghome { background: linear-gradient(180deg, #2a4fd6 0%, #1428a0 100%); color: #fff; }
 
 /* ===================== SETTINGS (tvOS split view) ===================== */
@@ -854,6 +853,13 @@ html, body {
 .search__results .tile__label { opacity: 1; }
 .search__empty { position: absolute; top: 330px; left: 90px; font-size: 26px; font-weight: 600; color: rgba(255, 255, 255, 0.6); }
 .has-search .shelfinfo, .has-search .home, .has-search .status, .has-search .hint { opacity: 0; }
+/* ▲ Search, at the top of the full screen Top Shelf */
+.search-hint { position: fixed; top: 48px; left: 50%; z-index: 9; display: flex; align-items: center; gap: 12px; padding: 10px 24px 10px 20px; border-radius: 30px;
+    background: rgba(26, 28, 36, 0.55); color: rgba(255, 255, 255, 0.9); font-size: 24px; font-weight: 600; transform: translateX(-50%);
+    opacity: 0; transition: opacity 400ms ease; pointer-events: none; }
+.search-hint__chevron { width: 14px; height: 14px; margin-top: 6px; border-left: 3px solid currentColor; border-top: 3px solid currentColor; border-radius: 2px; transform: rotate(45deg); }
+.mode-full .search-hint { opacity: 1; }
+.has-search .search-hint { opacity: 0; }
 .scard.is-focused .scard__art { transform: scale(1.1); box-shadow: 0 34px 60px rgba(0,0,0,0.55); }
 .scard.is-focused .scard__art--glass { background: #f5f5f7; color: #1c1c1e; }
 .scard.is-focused .scard__art--glass .scard__ico { background: rgba(0,0,0,0.07); }
