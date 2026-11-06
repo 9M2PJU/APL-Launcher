@@ -9,7 +9,7 @@ The interface is in French, so labels are given here in French with their Englis
 | ◀ ▶ ▲ ▼ | move between apps | ◀ ▶ change app |
 | **OK** | open the app | open the app |
 | **OK held** | app menu (see below) | — |
-| **Back** | back to the first app; from the first app, back to Samsung | back to the dock |
+| **Back** | back to the first app; on the first app, nothing (the *Smart Hub* tile opens Samsung's home) | back to the dock |
 | **Home** (Vetro) | opens the launcher; pressed twice: open apps; held: Control Center | |
 | **⏯** or red key | Control Center, over any app (⏯ no longer pauses videos, unless *Settings › Remote and Devices › Play/Pause Button* is set to *Play and Pause*) | |
 | **Samsung TV Plus** | AquaPlay | |
