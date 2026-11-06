@@ -66,7 +66,7 @@ Whatever is still missing, `genart.js` draws once, in a canvas, and keeps in `lo
 
 The picture is blurred by 10% of the width, so it is drawn at 480×270 and the screen enlarges it: about 7 KB per theme and per app. Both themes are made once; switching the theme shows the other one without drawing again. Catalog apps get sheets in their catalog colour, with no logo search. Real artwork (an Apple TV screenshot, live content) still comes first.
 
-The other styles: the logo enlarged on large shapes in the app's colours (*Large Logo*, 1920×1080, about 100 KB; a catalog app's logo is its catalog tile, cut out), the colours alone, the APL wallpaper (also behind every app with *APL Wallpaper, Always*), or plain black.
+The other styles: *Large Logo*, the logo on a dark background with a soft halo in the app's colour (1920×1080, about 100 KB; a catalog app's logo is its catalog tile, cut out), or *Black*, plain dark behind every app, its own artwork included. What the apps show themselves has its own switches (*What You're Watching*, *What's Popular*).
 
 The logo comes from, in order: the app's own icon if it is at least 200 px, the App Store (exact name), TMDB, dashboard-icons and selfh.st by name, the app's icon at any size. With nothing, the app's name is the logo. A small logo is enlarged at most about 3 times: small rather than blurred.
 

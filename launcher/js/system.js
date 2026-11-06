@@ -41,7 +41,7 @@
         pinnedSources: [],          // inputs shown on the Home Screen as tiles (sources.js)
         autoUpdate: true,           // launcher updates from GitHub, on their own
         autoArt: true,              // logos, backgrounds and content found automatically (App Store, TMDB)
-        shelfArt: "sheets",         // Top Shelf of apps without artwork: "sheets" | "logo" | "colors" | "wallpaper" | "all" | "black" (genart.js)
+        shelfArt: "sheets",         // Top Shelf of apps without artwork: "sheets" | "logo" | "black" (genart.js, launcher.js)
         smartHubTileSet: false,     // the Smart Hub tile was hidden once in this profile (it starts hidden)
         hubShelf: true,             // Top Shelf: the apps' own Smart Hub rows first (liveshelf.js)
         liveShelf: true,            //   then the content of the moment (TMDB / YouTube…), then shelfArt
@@ -84,6 +84,9 @@
         save("apl.profiles", household);
     }
     var pprefs = load("apl.prefs." + household.current, {});
+    // Up to 1.0.19, Otherwise also had App Colors (now Large Logo) and the APL wallpaper (now Black)
+    var OLD_ART = { colors: "logo", wallpaper: "black", all: "black" };
+    if (OLD_ART[prefs.shelfArt]) { prefs.shelfArt = OLD_ART[prefs.shelfArt]; save("apl.prefs", prefs); }
     // Up to 1.0.14, "App Backgrounds" off (per profile) gave a plain dark Top Shelf: now shelfArt "black"
     household.list.forEach(function (p) {
         var pp = p.id === household.current ? pprefs : load("apl.prefs." + p.id, {});

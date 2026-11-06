@@ -65,16 +65,11 @@
     /* Dominant colour: the one sampled from the Tizen icon, otherwise the accent. */
     function brandColour(app) { return app.edge || app.accent || "#3a4a8a"; }
 
-    /* The Top Shelf image: the app's artwork, or the APL wallpaper behind every app
-       (Settings › Appearance › Top Shelf › Otherwise › APL Wallpaper, Always). */
-    function shelfImage(app) {
-        if (APL.sys.pref("shelfArt") === "all" && APL.genArt && APL.genArt.wallpaper) return APL.genArt.wallpaper();
-        return app.bg;
-    }
-    /* Settings › Appearance › Top Shelf › Otherwise › Black: a plain dark background instead of the
-       app's artwork (the launcher's own Settings and Sources keep their large icon). */
+    /* Settings › Appearance › Top Shelf › Otherwise › Black: a plain dark background behind every app,
+       its own artwork included (the launcher's own Settings and Sources keep their large icon). What the
+       apps show (What You're Watching, What's Popular) has its own switches. */
     function black() { return APL.sys.pref("shelfArt") === "black"; }
-    function artOf(app) { return black() ? null : shelfImage(app); }
+    function artOf(app) { return black() ? null : app.bg; }
     function plain(app) { return black() && !app.shelfHtml; }
 
     function backdropFor(app) {
@@ -164,13 +159,13 @@
         if (mode === "grid") flushBlur();
     }
     /* Liquid Glass with no live blur: the dock shows a soft copy of the picture behind it (the sheets
-       and wallpaper, soft already), lined up with it (layout), so the
+       are soft already), lined up with it (layout), so the
        picture looks frosted through the glass. A static image, drawn once when the picture changes.
        Not the small copy of live content: enlarged 6 times without a blur, it showed as big pixels in
        the dock (seen on the M8); the dock is then clear glass over the picture. */
     var frostSrc, frostToken = 0;
     function frost(src) {
-        if (!dom.dock || src === frostSrc) return;           // the same picture (the APL wallpaper on every app): nothing to repaint
+        if (!dom.dock || src === frostSrc) return;           // the same picture: nothing to repaint
         frostSrc = src;
         var token = ++frostToken;
         // Swapped once decoded: the dock never flashes to the bare tint while the picture loads
@@ -439,7 +434,6 @@
     function startLive(app) {
         stopLive();
         if (!APL.live || !APL.live.hasSource(app)) return;
-        if (APL.sys.pref("shelfArt") === "all") return;      // one wallpaper for every app: nothing changes behind it
         liveTimer = setTimeout(function () {
             APL.live.itemsNow(app).then(function (items) {
                 if (!items || apps[nav.index] !== app) return;
@@ -1029,7 +1023,7 @@
     };
 
     APL.refreshArt = function () { if (APL.autoArt) APL.autoArt.refresh(allApps, render); };
-    // render() too: with the wallpaper for every app, no made background changes, yet every layer must be redrawn
+    // render() too: Black changes no made background, yet every layer must be redrawn
     APL.restyleArt = function () { if (APL.autoArt) APL.autoArt.restyle(allApps, render); render(); };
 
     APL.resetHomeOrder = function () {

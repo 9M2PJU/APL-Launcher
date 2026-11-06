@@ -6,7 +6,7 @@
                             the sharp logo, cut out from its background, on the app's color
      background  1920×1080  for every app without artwork of its own, catalog apps included
                             (no background is shipped): light sheets in the app's colors for
-                            dark and light themes, or the logo on large shapes in its colors
+                            dark and light themes, or the logo on a halo of its color
 
    The logo comes, in this order: from the app's icon if it is big enough,
    from the App Store if the name matches exactly, from TMDB, from public icon
@@ -247,56 +247,27 @@
     }
 
     /* ---------- background ---------- */
-    /* Large shapes around the edge of the screen; the center stays calm for the logo. */
-    function paintBg(base, logo, hue, sat, seedText) {
-        var c = canvas(BG_W, BG_H), x = c.getContext("2d"), rnd = seeded(seedText), light = lum(base) > 170;
-        x.fillStyle = rgb(base);
+    /* Large Logo: dark, with a soft halo in the app's color behind the logo, the style of the old
+       catalog cards, now drawn here for every app. */
+    function paintBg(logo, hue, sat) {
+        var c = canvas(BG_W, BG_H), x = c.getContext("2d"), a = hslToRgb(hue, sat, 50), cy = BG_H * 0.44;
+        var o = "rgba(" + Math.round(a.r) + "," + Math.round(a.g) + "," + Math.round(a.b) + ",";
+        x.fillStyle = "#07080c";
         x.fillRect(0, 0, BG_W, BG_H);
-        var shifts = [0, 34, -30, 62, 180, -64, 16, 150], count = 8, turn = rnd() * Math.PI * 2, i;
-        for (i = 0; i < count; i++) {
-            var a = turn + i * Math.PI * 2 / count + (rnd() - 0.5) * 0.35;
-            var cx = BG_W / 2 + Math.cos(a) * BG_W * (0.47 + rnd() * 0.1);
-            var cy = BG_H / 2 + Math.sin(a) * BG_H * (0.48 + rnd() * 0.14);
-            var size = 260 + rnd() * 300, h = hue + shifts[i % shifts.length], l = light ? 72 + rnd() * 12 : 44 + rnd() * 22;
-            var g = x.createLinearGradient(cx - size, cy - size, cx + size, cy + size);
-            g.addColorStop(0, hsl(h, sat, l));
-            g.addColorStop(1, hsl(h + 18, sat, l - 12));
+        function halo(px, py, rx, ry, alpha, stop) {
+            x.save();
+            x.translate(px, py);
+            x.scale(1, ry / rx);
+            var g = x.createRadialGradient(0, 0, 0, 0, 0, rx);
+            g.addColorStop(0, o + alpha + ")");
+            g.addColorStop(stop, o + "0)");
             x.fillStyle = g;
-            x.beginPath();
-            if (i % 3 === 0) {
-                x.arc(cx, cy, size, 0, Math.PI * 2);
-            } else {
-                var sides = i % 3 === 1 ? 3 : 4, start = rnd() * Math.PI * 2, k;
-                for (k = 0; k < sides; k++) {
-                    var b = start + k * Math.PI * 2 / sides, rr = size * (1.1 + rnd() * 0.4);
-                    x[k ? "lineTo" : "moveTo"](cx + Math.cos(b) * rr, cy + Math.sin(b) * rr);
-                }
-                x.closePath();
-            }
-            x.fill();
+            x.fillRect(-rx, -rx, rx * 2, rx * 2);
+            x.restore();
         }
-        // A few thin, hand-drawn strokes
-        x.lineWidth = 3;
-        x.strokeStyle = light ? "rgba(0,0,0,0.22)" : "rgba(255,255,255,0.4)";
-        for (i = 0; i < 3; i++) {
-            var ax = rnd() < 0.5 ? rnd() * 420 : BG_W - rnd() * 420, ay = rnd() * BG_H, ar = 120 + rnd() * 240;
-            x.beginPath();
-            x.ellipse(ax, ay, ar, ar * (0.5 + rnd() * 0.5), rnd() * Math.PI, 0, Math.PI * (1.2 + rnd()));
-            x.stroke();
-        }
-        // The center returns to the logo's color, and the bottom darkens under the dock
-        var cy2 = BG_H * 0.4;
-        x.save();
-        x.translate(BG_W / 2, cy2);
-        x.scale(1, 0.62);
-        var glow = x.createRadialGradient(0, 0, BG_W * 0.2, 0, 0, BG_W * 0.42), o = "rgba(" + Math.round(base.r) + "," + Math.round(base.g) + "," + Math.round(base.b) + ",";
-        glow.addColorStop(0, o + "1)");
-        glow.addColorStop(0.45, o + "0.82)");
-        glow.addColorStop(1, o + "0)");
-        x.fillStyle = glow;
-        x.fillRect(-BG_W, -BG_H * 2, BG_W * 2, BG_H * 4);
-        x.restore();
-        if (logo) drawLogo(x, logo, BG_W / 2, cy2, 820, logo.icon ? 400 : 320);
+        halo(BG_W / 2, cy, BG_W * 0.6, BG_H * 0.7, 0.42, 0.7);
+        halo(BG_W / 2, BG_H * 1.15, BG_W * 1.1, BG_H * 0.8, 0.22, 0.6);
+        if (logo) drawLogo(x, logo, BG_W / 2, cy, 820, logo.icon ? 400 : 320);
         return c.toDataURL("image/jpeg", 0.84);
     }
 
@@ -515,35 +486,12 @@
         return c && c.s >= 35 ? c : null;
     }
 
-    /* Settings › Appearance › Top Shelf › Otherwise: light sheets in the app's colors, the logo
-       enlarged on the app's colors (a small icon gets blurry),
-       the colors alone, or one wallpaper for all of them. "all": the wallpaper behind every app. */
-    var WALLPAPER = "wallpaper", SHEETS = "sheets", wallpaperUrl = null;
-    // Black (plain dark Top Shelf, launcher.js) still needs the tiles: made as for the sheets, the default
-    function bgMode() { var m = sys.pref("shelfArt"); return m === SHEETS || m === "colors" || m === WALLPAPER || m === "logo" ? m : m === "all" ? WALLPAPER : SHEETS; }
+    /* Settings › Appearance › Top Shelf › Otherwise: light sheets in the app's colors (the default), or
+       its logo on a halo of its color. Black (a plain dark Top Shelf, launcher.js) still needs the tiles:
+       they are made as for the sheets. */
+    var SHEETS = "sheets", LOGO = "logo";
+    function bgMode() { return sys.pref("shelfArt") === LOGO ? LOGO : SHEETS; }
     function lightTheme() { return !!(document.body && document.body.classList.contains("theme-light")); }
-    /* A plain dark gradient, as on Apple TV: no shapes, so the dock and the cards stand out on it. */
-    function wallpaper() {
-        if (wallpaperUrl) return wallpaperUrl;
-        var c = canvas(BG_W, BG_H), x = c.getContext("2d");
-        var g = x.createLinearGradient(0, 0, 0, BG_H);
-        g.addColorStop(0, "#151a2b");
-        g.addColorStop(0.55, "#0c0f19");
-        g.addColorStop(1, "#06070c");
-        x.fillStyle = g;
-        x.fillRect(0, 0, BG_W, BG_H);
-        // Two soft glows, top left and right, barely there
-        [[BG_W * 0.22, BG_H * 0.18, BG_W * 0.55, "rgba(70, 96, 170, 0.22)"],
-         [BG_W * 0.84, BG_H * 0.3, BG_W * 0.45, "rgba(104, 78, 160, 0.14)"]].forEach(function (o) {
-            var r = x.createRadialGradient(o[0], o[1], 0, o[0], o[1], o[2]);
-            r.addColorStop(0, o[3]);
-            r.addColorStop(1, "rgba(0, 0, 0, 0)");
-            x.fillStyle = r;
-            x.fillRect(0, 0, BG_W, BG_H);
-        });
-        wallpaperUrl = c.toDataURL("image/jpeg", 0.9);
-        return wallpaperUrl;
-    }
 
     /* ---------- for one app ---------- */
     function fontName() {
@@ -575,7 +523,7 @@
         out.tile = paintTile(base, logo);
         out.accent = rgb(hslToRgb(hue, sat, 50));
         if (mode === SHEETS) { var two = sheets(app.id, { h: hue, s: sat, l: lit }, st); out.bgDark = two.dark; out.bgLight = two.light; }
-        else out.bg = mode === WALLPAPER ? WALLPAPER : paintBg(base, mode === "colors" ? null : logo, hue, sat, app.id);
+        else out.bg = paintBg(logo, hue, sat);
         return out;
     }
 
@@ -588,7 +536,7 @@
     function put(app, r) {
         try { global.localStorage.setItem(PREFIX + app.id, JSON.stringify(r)); } catch (e) {}   // full: made again at the next start-up
     }
-    function bgOf(r) { return r.bgDark ? (lightTheme() ? r.bgLight : r.bgDark) : r.bg === WALLPAPER ? wallpaper() : r.bg; }
+    function bgOf(r) { return r.bgDark ? (lightTheme() ? r.bgLight : r.bgDark) : r.bg; }
     function use(app, r) {
         var changed = false;
         if (!app.tile && !app.tileHtml && r.tile) { app.tile = r.tile; app.madeTile = true; changed = true; }
@@ -661,5 +609,5 @@
         } catch (e) {}
     }
 
-    APL.genArt = { make: make, applyCached: applyCached, missing: missing, clear: clear, wallpaper: wallpaper, undo: undo, retheme: retheme };
+    APL.genArt = { make: make, applyCached: applyCached, missing: missing, clear: clear, undo: undo, retheme: retheme };
 })(window);
