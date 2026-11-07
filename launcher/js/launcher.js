@@ -633,8 +633,8 @@
 
     function startClock() {
         function tick() {
-            var d = new Date(), h = d.getHours(), m = String(d.getMinutes()).padStart(2, "0");
-            var text = APL.sys.pref("clock24") ? String(h).padStart(2, "0") + ":" + m : ((h % 12) || 12) + ":" + m;
+            var d = new Date(), h = d.getHours(), m = ((d.getMinutes()) < 10 ? "0" : "") + d.getMinutes();
+            var text = APL.sys.pref("clock24") ? ((h) < 10 ? "0" : "") + h + ":" + m : ((h % 12) || 12) + ":" + m;
             if (dom.clock.textContent !== text) dom.clock.textContent = text;
         }
         tick();
@@ -737,6 +737,8 @@
        launcher back over it within a second ("Return to the Launcher"). */
     var SAMSUNG_HOME_TILE = "apl.samsunghome";
     function openSamsungHome() {
+        // Without Vetro nothing can show it, but Home on the remote is still Samsung's
+        if (APL.sys.noVetro()) { toast(APL.t("Smart Hub needs Vetro. Without it, Home on the remote opens Samsung's home.")); return; }
         if (APL.sys.PREVIEW) { toast(APL.t("Opens Samsung's Smart Hub on the screen")); return; }
         // The overlay opens it itself (it reaches Vetro on its own, without the bridge) and then
         // leaves it on screen; without the overlay, the launcher asks Vetro.
