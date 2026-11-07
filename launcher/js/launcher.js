@@ -633,8 +633,8 @@
 
     function startClock() {
         function tick() {
-            var d = new Date(), h = d.getHours(), m = String(d.getMinutes()).padStart(2, "0");
-            var text = APL.sys.pref("clock24") ? String(h).padStart(2, "0") + ":" + m : ((h % 12) || 12) + ":" + m;
+            var d = new Date(), h = d.getHours(), m = ((d.getMinutes()) < 10 ? "0" : "") + d.getMinutes();
+            var text = APL.sys.pref("clock24") ? ((h) < 10 ? "0" : "") + h + ":" + m : ((h % 12) || 12) + ":" + m;
             if (dom.clock.textContent !== text) dom.clock.textContent = text;
         }
         tick();
