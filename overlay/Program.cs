@@ -61,6 +61,21 @@ namespace APL
             base.OnCreate();
             Window win = Window.Instance;
             win.BackgroundColor = new Color(0f, 0f, 0f, 0f);
+#if TIZEN6
+            // Tizen 6 (#21): an ordinary window shown over an app sent the app to the background (paused or
+            // closed), Samsung's home showed behind the Control Center and Return to the Launcher put the
+            // launcher over it. A see-through notification window stays above the app without taking its place
+            // (window.priority.set in the manifest).
+            try
+            {
+                win.SetTransparency(true);
+                win.SetOpaqueState(false);
+                win.Type = WindowType.Notification;
+                bool level = win.SetNotificationLevel(NotificationLevel.Top);
+                Note("window: notification, level " + (level ? "top" : "refused"));
+            }
+            catch (Exception ex) { Note("window: " + ex.Message); }
+#endif
             win.Hide();
             string res = DirectoryInfo.Resource;
             string fonts = System.IO.Path.Combine(res, "fonts");
