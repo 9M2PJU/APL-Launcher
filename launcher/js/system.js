@@ -848,10 +848,16 @@
         if (!pref("uiSounds")) return;
         try {
             if (!actx) { var AC = global.AudioContext || global.webkitAudioContext; if (!AC) return; actx = new AC(); }
-            var t = actx.currentTime, o = actx.createOscillator(), g = actx.createGain();
+            if (actx.state === "suspended" && actx.resume) actx.resume();
+            // A few milliseconds in and out: a sound that starts or stops at full level is a snap in the
+            // speakers ("like breaking plastic", Reddit, on an S93F), on top of the TV's own key sound
+            var t = actx.currentTime + 0.005, o = actx.createOscillator(), g = actx.createGain();
             o.type = "sine"; o.frequency.setValueAtTime(freq, t);
-            g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-            o.connect(g); g.connect(actx.destination); o.start(t); o.stop(t + dur + 0.02);
+            g.gain.setValueAtTime(0.0001, t);
+            g.gain.linearRampToValueAtTime(vol, t + 0.006);
+            g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+            g.gain.linearRampToValueAtTime(0, t + dur + 0.01);
+            o.connect(g); g.connect(actx.destination); o.start(t); o.stop(t + dur + 0.03);
         } catch (e) {}
     }
     /* Interface sounds: the files launcher/sounds/navigate.wav, click.wav and
