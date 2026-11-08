@@ -298,6 +298,7 @@ window.APL_LANG_FR = {
     "Clock on black": "Horloge sur fond noir",
     "Aerial: the Apple TV flyover videos, streamed live (China, Hawaii, London, space station…). Without a network, it switches to the app artwork.": "Aerial : les vidéos de survol de l'Apple TV, en direct (Chine, Hawaï, Londres, station spatiale…). Sans réseau, on passe aux visuels des apps.",
     "The screen kept {app} as its home app, Autorun Smart Hub {state}.": "L'écran a gardé {app} comme app d'accueil, Smart Hub au démarrage {state}.",
+    "The screen didn't answer within {s} s. Try again in a minute.": "L'écran n'a pas répondu en {s} s. Réessaie dans une minute.",
     "on": "activé",
     "off": "désactivé",
     "Support APL Launcher": "Soutenir APL Launcher",

@@ -777,10 +777,19 @@
         var d = NATIVE[id];
         if (PREVIEW) { MOCK_NATIVE[id] = value; return Promise.resolve(value); }
         var write = d.vconf ? "vconftool set -f -t int " + d.vconf + " " + value + " 2>&1" : AVOC + d.set.replace("V", value) + " 2>&1";
-        if (d.home) return homeAppSet(value).then(function (r) { return homeAppCheck(value, r); });
+        // A write the screen never answers would only say so after the bridge's minute: an S90F showed nothing at all
+        if (d.home) return withTimeout(homeAppSet(value), 20000).then(function (r) { return homeAppCheck(value, r); });
         return tvExec(write).then(function () { return nativeGet(id); }).then(function (back) {
             if (back !== value) throw new Error(APL.t("The screen refused this setting for now"));
             return back;
+        });
+    }
+    function withTimeout(p, ms) {
+        return new Promise(function (resolve, reject) {
+            var t = setTimeout(function () {
+                reject(new Error(APL.t("The screen didn't answer within {s} s. Try again in a minute.", { s: Math.round(ms / 1000) })));
+            }, ms);
+            p.then(function (v) { clearTimeout(t); resolve(v); }, function (e) { clearTimeout(t); reject(e); });
         });
     }
     /* Start on APL Launcher read back. When the screen doesn't keep it, the message says what it kept
