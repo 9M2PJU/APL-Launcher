@@ -758,6 +758,10 @@ html, body {
 .aplalert__title { margin: 0 0 18px; font-size: 46px; font-weight: 700; color: #fff; }
 .aplalert__msg { margin: 0 0 46px; font-size: 30px; line-height: 1.35; color: rgba(255, 255, 255, 0.62); white-space: pre-line; }
 .aplalert__buttons { display: flex; flex-direction: column; align-items: center; gap: 18px; }
+/* A QR code under the message (Settings › Support › Support APL Launcher): dark modules on white, sharp */
+.aplalert__qr { display: flex; flex-direction: column; align-items: center; margin: -14px 0 40px; }
+.aplalert__qr canvas { width: 300px; height: 300px; padding: 22px; border-radius: 34px; background: #fff; image-rendering: pixelated; box-shadow: 0 24px 60px rgba(0,0,0,0.45); }
+.aplalert__qrurl { margin-top: 20px; font-size: 26px; font-weight: 600; color: rgba(255,255,255,0.8); }
 .aplalert__btn {
     width: 600px;
     height: 86px;

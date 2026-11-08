@@ -2,7 +2,7 @@
  "version": "1.0.21",
  "loader": 1,
  "reinstall": "1.0.0",
- "notes": "The launcher stays in memory, no Samsung home after a full start, Samsung's menus without Vetro, Tizen 4 start-up fix, softer clicks, Setup signing fix",
+ "notes": "1.0.22 in progress: moving screen saver clock, OLED screens, Samsung's 2025 Home, Support APL Launcher",
  "scripts": [
   "js/diag.js",
   "js/lang-fr.js",
@@ -12,6 +12,7 @@
   "js/keys.local.js",
   "js/liveshelf.js",
   "js/icons.js",
+  "js/qr.js",
   "js/apps.js",
   "js/autoart.js",
   "js/genart.js",
