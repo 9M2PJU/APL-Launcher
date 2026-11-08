@@ -4,7 +4,10 @@
 #   apl-launcher-v<version>.wgt        the launcher and its web bridge, as APL Launcher Setup builds it
 #   apl-launcher-full-v<version>.wgt   with --overlay: one hybrid package for Apps2Samsung, the launcher
 #                                      + APL Overlay and its .NET bridge and start-up service
-#   SHA256SUMS-wgt.txt                 both, whichever are in the output folder
+#   SHA256SUMS-wgt.txt                 every apl-launcher-*.wgt and apl-overlay-*.tpk in the output folder
+#
+# The Tizen 6 packages (the launcher and APL Overlay in two packages, for 6.0 and 6.5) are made from the
+# full one afterwards by tools/make-tizen6.py, which writes SHA256SUMS-wgt.txt again.
 #
 # The package is signed with the Tizen SDK's default certificate. A retail screen only accepts a
 # package signed with a certificate that embeds its own DUID, so it does NOT install as is:
@@ -133,5 +136,5 @@ fi
 for f in $FILES; do
     grep -q " $f\$" <<<"$LIST" || { echo "$f is missing from $NAME" >&2; exit 1; }
 done
-(cd "$OUT" && sha256sum apl-launcher-*.wgt > SHA256SUMS-wgt.txt)
+(cd "$OUT" && shopt -s nullglob && sha256sum apl-launcher-*.wgt apl-overlay-*.tpk > SHA256SUMS-wgt.txt)
 ls -l "$OUT"
