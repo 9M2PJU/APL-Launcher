@@ -307,6 +307,7 @@ window.APL_LANG_FR = {
     "Every 4 minutes": "Toutes les 4 minutes",
     "Every 5 minutes": "Toutes les 5 minutes",
     "For OLED screens: the clock goes round the four corners, a few pixels off each time, so no spot stays lit for hours.": "Pour les écrans OLED : l'horloge fait le tour des quatre coins, décalée de quelques pixels à chaque fois, pour qu'aucun point ne reste allumé des heures.",
+    "This screen is an OLED: it's on unless you turn it off.": "Cet écran est un OLED : c'est activé, sauf si tu le désactives.",
     "Aerial Themes": "Thèmes Aerial",
     "Cities": "Villes",
     "New York, London, Hong Kong, Dubai…": "New York, Londres, Hong Kong, Dubaï…",

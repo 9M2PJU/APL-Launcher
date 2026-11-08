@@ -64,6 +64,15 @@
         pauseKey: "controlcenter",  // ⏯ in an app: "controlcenter" | "playpause", the app's own (overlay/Program.cs)
         language: "auto"            // "auto" (screen language) | "en" | "fr": read at start-up by i18n.js
     };
+    /* OLED panels, told by the model the screen reports: the S8x / S9x TVs from 2022 on, whatever the
+       region letters (QE55S95BATXXU, QN65S90FAEXZA, KQ65SD95AFXKR…), and the Odyssey OLED monitors with
+       Smart TV, whose code has an S where the Neo (mini LED) ones have an N (LS49CG954SUXEN, LS34BG850SNXGO,
+       LS32DG802SUXEN). A still picture can mark them, so the screen saver's clock moves there unless the
+       viewer chose otherwise (Settings › Screen Saver › Move the Clock). PC preview: ?oled. */
+    var OLED_RE = /^[A-Z]{2}\d{2}S[A-Z]?[89]\d|^LS\d{2}[A-Z]G[689]\d{2}S/;
+    var OLED = PREVIEW ? /[?&]oled\b/.test(global.location.search)
+        : OLED_RE.test(String((function () { try { return wa.productinfo.getRealModel(); } catch (e) { return ""; } })() || "").toUpperCase());
+    if (OLED) DEFAULTS.screensaverClockMove = 2;
     /* Screen settings (shared) and the settings of each profile in the household:
        Home Screen layout, hidden apps, preferences, recent apps. */
     var PROFILE_KEYS = { hiddenApps: 1, appOrder: 1, clock24: 1, showHint: 1, reduceMotion: 1, dnd: 1,
@@ -955,6 +964,7 @@
         registerKeys: registerKeys, armSleepTimer: armSleepTimer, readSleepTimer: readSleepTimer,
         vetroGet: vetroGet, vetroPost: vetroPost, exec: tvExec, game: game, runningApps: runningApps,
         native: { get: nativeGet, set: nativeSet, reset: nativeReset, info: function (id) { return NATIVE[id]; } },
+        isOled: function () { return OLED; },
         PICTURE_MODES: PICTURE_MODES, pictureModeName: pictureModeName, setPictureMode: setPictureMode,
         tvSettings: tvSettings, tvItem: tvItem, tvAdjust: tvAdjust, tvValue: tvValue,
         version: (global.APL_UPDATE && global.APL_UPDATE.running) || "1.0.0"
