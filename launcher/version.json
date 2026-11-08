@@ -2,7 +2,7 @@
  "version": "1.0.21",
  "loader": 1,
  "reinstall": "1.0.0",
- "notes": "1.0.22 in progress: Liquid Glass and Dynamic Backdrops (#32), moving screen saver clock, OLED screens, Samsung's 2025 Home, Support APL Launcher",
+ "notes": "1.0.22 in progress: Liquid Glass and Dynamic Backdrops (#32), moving screen saver clock, OLED screens, Samsung's 2025 Home, Support APL Launcher, Vetro on another port than 8099",
  "scripts": [
   "js/diag.js",
   "js/lang-fr.js",
