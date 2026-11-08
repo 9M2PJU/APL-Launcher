@@ -206,6 +206,9 @@
                     APL.t("Idle time on the Home Screen before the screen saver starts.")),
                 choice(APL.t("Type"), "screensaverStyle", [["aerial", APL.t("Aerial (Apple videos)")], ["art", APL.t("App artwork")], ["clock", APL.t("Large clock over the artwork")], ["dark", APL.t("Clock on black")]],
                     APL.t("Aerial: the Apple TV flyover videos, streamed live (China, Hawaii, London, space station…). Without a network, it switches to the app artwork.")),
+                choice(APL.t("Move the Clock"), "screensaverClockMove",
+                    [[0, APL.t("Off")], [1, APL.t("Every minute")], [2, APL.t("Every 2 minutes")], [3, APL.t("Every 3 minutes")], [4, APL.t("Every 4 minutes")], [5, APL.t("Every 5 minutes")]],
+                    APL.t("For OLED screens: the clock goes round the four corners, a few pixels off each time, so no spot stays lit for hours.")),
                 menu(APL.t("Aerial Themes"), "photo", [
                     flag(APL.t("Cities"), "cityscape", APL.t("New York, London, Hong Kong, Dubai…")),
                     flag(APL.t("Earth from Space"), "space", APL.t("Views from the International Space Station.")),

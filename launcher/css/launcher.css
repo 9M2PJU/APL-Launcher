@@ -616,6 +616,9 @@ html, body {
 /* Centred on the screen: the box itself, one line high (top: 46% put its top there, the digits ~58 px low) */
 .saver.is-dark .saver__time { top: 50%; right: auto; left: 0; width: 100%; text-align: center; font-size: 150px; font-weight: 300;
     line-height: 1; transform: translateY(-50%); }
+/* The moving clock (screensaver.js, placeClock sets its corner): it fades out, changes corner, fades back in */
+.saver.is-moving .saver__time { transition: opacity 900ms ease; }
+.saver.is-moving .saver__time.is-away { opacity: 0; }
 
 /* ===================== REDUCE MOTION ===================== */
 .reduce-motion *, .reduce-motion *::after { transition-duration: 0ms !important; animation: none !important; }

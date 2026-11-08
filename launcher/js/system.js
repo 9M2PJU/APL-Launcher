@@ -33,6 +33,7 @@
         sleepAt: 0,                 // timestamp of the scheduled sleep
         screensaverDelay: 5,        // minutes, 0 = never
         screensaverStyle: "aerial", // "aerial" (Apple videos) | "art" (app artwork) | "dark"
+        screensaverClockMove: 0,    // minutes between two corners of the screen saver's clock, 0 = it stays put
         uiSounds: true,             // small navigation clicks, like on Apple TV
         hiddenApps: [],
         appOrder: [],
@@ -66,7 +67,7 @@
     /* Screen settings (shared) and the settings of each profile in the household:
        Home Screen layout, hidden apps, preferences, recent apps. */
     var PROFILE_KEYS = { hiddenApps: 1, appOrder: 1, clock24: 1, showHint: 1, reduceMotion: 1, dnd: 1,
-                         uiSounds: 1, screensaverStyle: 1, screensaverDelay: 1, liveShelf: 1, hubShelf: 1, recentApps: 1,
+                         uiSounds: 1, screensaverStyle: 1, screensaverDelay: 1, screensaverClockMove: 1, liveShelf: 1, hubShelf: 1, recentApps: 1,
                          appearance: 1, folders: 1, aerialHidden: 1, smartHubTileSet: 1 };
     DEFAULTS.recentApps = [];
     var COLORS = ["#ff9f0a", "#30d158", "#0a84ff", "#bf5af2", "#ff375f", "#64d2ff", "#ffd60a", "#ac8e68"];
@@ -767,9 +768,21 @@
         var d = NATIVE[id];
         if (PREVIEW) { MOCK_NATIVE[id] = value; return Promise.resolve(value); }
         var write = d.vconf ? "vconftool set -f -t int " + d.vconf + " " + value + " 2>&1" : AVOC + d.set.replace("V", value) + " 2>&1";
-        return (d.home ? homeAppSet(value) : tvExec(write)).then(function () { return nativeGet(id); }).then(function (back) {
+        if (d.home) return homeAppSet(value).then(function (r) { return homeAppCheck(value, r); });
+        return tvExec(write).then(function () { return nativeGet(id); }).then(function (back) {
             if (back !== value) throw new Error(APL.t("The screen refused this setting for now"));
             return back;
+        });
+    }
+    /* Start on APL Launcher read back. When the screen doesn't keep it, the message says what it kept
+       (and what vconftool answered, when it said anything): "refused" alone told nobody why. */
+    function homeAppCheck(value, written) {
+        return homeAppRead().then(function (s) {
+            var back = s.home === "APLauncher.Home" && s.autostart === 1 ? 1 : 0;
+            if (back === value) return back;
+            var said = String((written && written.output) || "").replace(/\s+/g, " ").trim().slice(0, 90);
+            throw new Error(APL.t("The screen kept {app} as its home app, Autorun Smart Hub {state}.",
+                                  { app: s.home, state: s.autostart === 1 ? APL.t("on") : APL.t("off") }) + (said ? " " + said : ""));
         });
     }
     function homeAppRead() {
