@@ -492,7 +492,7 @@
     }
 
     /* An app's real icon, served by Vetro (fallback when the Tizen path can't be read). */
-    function vetroIcon(id) { return "http://127.0.0.1:8099/apps/icon?appId=" + encodeURIComponent(id); }
+    function vetroIcon(id) { return APL.sys.vetroUrl("/apps/icon?appId=" + encodeURIComponent(id)); }
 
     /* Slow camera move over the Top Shelf image, like Apple TV's animated backgrounds.
        Off by default: at rest on the M8 it takes more than one core by itself (135%, versus

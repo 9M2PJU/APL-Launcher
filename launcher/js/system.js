@@ -418,7 +418,19 @@
        Used for the REAL picture settings (backlight, contrast, sharpness,
        color…) and to close the Samsung home. Body sent as text/plain: no
        preflight request, Vetro reads the JSON whatever the type. */
-    var VETRO = "http://127.0.0.1:8099";
+    /* Vetro's port: 8099, or the one Vetro was built with (VETRO_PORT=…, when another app holds 8099). The bridge
+       finds it on its own (bridge/service.js, overlay/VetroPort.cs); the launcher learns it from /status, where
+       Vetro gives a port that is not the usual one, and keeps it for the direct calls and icons. */
+    var VETRO_PORT_KEY = "apl.vetroPort";
+    var vetroPortNum = (function () { var p = parseInt(load(VETRO_PORT_KEY, 0), 10); return p >= 1024 && p <= 65535 ? p : 8099; })();
+    function vetroUrl(path) { return "http://127.0.0.1:" + vetroPortNum + (path || ""); }
+    function notePort(s) {
+        if (!s || !s.app || typeof s.app !== "object" || !s.app.version) return;
+        var p = parseInt(s.app.port, 10) || 8099;
+        if (p === vetroPortNum || p < 1024 || p > 65535) return;
+        vetroPortNum = p;
+        if (p === 8099) { try { global.localStorage.removeItem(VETRO_PORT_KEY); } catch (e) {} } else save(VETRO_PORT_KEY, p);
+    }
     /* Vetro only lets the screen's apps read its answers for /status, /probe and
        /screen. The launcher's private bridge (bridge/service.js, a service in this package) makes
        the other requests and sends the answer back through a trusted Tizen message port
@@ -529,7 +541,7 @@
             if (r.status >= 400) throw new Error("Vetro " + r.status);
             return JSON.parse(r.body);
         }, function () {
-            return global.fetch(VETRO + path).then(function (r) { if (!r.ok) throw new Error("Vetro " + r.status); return r.json(); },
+            return global.fetch(vetroUrl(path)).then(function (r) { if (!r.ok) throw new Error("Vetro " + r.status); return r.json(); },
                 function () { throw new Error(APL.t("Vetro is not responding")); });
         });
     }
@@ -539,7 +551,7 @@
             try { return JSON.parse(r.body); } catch (e) { return {}; }
         }, function () {
             // Without the bridge: the order still goes to Vetro, with no readable answer
-            return global.fetch(VETRO + path, { method: "POST", mode: "no-cors", headers: { "content-type": "text/plain" }, body: text })
+            return global.fetch(vetroUrl(path), { method: "POST", mode: "no-cors", headers: { "content-type": "text/plain" }, body: text })
                 .then(function () { return { sent: true }; });
         });
     }
@@ -548,7 +560,7 @@
     function vetroAlive() {
         if (PREVIEW) return Promise.resolve(false);
         if (Date.now() - aliveAt < 30000) return Promise.resolve(alive);
-        return vetroGet("/status").then(function (s) { return !!s && !(s.agent && s.agent.connected === false); },
+        return vetroGet("/status").then(function (s) { notePort(s); return !!s && !(s.agent && s.agent.connected === false); },
                                         function () { return false; })
             .then(function (ok) { alive = ok; aliveAt = Date.now(); return ok; });
     }
@@ -572,8 +584,10 @@
                 try { var j = JSON.parse(x.body); ok = j.ok !== false; why = String(j.error || j.stderr || "").slice(0, 80); } catch (e) {}
                 // Vetro answers but runs nothing (an S95C on Tizen 9, Reddit): most often its root agent is not
                 // connected, which Vetro says ("no root agent connected"). Shown as it is.
+                var port = (info && info.port) || vetroPortNum;
                 return (ok ? APL.t("Through the bridge") : APL.t("Bridge: Vetro refused")) + " (" + (Date.now() - t0) + " ms" +
-                       (info && info.reached ? ", " + info.reached : "") + (!ok && why ? ", " + why : "") + ")";
+                       (info && info.reached ? ", " + info.reached : "") + (port !== 8099 ? ", " + APL.t("port {port}", { port: port }) : "") +
+                       (!ok && why ? ", " + why : "") + ")";
             }, function () {
                 // The bridge answers but Vetro doesn't: the addresses it tried and how they failed
                 var tried = [];
@@ -970,6 +984,7 @@
         audio: audio, network: network, product: product, display: display, storage: storage, hdr: hdr,
         remoteKey: remoteKey, openSamsungSettings: openSamsungSettings, sleepNow: sleepNow,
         switchSource: switchSource, vetroAlive: vetroAlive, vetroLink: vetroLink,
+        vetroUrl: vetroUrl, vetroPort: function () { return vetroPortNum; },
         noVetro: function () { return noVetro; },
         registerKeys: registerKeys, armSleepTimer: armSleepTimer, readSleepTimer: readSleepTimer,
         vetroGet: vetroGet, vetroPost: vetroPost, exec: tvExec, game: game, runningApps: runningApps,

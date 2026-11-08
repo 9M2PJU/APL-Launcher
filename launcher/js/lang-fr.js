@@ -337,6 +337,7 @@ window.APL_LANG_FR = {
     "How the launcher talks to Vetro. Through the bridge it reads the screen's settings; without it, orders still go out but the settings show Unavailable.": "Comment le launcher parle à Vetro. Par le pont, il lit les réglages de l'écran ; sans lui, les ordres partent quand même mais les réglages affichent Indisponible.",
     "Through the bridge": "Par le pont",
     "Bridge: Vetro refused": "Pont : Vetro a refusé",
+    "port {port}": "port {port}",
     "Bridge: {error}": "Pont : {error}",
     "Bridge works, Vetro unreachable": "Le pont marche, Vetro injoignable",
     "no answer at all": "aucune réponse",
