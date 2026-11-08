@@ -384,7 +384,8 @@ namespace APL.Bridge
         private static bool OnTvInput(State st)
         {
             return !string.IsNullOrEmpty(st.App) &&
-                   ((st.App.Contains("tv-viewer") && st.Source == 0) || st.App.Contains("csfs") || st.App.Contains("home.sidebar"));
+                   ((st.App.Contains("tv-viewer") && st.Source == 0) || st.App.Contains("csfs") || st.App.Contains("home.sidebar") ||
+                    st.App.Contains("coba.newhome") || st.App.Contains("home.media"));   // the new Home of the 2025 screens
         }
 
         private static void OpenLauncher(string why)

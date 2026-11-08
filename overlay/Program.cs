@@ -423,9 +423,11 @@ namespace APL
             else OpenLauncher("open:apl.tizentube");
         }
 
+        /// <summary>Samsung's home: csfs, and on the 2025 screens with the new Home, coba.newhome and home.media (as in APL Boot).</summary>
         private static bool IsSamsungHome(string app)
         {
-            return string.IsNullOrEmpty(app) ? false : app.Contains("csfs") || app.Contains("home.sidebar");
+            return string.IsNullOrEmpty(app) ? false : app.Contains("csfs") || app.Contains("home.sidebar") ||
+                                                       app.Contains("coba.newhome") || app.Contains("home.media");
         }
 
         /// <summary>
