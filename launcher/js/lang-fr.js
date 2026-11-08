@@ -622,5 +622,6 @@ window.APL_LANG_FR = {
     "{keys} are back to Samsung. Run APL Launcher Setup again to get the overlay back.": "{keys} reviennent à Samsung. Relance APL Launcher Setup pour retrouver l'overlay.",
     "{keys} is back to Samsung. Run APL Launcher Setup again to get the overlay back.": "{keys} revient à Samsung. Relance APL Launcher Setup pour retrouver l'overlay.",
     "A tile that opens Samsung's Smart Hub, the way out now that the Home button opens the launcher. Press Home there to come back.": "Une tuile qui ouvre le Smart Hub de Samsung, la porte de sortie maintenant que le bouton Home ouvre le launcher. Appuie sur Home pour revenir.",
-    "Opens Samsung's Smart Hub on the screen": "Ouvre le Smart Hub de Samsung sur l'écran"
+    "Opens Samsung's Smart Hub on the screen": "Ouvre le Smart Hub de Samsung sur l'écran",
+    "A film or series that service streams right now, on the apps that have nothing of their own to show: the storefront's trending list for your country (JustWatch, no key). Apps with a Top Shelf keep it - What You're Watching, What's Popular, Plex, Spotify and the players' Continue Watching come first.": "Un film ou une série que ce service diffuse en ce moment, sur les apps qui n'ont rien à montrer d'elles-mêmes : les tendances de la boutique de votre pays (JustWatch, sans clé). Les apps qui ont un Top Shelf le gardent — Ce que vous regardez, Ce qui est populaire, Plex, Spotify et la reprise de lecture des lecteurs passent d'abord.",
 };
