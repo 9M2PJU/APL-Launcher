@@ -119,7 +119,82 @@
         if (!src || !data) return;
         if (!cache[src]) order.push(src);
         cache[src] = data;
-        while (order.length > CACHE_MAX) delete cache[order.shift()];
+        while (order.length > CACHE_MAX) {
+            var old = order.shift();
+            if (cache[old] !== baked) delete lums[cache[old]];      // the pane on screen keeps its measure
+            delete cache[old];
+        }
+    }
+
+    /* How bright the picture is under each surface. The pane is an opaque slice of
+       the picture laid over the surface's own tint, so on a white poster the dock
+       and the clock pill were white glass with white text on it, and the Control
+       Center's labels barely read. The 48x27 sample the pane is made from is kept as
+       a grid of luminances (one cell = 40x40 px of the stage), and each pane is then
+       darkened - or, in the light theme, veiled - just enough for its own text. */
+    var lums = {};           /* luminance grid of each pane, by its data URL */
+    function chan(c) {
+        c = Math.min(1, c / 255 * LIGHT);
+        return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+    }
+    function grid(canvas) {
+        try {
+            var d = canvas.getContext("2d").getImageData(0, 0, TINY_W, TINY_H).data, g = [], i;
+            for (i = 0; i < d.length; i += 4) g.push(0.2126 * chan(d[i]) + 0.7152 * chan(d[i + 1]) + 0.0722 * chan(d[i + 2]));
+            return g;
+        } catch (e) { return null; }
+    }
+
+    /* For each kind of surface: the luminance its pane must stay under for white
+       text (dark theme), the shade it never goes below, and in the light theme the
+       luminance it must stay above for dark text, with its least veil. A pill and a
+       tile carry text; the dock carries only icons, so it is only kept from turning
+       into a white plate. Sources stays dark in both themes (white text). */
+    var TUNE = {
+        pill: { y: 0.09, shade: 0.30, ly: 0.55, veil: 0.45 },
+        dock: { y: 0.22, shade: 0.10, ly: 0.42, veil: 0.30 },
+        tile: { y: 0.07, shade: 0.55, ly: 0.60, veil: 0.55 },
+        card: { y: 0.06, shade: 0.70, dark: true }
+    };
+    function kindOf(el) {
+        var c = el.classList;
+        if (c.contains("cc__t")) return "tile";
+        if (c.contains("dock")) return "dock";
+        if (c.contains("scard__art--glass")) return "card";
+        return "pill";
+    }
+    /* Mean, brightest and darkest cell under a stage rectangle. */
+    function under(g, r) {
+        var x0 = Math.max(0, Math.floor(r.x / 40)), x1 = Math.min(TINY_W - 1, Math.floor((r.x + r.w - 1) / 40));
+        var y0 = Math.max(0, Math.floor(r.y / 40)), y1 = Math.min(TINY_H - 1, Math.floor((r.y + r.h - 1) / 40));
+        var sum = 0, n = 0, hi = 0, lo = 1, x, y, v;
+        for (y = y0; y <= y1; y++) {
+            for (x = x0; x <= x1; x++) {
+                v = g[y * TINY_W + x];
+                sum += v; n++;
+                if (v > hi) hi = v;
+                if (v < lo) lo = v;
+            }
+        }
+        return n ? { mean: sum / n, hi: hi, lo: lo } : null;
+    }
+    function tint(layer, el, r) {
+        var t = TUNE[kindOf(el)], g = lums[baked], s = g ? under(g, r) : null;
+        var light = !t.dark && body.classList.contains("theme-light");
+        if (!light) {
+            /* Black over the slice: in the screen's sRGB blend the luminance falls as
+               (1 - shade) ^ 2.2. Half the mean, half the brightest cell, so a bright
+               spot under the label counts. */
+            var min = t.shade, y = s ? 0.5 * s.mean + 0.5 * s.hi : 1, a = 0;
+            if (t.dark && body.classList.contains("perf")) min = 0.9;
+            if (y > t.y) a = 1 - Math.pow(t.y / y, 1 / 2.2);
+            layer.style.setProperty("--glass-shade", Math.max(min, Math.min(0.92, a)).toFixed(3));
+        } else {
+            /* A pale veil: it lifts a dark picture to the luminance dark text needs. */
+            var yl = s ? 0.5 * s.mean + 0.5 * s.lo : 0, vt = Math.pow(t.ly, 1 / 2.2), v = Math.pow(yl, 1 / 2.2), w = 0;
+            if (v < vt) w = (vt - v) / (1 - v);
+            layer.style.setProperty("--glass-veil", Math.max(t.veil, Math.min(0.95, w)).toFixed(3));
+        }
     }
 
     /* Two canvases, both off the animation path. The second is the only
@@ -148,7 +223,9 @@
            animation path. */
         if ("filter" in c) c.filter = "brightness(" + LIGHT + ")";
         c.drawImage(tiny, 0, 0, BAKE_W, BAKE_H);
-        return out.toDataURL("image/jpeg", 0.72);
+        var data = out.toDataURL("image/jpeg", 0.72), g = grid(tiny);
+        if (g) lums[data] = g;
+        return data;
     }
 
     var rendering = {};
@@ -380,20 +457,29 @@
         /* The same brightness the baked pictures carry. */
         c.fillStyle = "rgba(255, 255, 255, " + (LIGHT - 1) + ")";
         c.fillRect(0, 0, BAKE_W, BAKE_H);
-        return out.toDataURL("image/jpeg", 0.72);
+        var data = out.toDataURL("image/jpeg", 0.72);
+        var tiny = document.createElement("canvas");
+        tiny.width = TINY_W;
+        tiny.height = TINY_H;
+        tiny.getContext("2d").drawImage(out, 0, 0, TINY_W, TINY_H);
+        var g = grid(tiny);
+        if (g) lums[data] = g;
+        return data;
     }
 
     function paint() {
         if (!ensure()) return;
         if (!baked) return;
         var list = document.querySelectorAll(TARGETS.join(",")), i, el, r, key, l;
+        var theme = body.className.indexOf("theme-light") > -1 ? "l" : "d";
+        if (body.classList.contains("perf")) theme += "p";
         for (i = 0; i < list.length; i++) {
             el = list[i];
             if (!el.offsetWidth || el.offsetHeight < 4) continue;
             r = offset(el);
             /* The artwork is part of the key, so a new picture re-slices even when
-               the surface has not moved. */
-            key = r.x + "," + r.y + "," + r.w + "," + r.h + ":" + baked.length + ":" + baked.slice(-24);
+               the surface has not moved; the theme too, which decides the tint. */
+            key = r.x + "," + r.y + "," + r.w + "," + r.h + ":" + baked.length + ":" + baked.slice(-24) + ":" + theme;
             l = el.__cgLayer;
             if (el.__cgKey === key && l && l.parentNode === el && l.classList.contains("is-on")) continue;
             el.__cgKey = key;
@@ -410,6 +496,7 @@
                 n.style.backgroundImage = 'url("' + baked + '")';
                 n.style.setProperty("--gx", (-r.x) + "px");
                 n.style.setProperty("--gy", (-r.y) + "px");
+                tint(n, el, r);
                 el.insertBefore(n, l.parentNode === el ? l.nextSibling : el.firstChild);
                 el.__cgLayer = n;
                 (function (old) {
@@ -419,6 +506,7 @@
             }
             l.style.setProperty("--gx", (-r.x) + "px");
             l.style.setProperty("--gy", (-r.y) + "px");
+            tint(l, el, r);
             l.classList.add("is-on");
         }
     }

@@ -1207,6 +1207,8 @@ html, body {
         rgba(26, 28, 36, 0.68);
 }
 .theme-light .status, .theme-light.perf .status { background-color: rgba(236, 238, 244, 0.7); }
+/* The time follows the pill: it kept its white in the light theme, invisible on the pale glass */
+.theme-light .status__clock { color: #1d1d1f; }
 
 /* A round button that is on keeps its color (Game Mode green…), with visual effects off too: the glass
    rules above have the same weight and came later */
