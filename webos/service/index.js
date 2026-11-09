@@ -238,6 +238,19 @@ function sendImage(res, img) {
     res.writeHead(200, { "Content-Type": img.type, "Access-Control-Allow-Origin": "*", "Cache-Control": "max-age=86400" });
     res.end(img.body);
 }
+function proxyIcon(src, k, res) {
+    src = src.replace(/^http:\/\/127\.0\.0\.1:3000\//, "https://127.0.0.1:3001/");
+    https.get(src, { rejectUnauthorized: false, timeout: 8000 }, function (r) {
+        var parts = [];
+        r.on("data", function (d) { parts.push(d); });
+        r.on("end", function () {
+            if (r.statusCode !== 200) { res.writeHead(r.statusCode || 502); res.end(); return; }
+            var img = { type: r.headers["content-type"] || "image/png", body: Buffer.concat(parts) };
+            remember(k, img);
+            sendImage(res, img);
+        });
+    }).on("error", function () { res.writeHead(502); res.end(); });
+}
 var artServer = null;
 function startArt() {
     if (artServer) return;
@@ -247,19 +260,22 @@ function startArt() {
         var k = u.pathname + "?" + u.search;
         if (cache[k]) { sendImage(res, cache[k]); return; }
         if (u.pathname === "/icon") {
-            var src = String(u.searchParams.get("u") || "");
-            if (!ICON_RE.test(src) || src.indexOf("..") !== -1) { res.writeHead(403); res.end(); return; }
-            src = src.replace(/^http:\/\/127\.0\.0\.1:3000\//, "https://127.0.0.1:3001/");
-            https.get(src, { rejectUnauthorized: false, timeout: 8000 }, function (r) {
-                var parts = [];
-                r.on("data", function (d) { parts.push(d); });
-                r.on("end", function () {
-                    if (r.statusCode !== 200) { res.writeHead(r.statusCode || 502); res.end(); return; }
-                    var img = { type: r.headers["content-type"] || "image/png", body: Buffer.concat(parts) };
-                    remember(k, img);
-                    sendImage(res, img);
+            var src = String(u.searchParams.get("u") || ""), xl = String(u.searchParams.get("xl") || "");
+            var srcOk = ICON_RE.test(src) && src.indexOf("..") === -1, xlOk = FILE_RE.test(xl) && xl.indexOf("..") === -1;
+            if (!srcOk && !xlOk) { res.writeHead(403); res.end(); return; }
+            // The app's own 192 px icon first (sharper on the Home Screen), then the one the TV serves
+            if (xlOk) {
+                fs.readFile(xl, function (err, body) {
+                    if (!err && body.length) {
+                        var img = { type: TYPES[xl.split(".").pop().toLowerCase()] || "image/png", body: body };
+                        remember(k, img);
+                        sendImage(res, img);
+                    } else if (srcOk) proxyIcon(src, k, res);
+                    else { res.writeHead(404); res.end(); }
                 });
-            }).on("error", function () { res.writeHead(502); res.end(); });
+                return;
+            }
+            proxyIcon(src, k, res);
             return;
         }
         if (u.pathname === "/file") {

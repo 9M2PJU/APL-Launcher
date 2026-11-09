@@ -154,44 +154,34 @@
     /* Not apps people open from a home screen: LG's own panels and helpers */
     var HIDE = /^(com\.webos\.app\.(home|homeconnect|notificationcenter|voice|igallery|accountmanagement|quicksettings|livemenu|channeledit|tvhotkey|inputcommon|factorywin|membership|scheduler|onboarding|crashreport|tips|care365)|com\.webos\.exampleapp)/i;
     var appsCache = load(APPS_STORE, null);
-    /* The TV gives icons on https://127.0.0.1:3001 (its own certificate: refused by this page) and
-       backgrounds as the apps' files: the launcher's service serves both, with the header that lets
-       the launcher read their colours (webos/service/index.js). */
+    /* The TV gives icons on https://127.0.0.1:3001 (its own certificate: refused by this page), and the
+       sharper 192 px one as a file of the app: the launcher's service serves them, the file first, with
+       the header that lets the launcher read their colours (its Top Shelf art is made from them, as on
+       Samsung). The apps' own backgrounds are not used: often a store banner or a screenshot, where
+       Samsung's version shows its catalogue artwork or its sheets of light. */
     var ART = "http://127.0.0.1:8767/";
-    function iconUrl(u) { return /^https?:\/\/127\.0\.0\.1:300[01]\/resources\//.test(String(u || "")) ? ART + "icon?u=" + encodeURIComponent(u) : null; }
-    function fileUrl(p) { return /^\/(media|usr|mnt)\/.*\.(png|jpe?g|webp)$/i.test(String(p || "")) ? ART + "file?p=" + encodeURIComponent(p) : null; }
-    /* An app's own background, when it is a picture (not its splash screen: a logo on a plain colour,
-       which the launcher's own Top Shelf art does better, as on Samsung) */
-    function backdrop(lp) {
-        var p = String(lp.bgImage || "");
-        if (!p || lp.systemApp || /splash/i.test(p) || !/^\/media\/cryptofs\/apps\//.test(p) || badBg[p]) return null;
-        return fileUrl(p);
+    function iconUrl(lp) {
+        var u = String(lp.largeIcon || lp.icon || ""), xl = String(lp.extraLargeIcon || "");
+        var ok = /^https?:\/\/127\.0\.0\.1:300[01]\/resources\//.test(u), okXl = /^\/media\/cryptofs\/apps\/.*\.(png|jpe?g|webp)$/i.test(xl);
+        if (!ok && !okXl) return null;
+        return ART + "icon?" + (ok ? "u=" + encodeURIComponent(u) : "") + (okXl ? (ok ? "&" : "") + "xl=" + encodeURIComponent(xl) : "");
     }
-    /* Some apps name a background the TV doesn't let the service read: tried once, then left out (the
-       launcher's own Top Shelf art takes its place, as for any app without one) */
-    var BAD_STORE = "apl.webos.badbg", badBg = load(BAD_STORE, {});
-    function checkBackdrops(list, then) {
-        var todo = list.filter(function (a) { return a.bg; }), left = todo.length, dropped = 0;
-        if (!left) return;
-        todo.forEach(function (a) {
-            var im = new Image();
-            im.onload = function () { if (--left === 0 && dropped) then(); };
-            im.onerror = function () {
-                var p = decodeURIComponent(String(a.bg).split("file?p=")[1] || "");
-                if (p) badBg[p] = 1;
-                a.bg = null; dropped++;
-                if (--left === 0) { save(BAD_STORE, badBg); then(); }
-            };
-            im.src = a.bg;
-        });
+    /* A website pinned to LG's home bar is named after its page ("Accueil - FRAnime #1 DE L'ANIME…"):
+       the site's own name instead (franime.fr: FRAnime, which the catalogue knows) */
+    function siteName(lp) {
+        var host = String((lp.params && lp.params.target) || "").replace(/^[a-z]+:\/\//i, "").split(/[\/?#:]/)[0].toLowerCase();
+        var parts = host.split(".").filter(function (x) { return x && !/^(www\d*|m|v\d+|tv)$/.test(x); });
+        var name = parts.length > 1 ? parts[parts.length - 2] : parts[0];
+        return name ? name.charAt(0).toUpperCase() + name.slice(1) : String(lp.title || "");
     }
     function fromLaunchPoints(lps) {
         var seen = {}, out = [];
         (lps || []).forEach(function (lp) {
             var id = String(lp.id || ""), launchId = id;
             if (!id || SELF.test(id) || HIDE.test(id)) return;
-            // A website pinned to LG's home bar: one more launch point of the browser, with its address
-            if (lp.lptype === "bookmark" || seen[id]) {
+            var site = lp.lptype === "bookmark";
+            // One more launch point of an app (a website pinned from the browser): its own id, with its address
+            if (site || seen[id]) {
                 if (!lp.launchPointId) return;
                 id = "lp." + lp.launchPointId;
             }
@@ -200,12 +190,10 @@
             out.push({
                 id: id,
                 launchId: launchId,
-                name: String(lp.title || id),
-                icon: iconUrl(lp.largeIcon) || iconUrl(lp.icon) || fileUrl(lp.extraLargeIcon) || null,
-                bg: backdrop(lp),
+                name: site ? siteName(lp) : String(lp.title || id),
+                icon: site ? null : iconUrl(lp),          // a site's icon is a tiny favicon: its letter and colour instead
                 accent: lp.bgColor || null,
-                params: lp.params && Object.keys(lp.params).length ? lp.params : null,
-                web: lp.lptype === "bookmark"
+                params: lp.params && Object.keys(lp.params).length ? lp.params : null
             });
         });
         return out;
@@ -213,13 +201,7 @@
     function fetchApps() {
         return ssap("ssap://com.webos.applicationManager/listLaunchPoints", {}, 30000).then(function (p) {
             var list = fromLaunchPoints(p.launchPoints);
-            if (list.length) {
-                appsCache = list; save(APPS_STORE, list);
-                checkBackdrops(list, function () {
-                    save(APPS_STORE, list);
-                    if (APL.refreshHome) APL.refreshHome();
-                });
-            }
+            if (list.length) { appsCache = list; save(APPS_STORE, list); }
             return list;
         });
     }
@@ -231,7 +213,6 @@
             return order(list.map(function (a) {
                 var d = decorate(a);
                 d.params = a.params;
-                if (a.bg && !d.tile) d.bg = a.bg;             // the app's own picture, where the catalogue has no artwork
                 return d;
             }));
         }
@@ -313,13 +294,13 @@
     });
 
     /* ---------- the question on screen ---------- */
-    /* The TV names it "LG Remote App" (LG's own manifest, the only one it accepts): the Home Screen says
-       that it is APL Launcher, and fills in once it is allowed. */
+    /* The TV asks about a remote-control app, not about APL Launcher by name: the Home Screen says what it
+       is, and fills in once it is allowed. */
     var asked = false;
     stateFns.push(function (s) {
         if (s === "prompt" && !asked) {
             asked = true;
-            if (APL.toast) APL.toast(t("The TV asks to allow “LG Remote App”: that's APL Launcher. Choose Allow to see your apps."));
+            if (APL.toast) APL.toast(t("The TV asks whether to allow a remote app: that's APL Launcher. Choose Allow to see your apps."));
         }
         if (s === "registered" && asked) {
             asked = false;

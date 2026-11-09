@@ -125,11 +125,13 @@
         var panel = dev.uhd8K ? "7680 × 4320" : dev.uhd ? "3840 × 2160" : "";
         return Promise.resolve(panel && panel !== ui ? t("{panel} (interface {ui})", { panel: panel, ui: ui }) : ui);
     }
+    /* LG's OLEDs all show Dolby Vision, HDR10 and HLG; the TV tells nothing of it to an app */
     function hdr() {
         var kinds = [];
         if (dev.dolbyVision) kinds.push("Dolby Vision");
         if (dev.hdr10) kinds.push("HDR10");
-        return kinds.length ? kinds.join(", ") : (dev.uhd ? t("Supported") : "—");
+        if (!kinds.length && P.oled) kinds = ["Dolby Vision", "HDR10", "HLG"];
+        return kinds.length ? kinds.join(", ") : "—";
     }
 
     /* ---------- the remote, off, inputs ---------- */
@@ -147,6 +149,18 @@
         if (!id) return Promise.reject(new Error(t("This input isn't supported on this screen")));
         return P.launch(id);
     }
+    /* The TV's inputs, for Sources: its HDMI ports, named as in LG's input list when renamed there */
+    P.readPorts = function () {
+        return P.ssap("ssap://tv/getExternalInputList", {}, 10000).then(function (p) {
+            var ports = (p.devices || []).filter(function (d) { return /^HDMI_\d$/.test(d.id || ""); }).map(function (d) {
+                return { type: "HDMI", number: d.port || parseInt(String(d.id).slice(5), 10), label: d.modified && d.label ? String(d.label) : "" };
+            });
+            if (!ports.length) return null;
+            ports.unshift({ type: "TV", number: 1 });
+            return ports;
+        }, function () { return null; });
+    };
+
     /* LG's own Settings, for what the launcher doesn't do itself */
     function openSettings() { return P.launch("com.palm.app.settings").catch(function () { return P.button("MENU"); }); }
 

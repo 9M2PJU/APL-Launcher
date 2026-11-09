@@ -31,6 +31,9 @@
         if ((item.type === "toggle" || item.type === "choice") && SAMSUNG_PREFS[item.key]) return true;
         if (item.type === "hide" && item.id === "apl.samsunghome") return true;
         if (item.type === "action" && (item.label === t("Check for Update") || item.label === t("Go Back to the Installed Version"))) return true;
+        // Samsung's own resets (its picture and sound service)
+        if (item.type === "action" && (item.label === t("Reset Picture") || item.label === t("Reset Equalizer"))) return true;
+        if (item.type === "info" && item.label === "HDR" && sys.hdr() === "—") return true;
         if (item.type === "info" && item.label === t("Storage")) return true;
         return false;
     }
@@ -44,7 +47,7 @@
             item.label = t("webOS Version");
         } else if (item.type === "info" && item.label === t("Link to Vetro")) {
             item.label = "LG Connect Apps";
-            item.desc = t("How the launcher lists your apps, reads the volume and turns the TV off: the TV asked once whether to allow “LG Remote App”. Refused by mistake? TV Settings › General › Devices › External Devices, then start the launcher again.");
+            item.desc = t("How the launcher lists your apps, reads the volume and turns the TV off: the TV asked once whether to allow it. Refused by mistake? TV Settings › General › Devices › External Devices, then start the launcher again.");
         } else if (item.type === "info" && item.label === t("Digital Output Audio Format")) {
             item.label = t("Sound Output");
         } else if (item.type === "action" && item.label === t("Control Center")) {
@@ -75,11 +78,33 @@
         return node;
     }
 
-    /* LG's own rows: Developer Mode's time left in About This Screen */
+    /* LG's own rows. The TV doesn't let an app read or change its picture settings without root (LG
+       Connect Apps answers "Application error", luna "Access denied"): the Picture menu opens LG's own,
+       the sound mode is read. Developer Mode's time left goes in About This Screen. */
+    var SOUND_MODES = { aiSoundPlus: "AI Sound Pro", aiSound: "AI Sound", standard: "Standard", cinema: "Cinema", clearVoice: "Clear Voice",
+                        sports: "Sports", music: "Music", game: "Game Optimizer" };
+    var soundMode = null;
+    function readSoundMode() {
+        return P.ssap("ssap://settings/getSystemSettings", { category: "sound", keys: ["soundMode"] }, 8000).then(function (m) {
+            var v = m.settings && m.settings.soundMode;
+            soundMode = v ? (SOUND_MODES[v] ? t(SOUND_MODES[v]) : v) : null;
+            return soundMode || t("Unavailable");
+        }, function () { return t("Unavailable"); });
+    }
     P.extraRows = function (node) {
-        if (node.label !== t("About This Screen")) return;
-        node.children.push({ type: "info", label: t("Developer Mode"), get: function () { return P.devmode ? P.devmode() : "—"; },
-                             desc: t("LG deletes the apps installed in Developer Mode when its 1000 hours run out, this launcher included. The launcher renews them on its own, once a day, as the Developer Mode app's Extend button does.") });
+        if (node.label === t("Picture")) {
+            node.children.unshift({ type: "action", label: t("Picture Settings on the TV"), icon: "display",
+                run: function () { sys.openTvSettings(); },
+                desc: t("Picture mode, OLED Pixel Brightness, contrast, colour: in LG's own settings. Without root, the TV keeps them for its own menus.") });
+        } else if (node.label === t("Sound")) {
+            var at = 0;
+            node.children.forEach(function (c, i) { if (c.type === "mute") at = i + 1; });
+            node.children.splice(at, 0, { type: "info", label: t("Sound Mode"), get: readSoundMode,
+                desc: t("Chosen in the TV's own settings (Sound › Sound Mode).") });
+        } else if (node.label === t("About This Screen")) {
+            node.children.push({ type: "info", label: t("Developer Mode"), get: function () { return P.devmode ? P.devmode() : "—"; },
+                                 desc: t("LG deletes the apps installed in Developer Mode when its 1000 hours run out, this launcher included. The launcher renews them on its own, once a day, as the Developer Mode app's Extend button does.") });
+        }
     };
 
     var build = APL.settingsTree;
