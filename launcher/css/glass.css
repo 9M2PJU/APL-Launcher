@@ -161,6 +161,10 @@ body.glass .cc__t.is-focused .cg__glass::after { background: #f5f5f7; box-shadow
 body.glass.theme-light .cc__t.is-focused .cg__glass::after { background: #fff; }
 body.glass .cc__t--round.is-on .cg__glass::after { background: var(--tint, #0a84ff); box-shadow: none; }
 body.glass .cc__t--round.is-on.is-focused .cg__glass::after { background: #f5f5f7; }
+/* The same for the focused card in Sources. launcher.css paints its white plate on the
+   card itself, under the pane: since the glass came (1.0.22) the focused card stayed
+   dark glass, and its icon, dark for the white plate, could hardly be seen on it. */
+body.glass .scard.is-focused .scard__art--glass .cg__glass::after { background: #f5f5f7; box-shadow: none; }
 
 /* The screen's light mode (launcher.js applyPerf) no longer hides the pane: the
    glass is a frozen slice baked once per picture, so it costs nothing on the

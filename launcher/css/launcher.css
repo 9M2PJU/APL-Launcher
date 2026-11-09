@@ -851,7 +851,9 @@ html, body {
     backdrop-filter: blur(40px) saturate(1.4);
 }
 .perf .sources__dim { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgba(6, 8, 14, 0.9); }
-.sources__title { position: absolute; top: 120px; left: 0; right: 0; text-align: center; font-size: 56px; font-weight: 700; }
+/* White in both themes, like the cards: Sources keeps its dark veil in the light theme too,
+   where the title took the theme's dark text and could hardly be seen. */
+.sources__title { position: absolute; top: 120px; left: 0; right: 0; text-align: center; font-size: 56px; font-weight: 700; color: #fff; }
 .sources__row { position: absolute; left: 0; right: 0; top: 360px; display: flex; justify-content: center; gap: 44px; padding: 0 96px; }
 .sources__row.is-picking { top: 250px; flex-wrap: wrap; gap: 26px 30px; padding: 0 140px; }
 /* As wide as 400 px, narrower when the screen has more inputs than fit (4 HDMI ports and AirPlay):
