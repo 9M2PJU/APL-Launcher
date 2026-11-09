@@ -34,6 +34,8 @@
         // Samsung's own resets (its picture and sound service)
         if (item.type === "action" && (item.label === t("Reset Picture") || item.label === t("Reset Equalizer"))) return true;
         if (item.type === "info" && item.label === "HDR" && sys.hdr() === "—") return true;
+        // The sound output in use: the Sound Output row below opens the list, with the one in use ticked
+        if (item.type === "info" && item.label === t("Digital Output Audio Format")) return true;
         if (item.type === "info" && item.label === t("Storage")) return true;
         return false;
     }
@@ -48,8 +50,6 @@
         } else if (item.type === "info" && item.label === t("Link to Vetro")) {
             item.label = "LG Connect Apps";
             item.desc = t("How the launcher lists your apps, reads the volume and turns the TV off: the TV asked once whether to allow it. Refused by mistake? TV Settings › General › Devices › External Devices, then start the launcher again.");
-        } else if (item.type === "info" && item.label === t("Digital Output Audio Format")) {
-            item.label = t("Sound Output");
         } else if (item.type === "action" && item.label === t("Control Center")) {
             item.desc = t("Also opens with the red button or ⏯ on the remote, on the Home Screen.");
         } else if (item.type === "toggle" && item.key === "liveShelf") {

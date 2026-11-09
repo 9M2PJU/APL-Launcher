@@ -4,6 +4,7 @@
     python tools/make-webos.py --release          no personal file (apl-launcher-vX.Y.Z-lg-webos.ipk + SHA256)
     python tools/make-webos.py --personal DIR     take the personal files from another launcher/ folder
                                                   (a git worktree has none of its own)
+    python tools/make-webos.py --hd               drawn in 1920 x 1080 instead of 4K (older or slower TVs)
 
 Then, with LG's webOS CLI (npm install -g @webos-tools/cli) and the TV in Developer Mode:
     ares-install -d <tv> dist/com.knikt.apllauncher_<version>_all.ipk
@@ -24,6 +25,10 @@ APP_ID = "com.knikt.apllauncher"
 SERVICE_ID = APP_ID + ".service"
 
 release = "--release" in sys.argv
+# The page LG draws: 3840 x 2160, the launcher's 1920 x 1080 layout zoomed twice (js/webos.js), so text,
+# icons and glass are as sharp as the panel. Measured on a G5 (OLED55G56LS): 59 images a second moving
+# through the dock and 57 in the grid, against 53 and 50 at 1920 x 1080. --hd keeps LG's 1920 x 1080.
+RESOLUTION = "1920x1080" if "--hd" in sys.argv else "3840x2160"
 out = os.path.join(ROOT, "dist")
 if "--out" in sys.argv:
     out = os.path.abspath(sys.argv[sys.argv.index("--out") + 1])
@@ -100,7 +105,7 @@ appinfo = {
     "splashBackground": "splash.png",
     "bgColor": "#000000",
     "iconColor": "#1c1c1e",
-    "resolution": "1920x1080",
+    "resolution": RESOLUTION,
     "disableBackHistoryAPI": True,
     "handlesRelaunch": True,
     "transparent": False,

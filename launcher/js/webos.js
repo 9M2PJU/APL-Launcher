@@ -41,6 +41,16 @@
     /* OLED: what the TV says (panelType), otherwise LG's model names (OLED55G56LS, OLED65C4…) */
     var oled = device.panelType ? /OLED/i.test(String(device.panelType)) : /^OLED/i.test(model);
     document.documentElement.className += " is-webos";
+    /* 4K: LG draws the page in 3840 x 2160 (appinfo.json, tools/make-webos.py) and the launcher keeps its
+       1920 x 1080 layout, zoomed to the page: everything is drawn at the panel's own sharpness. The glass
+       follows (it reads layout offsets), and so do the arrows (they compare positions). */
+    function fitPage() {
+        var z = Math.round(100 * (global.innerWidth || 1920) / 1920) / 100;
+        document.documentElement.style.zoom = z > 1.01 ? String(z) : "";
+        global.APL_HIRES = z > 1.01;              // the Top Shelf asks for its pictures in their full size (liveshelf.js)
+    }
+    fitPage();
+    global.addEventListener("resize", fitPage);
 
     /* ---------- luna ---------- */
     var live = [];          // bridges waiting for their answer: a bridge nobody holds can be collected before it answers
@@ -205,11 +215,29 @@
             return list;
         });
     }
+    /* LG's own panels and promotions start hidden, once per profile, as Samsung's Smart Hub tile does: a
+       launcher shows as little of the TV's own interface as it can. Settings › Home Screen › Show on Home
+       Screen brings any of them back. Live TV, the browser, the media player and LG's store stay. */
+    var LG_OWN = ["com.webos.app.camera", "com.webos.app.storagemanager", "com.webos.app.multiviewsettings", "fr.public.value",
+                  "com.webos.app.sportsteamsettings", "com.webos.app.lglink-full", "com.palmdts.devmode", "com.webos.app.lifeonscreen",
+                  "com.webos.app.lgchannels", "com.lgtvod.app", "com.twin.app.audiochannel", "com.twin.app.gamingportal",
+                  "epoxyaisports", "shortcutcopilot"];
+    function hideLgOwn(list) {
+        var sys = APL.sys;
+        if (!sys || !sys.profiles || !list.length) return;
+        var who = sys.profiles.current().id, done = sys.pref("lgHiddenFor") || [];
+        if (done.indexOf(who) !== -1) return;
+        var hidden = (sys.pref("hiddenApps") || []).slice();
+        list.forEach(function (a) { if (LG_OWN.indexOf(a.id) !== -1 && hidden.indexOf(a.id) === -1) hidden.push(a.id); });
+        sys.setPref("hiddenApps", hidden);
+        sys.setPref("lgHiddenFor", done.concat([who]));
+    }
     /* At start-up the list kept from last time comes at once, and the TV's own list replaces it as
        soon as it answers. The first time (no answer from the TV yet), Settings and Sources only. */
     var appsChanged = null;
     function loadApps(decorate, order) {
         function done(list) {
+            hideLgOwn(list);
             return order(list.map(function (a) {
                 var d = decorate(a);
                 d.params = a.params;

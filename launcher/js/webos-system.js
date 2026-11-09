@@ -120,9 +120,10 @@
     function product() { return info; }
 
     var dev = P.device || {};
+    /* The panel (deviceInfo: 3840 x 2160 on a G5) and the interface, which LG draws in 1920 x 1080 */
     function display() {
-        var ui = (dev.screenWidth || 1920) + " × " + (dev.screenHeight || 1080);
-        var panel = dev.uhd8K ? "7680 × 4320" : dev.uhd ? "3840 × 2160" : "";
+        var ui = (global.innerWidth || 1920) + " × " + (global.innerHeight || 1080);
+        var panel = dev.screenWidth ? dev.screenWidth + " × " + dev.screenHeight : "";
         return Promise.resolve(panel && panel !== ui ? t("{panel} (interface {ui})", { panel: panel, ui: ui }) : ui);
     }
     /* LG's OLEDs all show Dolby Vision, HDR10 and HLG; the TV tells nothing of it to an app */
@@ -183,19 +184,19 @@
        When its 1000 hours run out, the TV deletes every app installed through it, this one included. The
        launcher's service renews it the way the Developer Mode app's Extend button does: checked once a day
        while the launcher runs, renewed once fewer than 960 hours are left. */
-    var DEV_KEY = "apl.webos.devmode", dev = (function () { try { return JSON.parse(global.localStorage.getItem(DEV_KEY) || "null") || {}; } catch (e) { return {}; } })();
+    var DEV_KEY = "apl.webos.devmode", devm = (function () { try { return JSON.parse(global.localStorage.getItem(DEV_KEY) || "null") || {}; } catch (e) { return {}; } })();
     function devCheck() {
-        if (dev.at && Date.now() - dev.at < 20 * 3600 * 1000) return;
+        if (devm.at && Date.now() - devm.at < 20 * 3600 * 1000) return;
         P.service("devmode", { extend: true }).then(function (m) {
-            dev = { at: Date.now(), hours: m.hours, renewed: m.extended ? Date.now() : dev.renewed || 0 };
-            try { global.localStorage.setItem(DEV_KEY, JSON.stringify(dev)); } catch (e) {}
-        }, function (e) { dev.error = e.message; });
+            devm = { at: Date.now(), hours: m.hours, renewed: m.extended ? Date.now() : devm.renewed || 0 };
+            try { global.localStorage.setItem(DEV_KEY, JSON.stringify(devm)); } catch (e) {}
+        }, function (e) { devm.error = e.message; });
     }
     setTimeout(devCheck, 8000);
     setInterval(devCheck, 3600 * 1000);
     P.devmode = function () {
-        if (dev.hours === undefined) return dev.error ? t("Unavailable") : "…";
-        var left = Math.max(0, dev.hours - Math.floor((Date.now() - (dev.at || Date.now())) / 3600000));
+        if (devm.hours === undefined) return devm.error ? t("Unavailable") : "…";
+        var left = Math.max(0, devm.hours - Math.floor((Date.now() - (devm.at || Date.now())) / 3600000));
         return t("{h} h left, renewed by the launcher", { h: left });
     };
 
