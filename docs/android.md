@@ -2,7 +2,7 @@
 
 APL Launcher also runs on Android TV and Google TV, as a real launcher app: the same Home Screen, Settings, Control Center, Search, profiles and screen saver as on Samsung, from the same code. No root needed.
 
-> **Status: first version, not released.** Tried in the Android TV 14 emulator only (`AOSP TV on x86`): not yet on a real box, TV or on Google TV. The package built so far is signed with the Android SDK's test key: never share it.
+> **Status: first version, not released.** Tried in the Android TV 14 emulator only (`AOSP TV on x86`): not yet on a real box, TV or on Google TV.
 
 ## Install
 
@@ -113,7 +113,14 @@ python tools/make-android.py --dev        # your own devices, the page can be in
 
 It needs a JDK 17+, the Android SDK (platform 35, build-tools 35), Gradle 8.10, Node and Pillow (see the top of the script). The launcher is copied from `launcher/` unchanged, with the Android layer from `android/web` (`android.js`, and `cc.html` for the Control Center over apps); the Kotlin app is in `android/app`. Nothing in `launcher/` is built differently for Samsung.
 
-Signing: an Android app must always be signed with the same key, or it can't be updated without uninstalling it (which loses the Home Screen layout). Until APL Launcher has its own key, the script signs with the Android SDK's test key and names the file `-testkey`; `--release` refuses to run then. `--new-key` makes APL Launcher's key, kept outside the repository (see the top of the script).
+Signing: an Android app must always be signed with the same key, or it can't be updated without uninstalling it (which loses the Home Screen layout). APL Launcher has its own key (not APL TV's), kept outside the repository and never published (see the top of the script for where the script looks for it). Its certificate, to check a downloaded `.apk` (`apksigner verify --print-certs`):
+
+```
+CN=APL Launcher, O=Gero Corp., C=FR
+SHA-256: d9:3c:e3:6b:3c:d7:01:1e:01:81:7f:f3:19:c1:ae:38:6a:8c:48:48:9d:e0:06:ef:0f:61:53:87:6b:d6:86:a6
+```
+
+On a machine without that key, the script signs with the Android SDK's test key and names the file `-testkey` (for tests only; `--release` refuses to run then). An `.apk` signed with the test key can't update one signed with APL Launcher's key: uninstall it first.
 
 ## How it works
 
