@@ -19,7 +19,8 @@
 
     var tz = global.tizen;
     var wa = global.webapis;
-    var PREVIEW = !tz;
+    // Android TV (android/web/android.js, which replaces what follows with Android's calls) is a real device too
+    var PREVIEW = !tz && !global.APLAndroid;
     var APL = global.APL;
 
     /* ---------- preferences (stored on the screen) ---------- */
@@ -982,6 +983,7 @@
     global.APL.sys = {
         PREVIEW: PREVIEW,
         pref: pref, setPref: setPref, onPref: onPref, profiles: profiles,
+        setDefault: function (k, v) { DEFAULTS[k] = v; },     // another platform's defaults (android.js)
         audio: audio, network: network, product: product, display: display, storage: storage, hdr: hdr,
         remoteKey: remoteKey, openSamsungSettings: openSamsungSettings, sleepNow: sleepNow,
         switchSource: switchSource, vetroAlive: vetroAlive, vetroLink: vetroLink,

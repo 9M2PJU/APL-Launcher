@@ -1107,7 +1107,8 @@
         var rest = list.filter(function (a) { return !a.favorite; }).concat(APL.webApps ? APL.webApps() : []).sort(function (a, b) {
             return rank(a) - rank(b) || a.name.localeCompare(b.name, APL.locale, { sensitivity: "base" });
         });
-        virtuals = virtuals || virtualApps();
+        // Another platform keeps the tiles it can open (android.js: no Sources, its own home for Smart Hub)
+        virtuals = virtuals || (APL.platform && APL.platform.virtualApps ? APL.platform.virtualApps(virtualApps()) : virtualApps());
         var usable = virtuals.filter(function (v) { return !v.needs || list.some(function (a) { return a.id === v.needs; }); })
             .concat(APL.sources ? APL.sources.homeTiles() : []);              // inputs pinned to the Home Screen
         var tube = usable.filter(function (v) { return v.id === "apl.tizentube"; });
@@ -1121,7 +1122,7 @@
        the grid updates by itself, without restarting the launcher. */
     var pkgTimer = null;
     function watchPackages() {
-        var pm = global.tizen && global.tizen.package;
+        var pm = (global.tizen && global.tizen.package) || (APL.platform && APL.platform.packages);
         if (!pm || typeof pm.setPackageInfoEventListener !== "function") return;
         function again() {
             clearTimeout(pkgTimer);

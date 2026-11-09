@@ -345,6 +345,8 @@
 
     global.APL = global.APL || {};
     global.APL.loadApps = loadApps;
+    /* Another platform's list ({ id, name, icon }), named, coloured and ordered as above (android.js) */
+    global.APL.appsFromList = function (list) { return order(dedupe(list.map(decorate))); };
     global.APL.isInstalled = isInstalled;
     global.APL.webApps = webApps;
     global.APL.openUrl = openUrl;
