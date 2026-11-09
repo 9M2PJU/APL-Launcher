@@ -235,6 +235,19 @@
         sys.vetroGet = noRoot; sys.vetroPost = noRoot; sys.exec = noRoot;
         sys.noVetro = function () { return false; };         // the rows that need Vetro are not shown here (webos-settings.js)
         sys.isOled = function () { return !!P.oled; };
+        /* The picture: kept from apps without root (LG Connect Apps "Application error", luna "Access denied").
+           The Control Center's slider is the volume instead (P.ccSlider, webos-settings.js). */
+        function volumeItem() { return { id: "volume", writable: true, value: snd.volume, min: 0, max: 100 }; }
+        sys.tvSettings = function () { return Promise.resolve([]); };
+        sys.tvItem = function (id) { return Promise.resolve(id === "volume" ? volumeItem() : null); };
+        sys.tvValue = function (id) { return Promise.resolve(id === "volume" ? snd.volume : null); };
+        sys.tvAdjust = function (id, delta, onChange) {
+            if (id !== "volume") return Promise.reject(new Error(t("Setting unavailable for now")));
+            var v = audio.setVolume(snd.volume + delta);
+            if (onChange) onChange(v, volumeItem());
+            return Promise.resolve(v);
+        };
+        sys.setPictureMode = function () { return Promise.reject(new Error(t("Setting unavailable for now"))); };
         sys.game = {
             get: function () { return Promise.resolve({ available: false, on: false }); },
             set: function () { return Promise.reject(new Error(t("Game Optimizer is in the TV's own settings"))); },

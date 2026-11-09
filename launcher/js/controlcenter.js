@@ -21,6 +21,9 @@
 
     var APL = global.APL, sys = APL.sys, K = APL.KEY;
     var P = APL.platform;             // another TV system (js/webos-settings.js on LG): its own sound outputs and AirPlay
+    /* The slider: the screen's brightness, or what the TV system puts there instead (LG keeps its picture
+       settings from apps: the volume there) */
+    var SLIDER = (P && P.ccSlider) || { id: "backlight", icon: "sun", title: APL.t("Brightness") };
     var root, panel, timeEl, avatarEl, viewport, body, captionEl, nav;
     var items = [], view = "main", lastMainIndex = 1, scrollY = 0;
     var isOpen = false;
@@ -267,7 +270,7 @@
             if (isOpen) refresh();
             // Game Mode has its own brightness: the slider picks up the screen's
             nav.tiles.forEach(function (t) {
-                if (t._item.type === "backlight") sys.tvItem("backlight").then(function (m) { if (m) drawBacklight(t, m.value, m); }, function () {});
+                if (t._item.type === "backlight") sys.tvItem(SLIDER.id).then(function (m) { if (m) drawBacklight(t, m.value, m); }, function () {});
             });
         }, function (e) {
             gameState.busy = false;
@@ -313,7 +316,7 @@
             { cls: "round", icon: "access", title: APL.t("Accessibility"), select: openSettings(APL.t("General & Privacy")) },
             { cls: "round", icon: "airplay", title: APL.t("AirPlay and iPhone"), select: function () { show("airplay"); } },
             { cls: "round", icon: "source", title: "Sources", select: function () { close(); APL.openSources(); } },
-            { cls: "slider", type: "backlight", icon: "sun", title: APL.t("Brightness") },
+            { cls: "slider", type: "backlight", icon: SLIDER.icon, title: SLIDER.title },
             { cls: "pill", icon: "photo", title: APL.t("Screensaver"), sub: function () { return APL.t("Start"); },
               select: function () { close(); if (APL.screensaver) APL.screensaver.start(); } },
             { cls: "pill", icon: "gear", title: APL.t("Settings"), sub: function () { return APL.t("All settings"); },
@@ -435,7 +438,7 @@
 
     function drawBacklight(t, v, meta) {
         var pct = (v === null || !meta) ? 0 : Math.round(100 * (v - meta.min) / Math.max(1, meta.max - meta.min));
-        fill(t, '<span class="cc__ico">' + APL.icon("sun", 38, 2) + '</span>' +
+        fill(t, '<span class="cc__ico">' + APL.icon(SLIDER.icon, 38, 2) + '</span>' +
             '<span class="cc__bar"><i style="width:' + pct + '%"></i></span>' +
             '<span class="cc__val">' + (v === null ? "—" : v) + '</span>');
     }
@@ -494,7 +497,7 @@
         }
         focusables.forEach(function (t) {
             if (t._item.type === "backlight") {
-                sys.tvItem("backlight").then(function (m) {
+                sys.tvItem(SLIDER.id).then(function (m) {
                     if (m) drawBacklight(t, m.target !== undefined ? m.target : m.value, m);
                 }, function () {});
             }
@@ -574,7 +577,7 @@
             onSelect: function (i, t) {
                 var it = t._item;
                 if (it.type === "backlight") {
-                    sys.tvItem("backlight").then(function (m) { if (!m || !m.writable) APL.toast(APL.t("Brightness unavailable right now")); },
+                    sys.tvItem(SLIDER.id).then(function (m) { if (!m || !m.writable) APL.toast(APL.t("Brightness unavailable right now")); },
                                                  function (e) { APL.toast(e.message); });
                     return;
                 }
@@ -591,7 +594,7 @@
             onKey: function (code) {
                 var t = nav.current(), it = t && t._item;
                 if (it && it.type === "backlight" && (code === K.LEFT || code === K.RIGHT)) {
-                    sys.tvAdjust("backlight", code === K.RIGHT ? 2 : -2, function (v, meta) { drawBacklight(t, v, meta); })
+                    sys.tvAdjust(SLIDER.id, code === K.RIGHT ? 2 : -2, function (v, meta) { drawBacklight(t, v, meta); })
                         .catch(function (e) { APL.toast(e.message); });
                     return true;
                 }

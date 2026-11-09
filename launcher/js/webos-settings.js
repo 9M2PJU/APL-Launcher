@@ -112,6 +112,7 @@
 
     /* ---------- Control Center ---------- */
     P.ccHint = t("Tip: the red button or ⏯ opens Control Center on the Home Screen");
+    P.ccSlider = { id: "volume", icon: "speaker", title: t("Volume") };
     /* The sound outputs the TV offers (LG Connect Apps): the one in use is ticked. */
     var OUTPUT_LIST = ["tv_speaker", "external_arc", "external_optical", "bt_soundbar", "headphone", "lineout", "tv_speaker_headphone"];
     P.ccOutputName = function () { return sys.audio.outputMode(); };
