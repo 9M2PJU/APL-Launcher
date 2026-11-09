@@ -70,6 +70,9 @@ body.glass .bg.is-slide > img { animation: none; }
     pointer-events: none;
     background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.42) 18%, rgba(255, 255, 255, 0.42) 82%, rgba(255, 255, 255, 0));
 }
+/* The clock pill is round at both ends: 6 % of a pill this small reached over the curves, a straight line
+   above them that cut the pill's top (seen on an LG with a single profile, so no avatar) */
+.status .cg__glass::before { left: 28px; right: 28px; }
 
 /* 5 % of white, lit from the top edge, over a shade: the glass, not the picture.
    The shade is measured for each pane by glass.js (--glass-shade) from the picture

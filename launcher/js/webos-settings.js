@@ -1,0 +1,132 @@
+/* ============================================================
+   webos-settings.js — Settings and Control Center on LG TVs (webOS).
+
+   settings-tree.js describes Samsung's menus. On an LG TV this file goes
+   through that tree once it is built (APL.settingsTree): what only Samsung
+   or Vetro can do goes away (Samsung's services, Smart Hub, the overlay,
+   root commands), the rest stays as it is, and LG's own parts take their
+   place: the TV's picture and sound settings, its sound outputs, LG's
+   Settings app. It also gives the Control Center LG's sound outputs and
+   AirPlay (controlcenter.js asks APL.platform).
+   ============================================================ */
+(function (global) {
+    "use strict";
+
+    var APL = global.APL = global.APL || {};
+    var P = APL.platform;
+    if (!P || P.name !== "webos") return;
+    var sys = APL.sys;
+
+    function t(s, vars) { return APL.t(s, vars); }
+
+    /* ---------- the tree ---------- */
+    // Launcher preferences that only mean something on Samsung (Smart Hub rows, APL Overlay, Vetro, updates)
+    var SAMSUNG_PREFS = { homeReturn: 1, pauseKey: 1, alexaBridge: 1, idleClose: 1, bootCleanup: 1, autoUpdate: 1, hubShelf: 1 };
+    // Rows of the Samsung screen's own settings (settings-tree.js), until LG's equivalents below replace them
+    var SAMSUNG_TYPES = { service: 1, game: 1, tv: 1, tvmode: 1, native: 1 };
+
+    function samsungOnly(item) {
+        if (item.vetro === true) return true;
+        if (SAMSUNG_TYPES[item.type] && !(P.tvRows && P.tvRows[item.type + ":" + (item.id || "")])) return true;
+        if ((item.type === "toggle" || item.type === "choice") && SAMSUNG_PREFS[item.key]) return true;
+        if (item.type === "hide" && item.id === "apl.samsunghome") return true;
+        if (item.type === "action" && (item.label === t("Check for Update") || item.label === t("Go Back to the Installed Version"))) return true;
+        if (item.type === "info" && item.label === t("Storage")) return true;
+        return false;
+    }
+
+    /* A few rows say what they do on LG */
+    function relabel(item) {
+        if (item.type === "samsung") {
+            item.label = t("TV Settings");
+            item.desc = t("LG's own settings, for what the launcher doesn't change itself: Wi-Fi, time, language, LG account, parental controls, Game Optimizer, reset.");
+        } else if (item.type === "info" && item.label === t("Tizen Version")) {
+            item.label = t("webOS Version");
+        } else if (item.type === "info" && item.label === t("Link to Vetro")) {
+            item.label = "LG Connect Apps";
+            item.desc = t("How the launcher lists your apps, reads the volume and turns the TV off: the TV asked once whether to allow “LG Remote App”. Refused by mistake? TV Settings › General › Devices › External Devices, then start the launcher again.");
+        } else if (item.type === "info" && item.label === t("Digital Output Audio Format")) {
+            item.label = t("Sound Output");
+        } else if (item.type === "action" && item.label === t("Control Center")) {
+            item.desc = t("Also opens with the red button or ⏯ on the remote, on the Home Screen.");
+        } else if (item.type === "toggle" && item.key === "liveShelf") {
+            item.desc = t("Trending films, series and videos on each service, top albums, games, sports. Films and series need a TMDB key, videos a YouTube key (see Online Services).");
+        } else if (item.type === "choice" && item.key === "language") {
+            item.desc = t("Automatic follows the TV's language. The launcher restarts to apply it.");
+        }
+        return item;
+    }
+
+    function adapt(node) {
+        if (!node.children) return node;
+        var kids = [];
+        node.children.forEach(function (c) {
+            if (samsungOnly(c)) return;
+            // Samsung Services: Samsung's own processes, nothing of it on LG
+            if (c.type === "menu" && (c.children || []).some(function (k) { return k.type === "service"; })) return;
+            if (c.type === "menu") {
+                adapt(c);
+                if (!c.children.length) return;                 // a menu left empty (Gaming, Power, HDMI…)
+            }
+            kids.push(relabel(c));
+        });
+        node.children = kids;
+        if (P.extraRows) P.extraRows(node);
+        return node;
+    }
+
+    /* LG's own rows: Developer Mode's time left in About This Screen */
+    P.extraRows = function (node) {
+        if (node.label !== t("About This Screen")) return;
+        node.children.push({ type: "info", label: t("Developer Mode"), get: function () { return P.devmode ? P.devmode() : "—"; },
+                             desc: t("LG deletes the apps installed in Developer Mode when its 1000 hours run out, this launcher included. The launcher renews them on its own, once a day, as the Developer Mode app's Extend button does.") });
+    };
+
+    var build = APL.settingsTree;
+    if (build) APL.settingsTree = function () { return adapt(build()); };
+
+    /* ---------- Control Center ---------- */
+    P.ccHint = t("Tip: the red button or ⏯ opens Control Center on the Home Screen");
+    /* The sound outputs the TV offers (LG Connect Apps): the one in use is ticked. */
+    var OUTPUT_LIST = ["tv_speaker", "external_arc", "external_optical", "bt_soundbar", "headphone", "lineout", "tv_speaker_headphone"];
+    P.ccOutputName = function () { return sys.audio.outputMode(); };
+    P.ccAudioItems = function (redraw) {
+        var cur = sys.audio.output ? sys.audio.output() : "";
+        var out = [{ cls: "head", title: "Audio" }, { cls: "section", title: t("Sound Output") }];
+        OUTPUT_LIST.forEach(function (o) {
+            out.push({ cls: "row", icon: o === "tv_speaker" ? "display" : o === "headphone" ? "headphones" : o === "bt_soundbar" ? "bluetooth" : "speaker",
+                       title: sys.audio.outputName(o),
+                       check: function () { return (sys.audio.output ? sys.audio.output() : "") === o; },
+                       select: function () {
+                           P.ssap("ssap://audio/changeSoundOutput", { output: o }, 8000).then(function () {
+                               setTimeout(function () { P.lunaOnce("luna://com.webos.audio/getSoundOutput", {}).then(function (m) {
+                                   if (m.soundOutput && sys.audio.setOutput) sys.audio.setOutput(m.soundOutput);
+                                   redraw();
+                               }, redraw); }, 600);
+                           }, function (e) { APL.toast(e.message); });
+                       } });
+        });
+        out.push({ cls: "section", title: t("Bluetooth") });
+        out.push({ cls: "row", icon: "bluetooth", title: t("Pair AirPods or Headphones…"),
+                   sub: function () { return t("In the TV's settings: Sound › Sound Out › Bluetooth"); },
+                   select: function () { sys.openTvSettings(); } });
+        if (cur && OUTPUT_LIST.indexOf(cur) === -1) out.splice(2, 0, { cls: "row", icon: "speaker", title: sys.audio.outputName(cur), check: function () { return true; } });
+        return out;
+    };
+    P.ccAirplayItems = function () {
+        return [
+            { cls: "head", title: t("AirPlay and iPhone") },
+            { cls: "section", title: t("From iPhone") },
+            { cls: "row", icon: "split", title: t("Mirror the Screen"),
+              sub: function () { return t("Control Center › Screen Mirroring › this screen"); } },
+            { cls: "row", icon: "airplay", title: t("Send a Video or Photos"),
+              sub: function () { return t("AirPlay button in the app, then choose this screen"); } },
+            { cls: "row", icon: "remote", title: t("iPhone as a Remote"),
+              sub: function () { return t("Home app: add the screen, then Control Center › Remote"); } },
+            { cls: "section", title: t("On the Screen") },
+            { cls: "row", icon: "gear", title: t("AirPlay and HomeKit Settings"),
+              sub: function () { return t("Screen name, passcode, HomeKit"); },
+              select: function () { P.launch("com.webos.app.airplay").catch(function () { sys.openTvSettings(); }); } }
+        ];
+    };
+})(window);

@@ -19,7 +19,10 @@
 
     var tz = global.tizen;
     var wa = global.webapis;
-    var PREVIEW = !tz;
+    /* Another TV system (js/webos.js on LG) is a real screen too: it gives its own sound, network,
+       picture… (P.adaptSys, at the end of this file) */
+    var P = global.APL && global.APL.platform;
+    var PREVIEW = !tz && !P;
     var APL = global.APL;
 
     /* ---------- preferences (stored on the screen) ---------- */
@@ -141,6 +144,7 @@
         if (pref("homeReturn") !== before) (listeners.homeReturn || []).forEach(function (fn) { fn(false); });
     }
     function detectVetro() {
+        if (P) return;                     // not a Samsung screen: no Vetro to look for
         if (PREVIEW) {
             // The PC preview has no Vetro to look for: ?novetro shows the screen without it
             if (global.location && /[?&]novetro\b/.test(global.location.search)) markNoVetro();
@@ -532,7 +536,7 @@
         }
         try { send(); } catch (e) { if (visible) startBridge().then(send).catch(function () {}); }
     }
-    if (!PREVIEW && global.document) {
+    if (!PREVIEW && !P && global.document) {
         document.addEventListener("visibilitychange", function () { bridgeFront(!document.hidden); });
         setTimeout(function () { if (!document.hidden) bridgeFront(true); }, 5000);
     }
@@ -565,7 +569,7 @@
             .then(function (ok) { alive = ok; aliveAt = Date.now(); return ok; });
     }
     // Bridge started early: Control Center and Settings respond right away
-    if (!PREVIEW) setTimeout(function () { vetroAlive(); }, 4000);
+    if (!PREVIEW && !P) setTimeout(function () { vetroAlive(); }, 4000);
 
     /* Settings › Support › About This Screen: how the launcher reaches Vetro. Through the bridge it reads the
        answers; without it orders still go out (Bluetooth connects) but nothing can be read back, so the
@@ -995,4 +999,5 @@
         tvSettings: tvSettings, tvItem: tvItem, tvAdjust: tvAdjust, tvValue: tvValue,
         version: (global.APL_UPDATE && global.APL_UPDATE.running) || "1.0.0"
     };
+    if (P && P.adaptSys) P.adaptSys(global.APL.sys, { DEFAULTS: DEFAULTS });
 })(window);

@@ -45,6 +45,9 @@
     function check(manual) {
         if (busy) return Promise.resolve();
         if (sys.PREVIEW) { if (manual) APL.toast(APL.t("Preview: updates happen on the screen")); return Promise.resolve(); }
+        // Another TV system (LG): GitHub's version is Samsung's until that system's own files are published
+        // with it, and its loader would not run a downloaded version anyway (boot.js)
+        if (APL.platform && !APL.platform.updates) { if (manual) APL.toast(APL.t("On this TV, updates come as a new package")); return Promise.resolve(); }
         busy = true;
         if (manual) APL.toast(APL.t("Checking for an update…"), true);
         return getText(U.RAW + "version.json").then(function (txt) {

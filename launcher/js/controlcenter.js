@@ -20,6 +20,7 @@
     "use strict";
 
     var APL = global.APL, sys = APL.sys, K = APL.KEY;
+    var P = APL.platform;             // another TV system (js/webos-settings.js on LG): its own sound outputs and AirPlay
     var root, panel, timeEl, avatarEl, viewport, body, captionEl, nav;
     var items = [], view = "main", lastMainIndex = 1, scrollY = 0;
     var isOpen = false;
@@ -281,6 +282,7 @@
     }
 
     function outputName() {
+        if (P && P.ccOutputName) return P.ccOutputName();
         var on = (bt.list || []).filter(function (d) { return d.connected; })[0];
         return on ? on.name : APL.t("TV Speakers");
     }
@@ -322,6 +324,7 @@
     }
 
     function audioItems() {
+        if (P && P.ccAudioItems) return P.ccAudioItems(function () { if (isOpen && view === "audio") render(); });
         var list = bt.list || [], out = [{ cls: "head", title: "Audio" }];
         var phones = list.filter(function (d) { return d.kind === "headphones"; });
         var speakers = list.filter(function (d) { return d.kind === "speaker"; });
@@ -368,6 +371,7 @@
     }
 
     function airplayItems() {
+        if (P && P.ccAirplayItems) return P.ccAirplayItems();
         return [
             { cls: "head", title: APL.t("AirPlay and iPhone") },
             { cls: "section", title: APL.t("From iPhone") },

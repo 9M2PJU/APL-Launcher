@@ -885,7 +885,7 @@
 
     var bootCleaned = false;
     function bootCleanup(tries) {
-        if (bootCleaned || document.hidden || APL.sys.PREVIEW || !APL.sys.pref("bootCleanup")) return;
+        if (bootCleaned || document.hidden || APL.sys.PREVIEW || APL.platform || !APL.sys.pref("bootCleanup")) return;
         bootCleaned = true;
         var frame = /LS03/i.test(APL.sys.product().model || "");      // The Frame: Art Mode needs art-app
         var ids = BOOT_CLOSE.filter(function (id) { return !(frame && id === "org.tizen.art-app"); })
@@ -904,7 +904,7 @@
        340 ms: on a busy screen, in every app, a short press sometimes counted twice.
        The setting is lost on restart: it is set again at every launch, as soon as Vetro answers. */
     function slowKeyRepeat(tries) {
-        if (APL.sys.PREVIEW) return;
+        if (APL.sys.PREVIEW || APL.platform) return;          // Samsung's key repeat, through Vetro
         whenVetro("enlightenment_info -key_repeat set 600 0 >/dev/null 2>&1; true", tries);
     }
 
@@ -1194,7 +1194,8 @@
         if (app.id !== "apl.settings") {
             items.push({ label: APL.t("Hide App"), icon: "eyeOff", run: function () { hideApp(app); } });
         }
-        if (!app.virtual && !PROTECTED.test(app.id)) {
+        // Deleted through Vetro: on another TV system (LG), from the TV's own menus
+        if (!app.virtual && !PROTECTED.test(app.id) && !APL.platform) {
             items.push({ label: APL.t("Delete App"), icon: "trash", destructive: true, run: function () { confirmDelete(app); } });
         }
         APL.contextMenu.open(el.querySelector(".tile__card") || el, items);
@@ -1408,7 +1409,7 @@
         if (n >= 3) return;
         APL.sys.setPref("ccHintCount", n + 1);
         setTimeout(function () {
-            toast(APL.t("Tip: ⏯ opens Control Center, and Home twice shows open apps"));
+            toast((APL.platform && APL.platform.ccHint) || APL.t("Tip: ⏯ opens Control Center, and Home twice shows open apps"));
         }, 2500);
     }
 
