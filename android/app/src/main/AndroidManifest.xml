@@ -6,7 +6,8 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-    <!-- Free Up Memory and Close Unused Apps: Android closes apps that are in the background, never the one in front -->
+    <!-- Free Up Memory, Close Unused Apps, the App Switcher's ▲: Android closes apps that are in the background, never
+         the one in front. Up to Android 13 only: Android 14 lets an app close nothing but its own processes. -->
     <uses-permission android:name="android.permission.KILL_BACKGROUND_PROCESSES" />
     <!-- Delete App: Android's own confirmation -->
     <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />

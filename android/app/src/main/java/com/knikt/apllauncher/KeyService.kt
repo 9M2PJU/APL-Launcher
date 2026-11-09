@@ -173,7 +173,8 @@ class KeyService : AccessibilityService() {
 
     /* ---------- Close Unused Apps ---------- */
     private fun closeIdle() {
-        if ((Bridge.prefs(this).getString("idleClose", "") ?: "") == "0") return
+        // Android 14 lets an app close only its own processes (tried: "Invalid packageName"): root's job there
+        if (Build.VERSION.SDK_INT >= 34 || (Bridge.prefs(this).getString("idleClose", "") ?: "") == "0") return
         val now = SystemClock.uptimeMillis()
         val am = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
         val old = leftAt.filter { now - it.value > IDLE_MS && it.key != front && it.key != packageName && !homes.contains(it.key) }.keys

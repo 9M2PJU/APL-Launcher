@@ -65,6 +65,7 @@ class Bridge(private val ctx: Context, private val host: Host) {
         o.put("overlayAllowed", if (Build.VERSION.SDK_INT >= 23) Settings.canDrawOverlays(app) else true)
         o.put("usageAccess", usageAccess())
         o.put("root", hasSu())
+        o.put("canClose", Build.VERSION.SDK_INT < 34)     // Android 14: killBackgroundProcesses only for the app's own processes
         return o.toString()
     }
 

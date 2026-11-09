@@ -203,7 +203,12 @@
         if (path === "/components/action" && body && body.action === "uninstall") return Promise.resolve({ ok: B.uninstall(String(body.appId || "")) });
         return needsRoot();
     };
-    sys.exec = function () { return needsRoot(); };
+    /* The App Switcher closes an app with Samsung's app_launcher -k: Android closes it, as it is in the background */
+    sys.exec = function (cmd) {
+        var m = /^app_launcher -k ([A-Za-z0-9._]+)[^;]*; true$/.exec(String(cmd || ""));
+        if (m && info.canClose) { B.freeMemory(JSON.stringify([m[1]])); return Promise.resolve({ ok: true, output: "" }); }
+        return needsRoot();
+    };
     sys.runningApps = function () { return Promise.resolve(json(B.running(), [])); };
 
     /* Picture, Game Mode and the screen's other settings: Samsung's, through Vetro */
@@ -437,10 +442,13 @@
 
         var apps = find(top, "Apps");
         if (apps) {
-            apps.children.push({ type: "toggle", label: T("Close Unused Apps"), key: "idleClose",
-                desc: T("An app left in the background for more than 10 minutes is closed by Android (through the remote buttons, Accessibility). The app in front, music playing in the background and the launcher are never closed.") });
-            apps.children.push(action(T("Free Up Memory"), freeMemory,
-                T("Asks Android to close the apps left in the background. They reopen normally, but start over from the beginning."), "reset"));
+            // Android 14 and later let an app close nothing but its own processes: that's for root there
+            if (info.canClose) {
+                apps.children.push({ type: "toggle", label: T("Close Unused Apps"), key: "idleClose",
+                    desc: T("An app left in the background for more than 10 minutes is closed by Android (through the remote buttons, Accessibility). The app in front, music playing in the background and the launcher are never closed.") });
+                apps.children.push(action(T("Free Up Memory"), freeMemory,
+                    T("Asks Android to close the apps left in the background. They reopen normally, but start over from the beginning."), "reset"));
+            }
             apps.children.push(opener(T("Manage Apps"), "apps", T("Storage, permissions, force stop, in Android."), "apps"));
         }
 
