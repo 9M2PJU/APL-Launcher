@@ -2,7 +2,7 @@
  "version": "1.0.24",
  "loader": 1,
  "reinstall": "1.0.0",
- "notes": "Liquid Glass stays readable on every picture: each pane darkens to the picture under it, and the light theme's clock is dark",
+ "notes": "Liquid Glass stays readable on every picture, and the Control Center moves smoothly with no black flash",
  "scripts": [
   "js/diag.js",
   "js/lang-fr.js",

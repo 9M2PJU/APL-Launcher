@@ -104,10 +104,19 @@ body.glass .status > :not(.cg__glass),
 body.glass .cc__t > :not(.cg__glass),
 body.glass .scard__art--glass > :not(.cg__glass) { position: relative; z-index: 1; }
 
-/* The focused tile is a solid plate, as on Apple TV: the pane steps aside so
-   the white card stays white. */
+/* The focused tile is a solid plate, as on Apple TV (the plate itself is drawn
+   on the pane, at the end of this file). */
 body.glass .cc__t.is-focused { background: #f5f5f7; }
-body.glass .cc__t.is-focused .cg__glass { opacity: 0; }
+/* The pane covers the tile's own fill, so that fill has nothing to animate:
+   its 150 ms fade only cost repaints under the glass. And each tile keeps a
+   layer of its own: the screen otherwise drew the two tiles of every move again,
+   pane and shadow, when their scale started and when it ended. Measured on the
+   M8 over 36 moves: 37 to 47 images a second with frames up to 167 ms before,
+   53 to 56 with none above 33 ms after. */
+body.glass .cc__t {
+    transition: transform 220ms var(--spring, ease), color 150ms ease;
+    will-change: transform;
+}
 
 /* The Control Center's tiles are circles and pills: a straight hairline ran past
    their curve and showed as a white line above each round button (an S90F). Their
@@ -143,8 +152,15 @@ body.glass.perf .scard__art--glass .cg__glass::after {
         linear-gradient(rgba(118, 126, 146, 0.28), rgba(118, 126, 146, 0.28)),
         linear-gradient(rgba(6, 8, 14, var(--glass-shade, 0.9)), rgba(6, 8, 14, var(--glass-shade, 0.9)));
 }
-/* A round button that is on keeps its colour (Game Mode green...): the pane steps aside, as on focus. */
-body.glass .cc__t--round.is-on .cg__glass { opacity: 0; }
+/* The white plate of the focused tile, and the colour of a round button that is on
+   (Game Mode green...), are drawn ON the pane instead of the pane being hidden.
+   Hiding it uncovered the tile's own dark fill for the 150 ms the plate took to
+   come in, which was a black flash on every move in the Control Center, and the
+   pane had to be drawn again each time the focus left it. */
+body.glass .cc__t.is-focused .cg__glass::after { background: #f5f5f7; box-shadow: none; }
+body.glass.theme-light .cc__t.is-focused .cg__glass::after { background: #fff; }
+body.glass .cc__t--round.is-on .cg__glass::after { background: var(--tint, #0a84ff); box-shadow: none; }
+body.glass .cc__t--round.is-on.is-focused .cg__glass::after { background: #f5f5f7; }
 
 /* The screen's light mode (launcher.js applyPerf) no longer hides the pane: the
    glass is a frozen slice baked once per picture, so it costs nothing on the

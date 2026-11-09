@@ -633,14 +633,28 @@
         [0, 250, 600, 1000, 1600, 2400, 3600].forEach(function (ms) {
             global.setTimeout(function () { refresh(); sync(); }, ms);
         });
-        /* A key only moves things: re-slice the geometry, never look at the
-           backdrop again. Doing both here was a second, later swap of the pane
-           on every step along the row - the throb on a change of focus. */
-        document.addEventListener("keydown", paint, true);
-        /* A redrawn tile gets its layer back, and a backdrop that has just
-           finished fading gets sliced in place of the one before it. */
-        document.addEventListener("keyup", function () { paint(); sync(); }, true);
-        document.addEventListener("transitionend", function () { paint(); sync(); }, true);
+        /* One look after a key, once its move has started, instead of one on the
+           key down, one on the key up and one at the end of every transition
+           (the scale, the colour and the background of both tiles, in the
+           Control Center and along the dock): each of those read the layout of
+           every surface while the focus was still animating, about thirty style
+           passes per move, which the TV's slower processor showed as a Control
+           Center that did not follow the remote. */
+        var later = 0;
+        function soon() {
+            if (later) return;
+            later = global.setTimeout(function () { later = 0; paint(); sync(); }, 90);
+        }
+        document.addEventListener("keyup", soon, true);
+        /* A transition matters only when it can move a surface or change the
+           picture: a backdrop that has finished fading, or a panel, the Home
+           Screen or a sheet that carries glass. A tile scaling on focus moves
+           nothing the panes are cut from (they ignore transforms). */
+        document.addEventListener("transitionend", function (e) {
+            var t = e.target;
+            if (!t || !t.classList) return;
+            if (t.classList.contains("bg") || (t.querySelector && t.querySelector(TARGETS.join(",")))) soon();
+        }, true);
         /* Surfaces rebuilt while the glass is on (Control Center redraws its
            tiles on every move) get their lens back within a frame: no flash of
            the plain fill, no glass that appears and is gone again. */
@@ -655,8 +669,17 @@
                cold start no .bg is active for the first second or two, so every
                timer fired into an empty scene and the glass only appeared after
                the first key press. */
+            /* Only a backdrop layer (or the body, which names the live app) is
+               a reason to look: every class change in the page used to count,
+               so each move of the focus asked for the picture again. */
             var boom = 0;
-            var layers = new global.MutationObserver(function () {
+            var layers = new global.MutationObserver(function (records) {
+                var i, t, hit = false;
+                for (i = 0; i < records.length && !hit; i++) {
+                    t = records[i].target;
+                    hit = t === body || !!(t.classList && t.classList.contains("bg"));
+                }
+                if (!hit) return;
                 global.clearTimeout(boom);
                 boom = global.setTimeout(function () { refresh(); sync(); }, 60);
             });
