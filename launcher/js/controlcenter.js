@@ -396,28 +396,44 @@
     }
 
     /* ---------- rendering ---------- */
+    /* A tile's content is written without touching its glass. innerHTML also wiped
+       the pane glass.js lays in each tile, and the Control Center redraws every
+       tile every 15 s and after each OK: all the buttons showed their plain fill
+       until their panes came back, half a second on the M8. Content that has not
+       changed is not written at all. */
+    function fill(t, html) {
+        if (t.__html === html) return;
+        t.__html = html;
+        var panes = [], i;
+        for (i = 0; i < t.children.length; i++) {
+            if (t.children[i].classList.contains("cg__glass")) panes.push(t.children[i]);
+        }
+        t.innerHTML = html;
+        for (i = panes.length - 1; i >= 0; i--) t.insertBefore(panes[i], t.firstChild);
+    }
+
     function draw(it, t) {
         if (it.cls === "avatar") return;
         var on = it.on && it.on();
         t.classList.toggle("is-on", !!on);
         if (it.tint) t.style.setProperty("--tint", it.tint);
         if (it.cls === "slider") { drawBacklight(t, null, null); return; }
-        if (it.cls === "round") { t.innerHTML = APL.icon(it.icon, 44, 1.9); return; }
+        if (it.cls === "round") { fill(t, APL.icon(it.icon, 44, 1.9)); return; }
         if (it.cls === "big") {
-            t.innerHTML = '<span class="cc__bigico">' + APL.icon(it.icon, 92, 1.7) + '</span><span class="cc__title">' + it.title + '</span>';
+            fill(t, '<span class="cc__bigico">' + APL.icon(it.icon, 92, 1.7) + '</span><span class="cc__title">' + it.title + '</span>');
             return;
         }
         var check = it.check ? '<span class="cc__check">' + (it.check() ? APL.icon("check", 30, 2.6) : "") + '</span>' : "";
-        t.innerHTML = '<span class="cc__ico">' + APL.icon(it.icon, it.cls === "row" ? 32 : 38, 2) + '</span>' +
+        fill(t, '<span class="cc__ico">' + APL.icon(it.icon, it.cls === "row" ? 32 : 38, 2) + '</span>' +
             '<span class="cc__txt"><span class="cc__title">' + it.title + '</span>' +
-            (it.sub ? '<span class="cc__sub">' + it.sub() + '</span>' : '') + '</span>' + check;
+            (it.sub ? '<span class="cc__sub">' + it.sub() + '</span>' : '') + '</span>' + check);
     }
 
     function drawBacklight(t, v, meta) {
         var pct = (v === null || !meta) ? 0 : Math.round(100 * (v - meta.min) / Math.max(1, meta.max - meta.min));
-        t.innerHTML = '<span class="cc__ico">' + APL.icon("sun", 38, 2) + '</span>' +
+        fill(t, '<span class="cc__ico">' + APL.icon("sun", 38, 2) + '</span>' +
             '<span class="cc__bar"><i style="width:' + pct + '%"></i></span>' +
-            '<span class="cc__val">' + (v === null ? "—" : v) + '</span>';
+            '<span class="cc__val">' + (v === null ? "—" : v) + '</span>');
     }
 
     function render() {
@@ -491,6 +507,9 @@
         if (view === "pair" || keepFocus) start = Math.min(keep || 0, focusables.length - 1);
         nav.focus(start);
         paintCaption(nav.current());
+        /* The new tiles get their glass in this same frame: waiting for glass.js
+           to notice them showed their plain fill for a moment as the panel opened. */
+        if (APL.glass && APL.glass.paint) APL.glass.paint();
     }
 
     function captionOf(it) {
