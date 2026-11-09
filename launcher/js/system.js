@@ -772,7 +772,7 @@
         if (PREVIEW) return Promise.resolve(MOCK_NATIVE[id] || (d.min !== undefined ? Math.round((d.min + d.max) / 2) : 0));
         if (d.home) {
             // On only if both took: with Autorun off the screen still starts on the TV input
-            return homeAppRead().then(function (s) { return s.home === "APLauncher.Home" && s.autostart === 1 ? 1 : 0; });
+            return withTimeout(homeAppRead(), 15000).then(function (s) { return s.home === "APLauncher.Home" && s.autostart === 1 ? 1 : 0; });
         }
         if (d.vconf) {
             return tvExec("vconftool get " + d.vconf + " 2>&1").then(function (r) {
@@ -791,9 +791,10 @@
     function nativeSet(id, value) {
         var d = NATIVE[id];
         if (PREVIEW) { MOCK_NATIVE[id] = value; return Promise.resolve(value); }
+        // Start on APL Launcher first: it has no D-Bus method, and reading d.set below threw before anything was
+        // written, so OK only showed "…" on every screen (an S90F). The timeout covers the read back too.
+        if (d.home) return withTimeout(homeAppSet(value).then(function (r) { return homeAppCheck(value, r); }), 20000);
         var write = d.vconf ? "vconftool set -f -t int " + d.vconf + " " + value + " 2>&1" : AVOC + d.set.replace("V", value) + " 2>&1";
-        // A write the screen never answers would only say so after the bridge's minute: an S90F showed nothing at all
-        if (d.home) return withTimeout(homeAppSet(value), 20000).then(function (r) { return homeAppCheck(value, r); });
         return tvExec(write).then(function () { return nativeGet(id); }).then(function (back) {
             if (back !== value) throw new Error(APL.t("The screen refused this setting for now"));
             return back;
