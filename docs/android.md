@@ -14,7 +14,11 @@ APL Launcher also runs on Android TV and Google TV, as a real launcher app: the 
    adb install apl-launcher-v1.0.24-android.apk
    ```
    The Downloader app works too, from a link to the `.apk`.
-4. Open APL Launcher from the TV's app list, then do the two steps below.
+4. Open APL Launcher from the TV's app list. At its first starts it asks for what Home needs (way A below), until Home opens it, three times at most:
+   - where the device's own launcher keeps the Home button (Android TV 12+, Google TV), *Turn On the Remote Buttons* opens Android's Accessibility screen: choose APL Launcher, turn it on, accept Android's usual warning, then Back. *All set* confirms it. Tried in the emulator from a fresh install, with a virtual remote;
+   - elsewhere it first offers Android's own *Set as default home app* question, then the remote buttons if Home still isn't APL Launcher. Not tried: the emulator's launcher keeps the button.
+
+   *Later* waits for the next start; *Settings › Android TV* has the same steps.
 
 ## Make Home open APL Launcher
 

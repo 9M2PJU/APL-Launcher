@@ -61,6 +61,7 @@ class Bridge(private val ctx: Context, private val host: Host) {
         o.put("emulator", Build.FINGERPRINT.contains("generic") || Build.HARDWARE.contains("ranchu") || Build.HARDWARE.contains("goldfish"))
         o.put("defaultHome", AppList.isDefaultHome(app))
         o.put("chosenHome", AppList.isChosenHome(app))
+        o.put("homeBlocked", AppList.stockHomeWins(app))
         o.put("accessibility", KeyService.isOn(app))
         o.put("overlayAllowed", if (Build.VERSION.SDK_INT >= 23) Settings.canDrawOverlays(app) else true)
         o.put("usageAccess", usageAccess())

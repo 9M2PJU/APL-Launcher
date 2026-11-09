@@ -94,6 +94,18 @@
             "Opens the device's own home screen ({name}). Press Home to come back.": "Ouvre l'écran d'accueil de l'appareil ({name}). Appuyez sur Accueil pour revenir.",
             "Home Screen of the device": "Accueil de l'appareil",
             "Ethernet": "Ethernet",
+            "Make APL Launcher Your Home Screen?": "Faire d'APL Launcher votre écran d'accueil ?",
+            "So that the remote's Home button and the device's start-up open APL Launcher. Android then asks which app to use: choose APL Launcher, then Set as default.":
+                "Pour que le bouton Accueil de la télécommande et le démarrage de l'appareil ouvrent APL Launcher. Android demande ensuite quelle app utiliser : choisissez APL Launcher, puis Définir par défaut.",
+            "Continue": "Continuer",
+            "Later": "Plus tard",
+            "One More Step: the Remote Buttons": "Encore une étape : les touches de la télécommande",
+            "This device keeps its own home screen on the Home button, even once APL Launcher is chosen. In Accessibility, choose APL Launcher and turn it on: Home then opens APL Launcher, and holding Home opens the Control Center over any app. Android then shows its usual warning about accessibility services: APL Launcher only sees the remote's buttons and which app is in front, and sends nothing anywhere.":
+                "Cet appareil garde son propre écran d'accueil sur le bouton Accueil, même quand APL Launcher est choisi. Dans Accessibilité, choisissez APL Launcher et activez-le : Accueil ouvre alors APL Launcher, et un appui long sur Accueil ouvre le Centre de contrôle par-dessus n'importe quelle app. Android affiche alors son avertissement habituel sur l'accessibilité : APL Launcher ne voit que les touches de la télécommande et l'app au premier plan, et n'envoie rien nulle part.",
+            "Open Accessibility": "Ouvrir Accessibilité",
+            "All set: Home now opens APL Launcher.": "C'est prêt : le bouton Accueil ouvre maintenant APL Launcher.",
+            "Not yet: in Accessibility, choose APL Launcher and turn it on. Settings › Android TV has it too.":
+                "Pas encore : dans Accessibilité, choisissez APL Launcher et activez-le. C'est aussi dans Réglages › Android TV.",
             "Other": "Autre"
         };
         for (var k in add) if (Object.prototype.hasOwnProperty.call(add, k) && !Object.prototype.hasOwnProperty.call(FR, k)) FR[k] = add[k];
@@ -564,9 +576,58 @@
         } catch (e) {}
     });
 
-    /* Once the launcher has started: what it was opened for */
+    /* ---------- the first starts: make it the Home app, then turn on the remote buttons ----------
+       Asked at start-up until Home really opens APL Launcher, three times at most ("Later" waits for the
+       next start); Settings › Android TV has the same steps. Where the device's own launcher has a system
+       priority on Home (Android TV 12+, Google TV: info.homeBlocked), Android's question changes nothing
+       and the device even goes back to its own home after it (tried): only the remote buttons are asked. */
+    var setupWait = "";
+    function homeWorks(i) { return !!(i.defaultHome || (i.accessibility && sys.pref("catchHome"))); }
+    function setupDone() { toast(T("All set: Home now opens APL Launcher."), true); }
+    function askRemoteButtons(alone) {
+        var i = fresh();
+        if (homeWorks(i)) { setupDone(); return; }
+        APL.alert({ title: alone ? T("Turn On the Remote Buttons") : T("One More Step: the Remote Buttons"),
+            message: T("This device keeps its own home screen on the Home button, even once APL Launcher is chosen. In Accessibility, choose APL Launcher and turn it on: Home then opens APL Launcher, and holding Home opens the Control Center over any app. Android then shows its usual warning about accessibility services: APL Launcher only sees the remote's buttons and which app is in front, and sends nothing anywhere."),
+            buttons: [{ label: T("Open Accessibility"), run: function () { setupWait = "accessibility"; B.openSettings("accessibility"); } },
+                      { label: T("Later") }] });
+    }
+    function askHome() {
+        APL.alert({ title: T("Make APL Launcher Your Home Screen?"),
+            message: T("So that the remote's Home button and the device's start-up open APL Launcher. Android then asks which app to use: choose APL Launcher, then Set as default."),
+            buttons: [{ label: T("Continue"), run: function () {
+                          var r = B.requestHome();
+                          if (r === "role" || r === "settings") setupWait = "home";      // back here once Android has asked
+                          else askRemoteButtons();
+                      } },
+                      { label: T("Later") }] });
+    }
+    function backFromAndroid() {
+        var w = setupWait;
+        setupWait = "";
+        if (w === "home") setTimeout(askRemoteButtons, 400);
+        else if (w === "accessibility") {
+            if (homeWorks(fresh())) setupDone();
+            else toast(T("Not yet: in Accessibility, choose APL Launcher and turn it on. Settings › Android TV has it too."));
+        }
+    }
+    listen("homeRole", function () { if (setupWait === "home") backFromAndroid(); });
+    document.addEventListener("visibilitychange", function () {
+        // Android's Home settings and Accessibility say nothing when they close: the launcher showing again is the answer
+        if (!document.hidden && setupWait) setTimeout(function () { if (setupWait && !document.hidden) backFromAndroid(); }, 600);
+    });
+    function firstStarts() {
+        var i = fresh(), n = sys.pref("androidSetupAsked") || 0;
+        if (homeWorks(i) || n >= 3 || document.hidden) return;
+        if ((APL.settings && APL.settings.isOpen()) || (APL.alert && APL.alert.isOpen && APL.alert.isOpen())) return;
+        sys.setPref("androidSetupAsked", n + 1);
+        if (i.homeBlocked || i.chosenHome) askRemoteButtons(true); else askHome();
+    }
+
+    /* Once the launcher has started: what it was opened for, otherwise the first starts' questions */
     setTimeout(function wait() {
         if (!global.APL_BOOT_OK) { setTimeout(wait, 300); return; }
-        runAction(String(B.takeAction() || ""));
+        var a = String(B.takeAction() || "");
+        if (a) runAction(a); else setTimeout(firstStarts, 1500);
     }, 300);
 })(window);

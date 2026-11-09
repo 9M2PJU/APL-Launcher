@@ -141,6 +141,16 @@ object AppList {
         return ri?.activityInfo?.packageName == ctx.packageName
     }
 
+    /* Does the device's own launcher have a system priority on Home (Android TV 12+, Google TV: priority 2
+       against 0 for any other app)? Then choosing APL Launcher as the Home app changes nothing: after
+       Android's question the device even goes back to its own home. */
+    fun stockHomeWins(ctx: Context): Boolean {
+        val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+        val list = ctx.packageManager.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY)
+        val mine = list.firstOrNull { it.activityInfo?.packageName == ctx.packageName }?.priority ?: 0
+        return list.any { val a = it.activityInfo; a != null && a.packageName != ctx.packageName && it.priority > mine }
+    }
+
     /* Was APL Launcher chosen as the Home app (Android 10+: the Home role)? */
     fun isChosenHome(ctx: Context): Boolean {
         if (Build.VERSION.SDK_INT >= 29) {
