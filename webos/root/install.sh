@@ -22,7 +22,7 @@
 # To undo everything: sh /media/developer/apl-debloat/uninstall.sh
 set -eu
 
-APL_VERSION="1.0.24"
+APL_VERSION="1.1.0"
 REPO="Knikt/APL-Launcher"
 BRANCH="${1:-main}"
 URL="https://raw.githubusercontent.com/$REPO/$BRANCH/webos/root"
