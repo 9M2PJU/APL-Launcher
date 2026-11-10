@@ -28,6 +28,7 @@
 /* The surface itself stops filtering: the pane below it is already soft. */
 body.glass .dock,
 body.glass .status,
+body.glass .search-hint,
 body.glass .cc__t,
 body.glass .scard__art--glass {
     -webkit-backdrop-filter: none;
@@ -72,12 +73,14 @@ body.glass .bg.is-slide > img { animation: none; }
 }
 /* The clock pill is round at both ends: a straight hairline sat above its curves like a stray reflection
    (an LG G5, drawn twice as thick in 4K). Its rim, which follows the curve, is its light instead. */
-.status .cg__glass::before { display: none; }
-/* The rim of the dock and the pill (launcher.css, .dock::before) stays above the pane: the pane is an
+.status .cg__glass::before,
+.search-hint .cg__glass::before { display: none; }
+/* The rim of the dock and the pills (launcher.css, .dock::before) stays above the pane: the pane is an
    opaque slice, and it hid the rim whenever an app had a picture under the dock, so the outline came and
    went from one app to the next. The tiles and the time stay above the rim (z-index 1 and 2, later). */
 body.glass .dock::before,
-body.glass .status::before { z-index: 1; }
+body.glass .status::before,
+body.glass .search-hint::before { z-index: 1; }
 
 /* 5 % of white, lit from the top edge, over a shade: the glass, not the picture.
    The shade is measured for each pane by glass.js (--glass-shade) from the picture
@@ -109,6 +112,7 @@ body.glass.theme-light .cg__glass::after {
 body.glass .status__clock { position: relative; z-index: 2; }
 body.glass .dock > .row0,
 body.glass .status > :not(.cg__glass),
+body.glass .search-hint > :not(.cg__glass),
 body.glass .cc__t > :not(.cg__glass),
 body.glass .scard__art--glass > :not(.cg__glass) { position: relative; z-index: 1; }
 
