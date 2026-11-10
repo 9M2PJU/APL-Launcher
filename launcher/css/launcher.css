@@ -1312,10 +1312,17 @@ html, body {
 /* The clock: its text is a layer, so a new minute doesn't repaint the pill under it (25 ms) */
 .is-webos .status__clock { will-change: transform; }
 
-/* The Control Center's tiles: under its pane a tile's own fill is never seen, so it is one plain colour and
-   one shadow, the same focused or not. Focus is then the pane's plate and the text, not the tile's layer
-   with its blurred shadows (10 ms each). No fade of the text colour, which repainted it on every frame. */
-.is-webos body.glass .cc__t, .is-webos body .cc__t { transition: transform 220ms var(--spring, ease); --cc-fill: rgba(26, 28, 36, 0.72); --cc-shadow: 0 12px 32px rgba(0, 0, 0, 0.24); }
-.is-webos .theme-light .cc__t { --cc-fill: rgba(236, 238, 244, 0.6); --cc-shadow: 0 10px 28px rgba(0, 0, 0, 0.12); }
-.is-webos .cc__t:has(> .cg__glass.is-on), .is-webos .cc__t.is-focused:has(> .cg__glass.is-on) { background: var(--cc-fill); box-shadow: var(--cc-shadow); }
-.is-webos .cc__t.is-focused::before { opacity: 1; }
+/* The Control Center's tiles: under its pane a tile's own fill and rim are never seen, so the tile paints
+   nothing at all there, focused or not: no layer, where each tile's own (fill, blurred shadow, masked rim)
+   was 10 ms to paint and 1.2 MB, 15 MB for the twelve of them kept ready. Focus is the pane's plate and the
+   text. The soft shadow under a tile goes with it: over the dimmed screen it could hardly be seen. No fade
+   of the text colour, which repainted the tile on every frame. */
+.is-webos body.glass .cc__t, .is-webos body .cc__t { transition: transform 220ms var(--spring, ease); }
+.is-webos .cc__t:has(> .cg__glass.is-on), .is-webos .cc__t.is-focused:has(> .cg__glass.is-on) { background: none; box-shadow: none; }
+.is-webos .cc__t:has(> .cg__glass.is-on)::before { content: none; }
+
+/* Settings: the list's fade at its top and bottom was a mask, a second surface the size of the list (22 MB
+   with it) drawn again on every frame it scrolled. With Visual Effects off the list is simply cut at its
+   edges. With the Settings panel (32 MB) the page then stays under the TV's 125 MB: past it, a band of the
+   panel was left unpainted, a black bar (a G5). */
+.is-webos .perf .settings__listwrap { -webkit-mask-image: none; mask-image: none; }
