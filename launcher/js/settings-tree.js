@@ -257,7 +257,7 @@
 
             /* -------- General & Privacy -------- */
             menu(APL.t("General & Privacy"), "sliders", [
-                choice(APL.t("Language"), "language", [["auto", APL.t("Automatic")], ["en", "English"], ["fr", "Français"]],
+                choice(APL.t("Language"), "language", [["auto", APL.t("Automatic")], ["en", "English"], ["fr", "Français"], ["ms", "Bahasa Melayu"]],
                     APL.t("Automatic follows the screen's language. The launcher restarts to apply it."),
                     function (v) { if (v !== language) setTimeout(function () { global.location.reload(); }, 400); }),
                 toggle(APL.t("24-Hour Time"), "clock24", APL.t("Time format on the Home Screen and in Control Center.")),
