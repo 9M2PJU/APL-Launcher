@@ -254,6 +254,10 @@
             (res[1].results || []).forEach(function (d) { if (d && d.key) desc[d.key] = d; });
             var items = [];
             PIC_KEYS.forEach(function (k) {
+                /* A value never set in this mode comes back as the number 0, not a string: the TV's real one
+                   depends on the country (hasCountryVar). Left out: showing 0 and writing 1 from it would
+                   all but black the screen (Cinema on a G5). */
+                if (typeof s[k] !== "string") return;
                 var v = parseInt(s[k], 10);
                 if (isNaN(v)) return;
                 var d = desc[k], r = d && d.values && d.values.range;
