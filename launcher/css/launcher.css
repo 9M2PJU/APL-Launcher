@@ -70,6 +70,21 @@ html, body {
    Dock 43 -> 57 images a second, moving in the grid 45 -> 55, opening it 33 -> 43. */
 .is-webos .shelfinfo, .is-webos .dock, .is-webos .rows .tile { will-change: transform; }
 .is-webos .bgblur, .is-webos .hint { will-change: opacity; }
+/* The page is the screen: the rows below it made the document 2443 px tall, and each slide of the grid
+   resized the page's own layer and repainted it whole (and took 72 MB instead of 32). The body is the
+   rows' containing block and clips them; nothing scrolls, everything moves by transform. */
+.is-webos body { position: relative; overflow: clip; }
+/* The grid's blurred picture fades in faster: two 4K layers blended on each frame of its fade */
+.is-webos .bgblur { transition-duration: 250ms; }
+/* The scrim, a plain gradient, drawn at a quarter of the size and scaled up (webos.js adds is-up once it is
+   drawn, so it keeps that size): 2 MB instead of 32, under LG's 250 MB, and nothing to see in a gradient.
+   Over the grid it only fades out: its darkening is drawn into the grid's blurred picture (launcher.js
+   gridTint), so no 4K background is swapped and one full-screen layer fewer is blended. */
+.is-webos .scrim { right: auto; bottom: auto; width: 25%; height: 25%; transform-origin: 0 0; transform: scale(1); will-change: transform, opacity; }
+.is-webos .scrim.is-up { transform: scale(4); }
+.is-webos .mode-grid .scrim, .is-webos .perf.mode-grid .scrim, .is-webos .theme-light.mode-grid .scrim,
+.is-webos .theme-light.perf.mode-grid .scrim { opacity: 0;
+    background: linear-gradient(180deg, rgba(0,0,0,0.30) 0%, rgba(0,0,0,0) 16%, rgba(0,0,0,0) 50%, rgba(0,0,0,0.55) 70%, rgba(0,0,0,0.92) 86%, #000 100%); }
 /* A backdrop picture is an <img> (launcher.js showPicture): a decoded bitmap is
    painted whole, where a CSS background on this layer filled itself in a line at
    a time from the top as it decoded. */

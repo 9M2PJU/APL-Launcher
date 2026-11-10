@@ -28,6 +28,10 @@
 
     var APL = global.APL = global.APL || {};
 
+    /* These canvases are read back (getImageData, toDataURL) and never shown: kept in ordinary memory.
+       On the GPU each read waited for it, 90 ms at a time on an LG G5, in the middle of an animation. */
+    var READ = { willReadFrequently: true };
+
     var BAKE_W = 480, BAKE_H = 270;      /* 1/4 of the stage */
     var TINY_W = 48, TINY_H = 27;        /* 1/40: two steps down, no filter */
     var ZOOM = 1.25;                     /* the backdrop is enlarged behind the glass */
@@ -140,7 +144,7 @@
     }
     function grid(canvas) {
         try {
-            var d = canvas.getContext("2d").getImageData(0, 0, TINY_W, TINY_H).data, g = [], i;
+            var d = canvas.getContext("2d", READ).getImageData(0, 0, TINY_W, TINY_H).data, g = [], i;
             for (i = 0; i < d.length; i += 4) g.push(0.2126 * chan(d[i]) + 0.7152 * chan(d[i + 1]) + 0.0722 * chan(d[i + 2]));
             return g;
         } catch (e) { return null; }
@@ -212,12 +216,12 @@
         var tiny = document.createElement("canvas");
         tiny.width = TINY_W;
         tiny.height = TINY_H;
-        tiny.getContext("2d").drawImage(img, (iw - sw) / 2, (ih - sh) / 2, sw, sh, 0, 0, TINY_W, TINY_H);
+        tiny.getContext("2d", READ).drawImage(img, (iw - sw) / 2, (ih - sh) / 2, sw, sh, 0, 0, TINY_W, TINY_H);
 
         var out = document.createElement("canvas");
         out.width = BAKE_W;
         out.height = BAKE_H;
-        var c = out.getContext("2d");
+        var c = out.getContext("2d", READ);
         c.imageSmoothingEnabled = true;
         if ("imageSmoothingQuality" in c) c.imageSmoothingQuality = "high";
         /* Brightness is baked once here: no filter, no redraw, on the TV's
@@ -448,7 +452,7 @@
         var out = document.createElement("canvas");
         out.width = BAKE_W;
         out.height = BAKE_H;
-        var c = out.getContext("2d");
+        var c = out.getContext("2d", READ);
         var g = c.createLinearGradient(0, 0, 0, BAKE_H), i;
         for (i = 0; i < stops.length; i++) {
             g.addColorStop(stops.length === 1 ? 0 : i / (stops.length - 1), stops[i].trim());
@@ -462,7 +466,7 @@
         var tiny = document.createElement("canvas");
         tiny.width = TINY_W;
         tiny.height = TINY_H;
-        tiny.getContext("2d").drawImage(out, 0, 0, TINY_W, TINY_H);
+        tiny.getContext("2d", READ).drawImage(out, 0, 0, TINY_W, TINY_H);
         var g = grid(tiny);
         if (g) lums[data] = g;
         return data;

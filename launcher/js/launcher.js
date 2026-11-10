@@ -182,6 +182,13 @@
             var r = Math.max((w + 2 * m) / img.naturalWidth, (h + 2 * m) / img.naturalHeight);
             var dw = img.naturalWidth * r, dh = img.naturalHeight * r;
             ctx.drawImage(img, (w - dw) / 2, (h - dh) / 2, dw, dh);
+            /* LG: the grid's darkening is drawn here, and the full-screen scrim fades out over the grid
+               (launcher.css): one 4K layer less to blend on every frame of the grid's slide */
+            if (APL.platform && APL.platform.gridTint) {
+                ctx.filter = "none";
+                ctx.fillStyle = document.body.classList.contains("theme-light") ? "rgba(240, 241, 246, 0.72)" : "rgba(4, 5, 10, 0.32)";
+                ctx.fillRect(0, 0, w, h);
+            }
             c.style.opacity = "1";
             dom.bgBlur.style.background = "#05060a";
         }
@@ -198,10 +205,14 @@
        every move in the dock was what made navigation stutter. */
     var blurWanted = null;
     /* glass: the picture for the frosted dock, when it differs from the grid's (see frost). */
+    var blurAhead = 0;
     function wantBlur(src, app, glass) {
         frost(glass === undefined ? src : glass);
         blurWanted = { src: src, app: app };
         if (mode === "grid") flushBlur();
+        /* LG: prepared once the focus has rested on an app for a second, so that entering the grid has no
+           picture to decode (a 4K one in the first frames of the grid's slide) */
+        else if (APL.platform && APL.platform.blurAhead) { clearTimeout(blurAhead); blurAhead = setTimeout(flushBlur, 1200); }
     }
     /* Liquid Glass with no live blur: the dock shows a soft copy of the picture behind it (the sheets
        are soft already), lined up with it (layout), so the

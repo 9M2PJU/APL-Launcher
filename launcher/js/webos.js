@@ -51,6 +51,14 @@
     }
     fitPage();
     global.addEventListener("resize", fitPage);
+    /* The scrim is drawn at a quarter of the size, then scaled up (launcher.css): scaled only once drawn, so
+       the browser keeps that small drawing (a layer with will-change: transform isn't drawn again at a new scale) */
+    function scrimUp() {
+        var s = document.querySelector(".scrim");
+        if (!s) return;
+        global.requestAnimationFrame(function () { global.setTimeout(function () { s.classList.add("is-up"); }, 300); });
+    }
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", scrimUp); else scrimUp();
 
     /* ---------- luna ---------- */
     var live = [];          // bridges waiting for their answer: a bridge nobody holds can be collected before it answers
@@ -366,6 +374,8 @@
         /* The App Switcher leaves out LG's own apps that the TV keeps preloaded (LG Channels): never opened by you */
         notInSwitcher: function (id) { return LG_OWN.indexOf(id) !== -1; },
         readyLayers: 2,                       // backdrops kept ready in 4K (launcher.js readyLayer)
+        blurAhead: true,                      // the grid's blurred picture prepared before the grid opens (launcher.js)
+        gridTint: true,                       // the grid's darkening drawn into that picture (launcher.js, launcher.css)
         takeAction: function () { var a = pendingAction; pendingAction = ""; return a; },
         ccBack: function () { var id = returnTo; returnTo = ""; if (id && Date.now() - returnAt < 600000) launch(id).catch(function () {}); }
     };
