@@ -50,6 +50,9 @@ body.glass .scard__art--glass {
     transition: none;                    /* a window onto the picture: it never animates itself */
 }
 .cg__glass.is-on { opacity: 1; }
+/* LG, 4K: each pane is a layer of its own. A new picture puts a new pane in: without its own layer that
+   repainted the dock's whole layer, and the dock fell from 57 to 43 images a second (G5). */
+.is-webos .cg__glass { will-change: transform; }
 
 /* Nothing moves the picture while the glass is on. The slow pan of the artwork
    and the slide of a new one both drag it under panes that are fixed to the

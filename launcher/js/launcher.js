@@ -312,6 +312,7 @@
         clearTimeout(next._out);
         clearTimeout(old._out);
         bgActive = next;
+        readyLayer(next);
         /* The element itself, not only its id: several layers can carry the
            same app, and the glass has to slice the one that was faded in. */
         document.body.__bgLive = next;
@@ -337,6 +338,19 @@
                 if (list[i] !== bgActive) hideLayer(list[i]);
             }
         }, FADE_MS + 120);
+    }
+    /* LG draws in 4K: a layer kept ready is 32 MB there and its browser has 250 MB for all of them, so only
+       the last few stay ready (APL.platform.readyLayers, launcher.css .is-ready); back and forth between two
+       neighbours then repaints nothing. Elsewhere every layer stays ready. */
+    var readyList = [];
+    function readyLayer(l) {
+        var max = APL.platform && APL.platform.readyLayers;
+        if (!max) return;
+        var i = readyList.indexOf(l);
+        if (i !== -1) readyList.splice(i, 1);
+        readyList.unshift(l);
+        l.classList.add("is-ready");
+        while (readyList.length > max) readyList.pop().classList.remove("is-ready");
     }
     function hideLayer(l) {
         if (l === bgActive) return;                               // shown again in the meantime

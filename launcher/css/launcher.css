@@ -62,7 +62,14 @@ html, body {
    measured on a G5), and the TV left squares of the screen undrawn, black. Only the backdrop on screen is
    kept ready; a fading one keeps its layer for the length of its fade. 209 MB measured after. */
 .is-webos .bg { will-change: auto; }
-.is-webos .bg.is-active { will-change: opacity, transform; }
+.is-webos .bg.is-active, .is-webos .bg.is-ready { will-change: opacity, transform; }   /* the last two (launcher.js readyLayer) */
+/* LG, 4K: what changes on a move has a layer of its own, so a move repaints only that and never the page or
+   the whole grid (G5, measured with the inspector's paint events): the title area, the dock (its frosted
+   picture changes with each app), every grid tile (the focused one scaled up left the grid layer and was
+   repainted into it again, 8 Mpx twice a move), the grid's blurred picture and the hint as they fade.
+   Dock 43 -> 57 images a second, moving in the grid 45 -> 55, opening it 33 -> 43. */
+.is-webos .shelfinfo, .is-webos .dock, .is-webos .rows .tile { will-change: transform; }
+.is-webos .bgblur, .is-webos .hint { will-change: opacity; }
 /* A backdrop picture is an <img> (launcher.js showPicture): a decoded bitmap is
    painted whole, where a CSS background on this layer filled itself in a line at
    a time from the top as it decoded. */

@@ -365,6 +365,7 @@
         cachedApps: function () { return appsCache || []; },
         /* The App Switcher leaves out LG's own apps that the TV keeps preloaded (LG Channels): never opened by you */
         notInSwitcher: function (id) { return LG_OWN.indexOf(id) !== -1; },
+        readyLayers: 2,                       // backdrops kept ready in 4K (launcher.js readyLayer)
         takeAction: function () { var a = pendingAction; pendingAction = ""; return a; },
         ccBack: function () { var id = returnTo; returnTo = ""; if (id && Date.now() - returnAt < 600000) launch(id).catch(function () {}); }
     };
