@@ -12,8 +12,10 @@
      inputs      the HDMI / Live TV apps (com.webos.app.hdmi1…)
      off, timer  LG Connect Apps (ssap://system/turnOff), the timer kept by
                  the launcher's service while the launcher is in the background
-     picture     LG Connect Apps (ssap://settings/…), webos-settings.js
-   Root commands (Vetro on Samsung) don't exist here: they say so.
+     picture     on a rooted TV, LG's settings service through the launcher's
+                 service (webos/root/ elevates it); otherwise LG's own menus
+     open apps   on a rooted TV, the app manager: the apps running, closing one
+   Vetro's shell (sys.exec on Samsung) doesn't exist here: it says so.
    ============================================================ */
 (function (global) {
     "use strict";
@@ -24,6 +26,27 @@
 
     function t(s, vars) { return APL.t ? APL.t(s, vars) : s; }
     function noRoot() { return Promise.reject(new Error(t("This needs a rooted TV on LG"))); }
+
+    /* ---------- root ----------
+       On a TV rooted with the Homebrew Channel, webos/root/ gives the launcher's service root: it then relays
+       a few of LG's own calls (its picture settings, the apps running). Known from the last start at once,
+       then from the service. */
+    var ROOT_KEY = "apl.webos.root", rootFns = [];
+    P.rooted = (function () { try { return global.localStorage.getItem(ROOT_KEY) === "1"; } catch (e) { return false; } })();
+    P.onRoot = function (fn) { rootFns.push(fn); fn(P.rooted); };
+    P.service("status", {}).then(function (m) {
+        var r = !!m.root;
+        try { global.localStorage.setItem(ROOT_KEY, r ? "1" : "0"); } catch (e) {}
+        if (r === P.rooted) return;
+        P.rooted = r;
+        rootFns.forEach(function (fn) { try { fn(r); } catch (e) {} });
+    }, function () {});
+    function rootLuna(uri, payload, ms) {
+        if (!P.rooted) return noRoot();
+        return P.lunaOnce("luna://com.knikt.apllauncher.service/luna", { uri: uri, payload: payload || {} }, ms || 15000)
+            .then(function (m) { return m.payload || {}; });
+    }
+    var SETTINGS = "luna://com.webos.settingsservice/", APPMGR = "luna://com.webos.applicationManager/";
 
     /* ---------- sound ---------- */
     var snd = { volume: 0, mute: false, output: "" };
@@ -186,6 +209,7 @@
        while the launcher runs, renewed once fewer than 960 hours are left. */
     var DEV_KEY = "apl.webos.devmode", devm = (function () { try { return JSON.parse(global.localStorage.getItem(DEV_KEY) || "null") || {}; } catch (e) { return {}; } })();
     function devCheck() {
+        if (P.rooted) return;                            // rooting removes Developer Mode and its 1000 hours
         if (devm.at && Date.now() - devm.at < 20 * 3600 * 1000) return;
         P.service("devmode", { extend: true }).then(function (m) {
             devm = { at: Date.now(), hours: m.hours, renewed: m.extended ? Date.now() : devm.renewed || 0 };
@@ -199,6 +223,128 @@
         var left = Math.max(0, devm.hours - Math.floor((Date.now() - (devm.at || Date.now())) / 3600000));
         return t("{h} h left, renewed by the launcher", { h: left });
     };
+
+    /* ---------- the picture, on a rooted TV ----------
+       LG's settings service, as LG's own menus: values are strings ("14"), each picture mode keeps its own,
+       and the ranges and the modes on offer come from the TV (getSystemSettingDesc). On an OLED, backlight
+       is OLED Pixel Brightness. */
+    var PIC_KEYS = ["backlight", "contrast", "brightness", "sharpness", "color", "tint", "colorTemperature"];
+    var PIC_RANGE = { backlight: [0, 100], contrast: [0, 100], brightness: [0, 100], sharpness: [0, 50], color: [0, 100],
+                      tint: [-50, 50], colorTemperature: [-50, 50] };
+    var MODE_NAMES = { vivid: "Vivid", normal: "Standard", standard: "Standard", eco: "Eco", cinema: "Cinema", cinemaBright: "Cinema Home",
+                       sports: "Sports", game: "Game Optimizer", filmMaker: "Filmmaker Mode", expert1: "ISF Expert (Bright Room)",
+                       expert2: "ISF Expert (Dark Room)", personalized: "Personalized Picture" };
+    /* HDR and Dolby Vision have their own modes (hdrStandard, dolbyHdrCinema…): the same names */
+    function modeName(v) {
+        var k = String(v || "").replace(/^(dolbyHdr|hdr)(.)/, function (m, p, c) { return c.toLowerCase(); });
+        return MODE_NAMES[k] ? t(MODE_NAMES[k]) : String(v || "—");
+    }
+    var picModes = [];                                // [value, name], in LG's order (settings.js lists them)
+    var picCache = null, picAt = 0, picPending = null;
+    function tvSettings(force) {
+        if (!P.rooted) return Promise.resolve([]);
+        if (!force && picCache && Date.now() - picAt < 8000) return Promise.resolve(picCache);
+        if (picPending) return picPending;
+        var keys = PIC_KEYS.concat(["pictureMode"]);
+        picPending = Promise.all([
+            rootLuna(SETTINGS + "getSystemSettings", { category: "picture", keys: keys }),
+            rootLuna(SETTINGS + "getSystemSettingDesc", { category: "picture", keys: keys }).catch(function () { return {}; })
+        ]).then(function (res) {
+            var s = res[0].settings || {}, desc = {};
+            (res[1].results || []).forEach(function (d) { if (d && d.key) desc[d.key] = d; });
+            var items = [];
+            PIC_KEYS.forEach(function (k) {
+                var v = parseInt(s[k], 10);
+                if (isNaN(v)) return;
+                var d = desc[k], r = d && d.values && d.values.range;
+                items.push({ id: k, writable: !(d && d.ui && d.ui.active === false), value: v,
+                             min: r ? r.min : PIC_RANGE[k][0], max: r ? r.max : PIC_RANGE[k][1] });
+            });
+            if (s.pictureMode) {
+                var list = (desc.pictureMode && desc.pictureMode.values && desc.pictureMode.values.arrayExt) || [];
+                picModes.length = 0;
+                list.forEach(function (m) { if (m.visible && m.active) picModes.push([m.value, modeName(m.value)]); });
+                if (!picModes.some(function (m) { return m[0] === s.pictureMode; })) picModes.unshift([s.pictureMode, modeName(s.pictureMode)]);
+                items.push({ id: "pictureMode", writable: true, value: s.pictureMode, coded: true });
+            }
+            picCache = items; picAt = Date.now(); picPending = null;
+            return items;
+        }, function (e) { picPending = null; throw e; });
+        return picPending;
+    }
+    /* Writes a value and reads it back: the value read back is what counts */
+    function picWrite(it, want) {
+        var set = {};
+        set[it.id] = String(want);
+        return rootLuna(SETTINGS + "setSystemSettings", { category: "picture", settings: set }).then(function (r) {
+            if (r.returnValue === false) throw new Error(t("The screen refused this setting for now"));
+            return rootLuna(SETTINGS + "getSystemSettings", { category: "picture", keys: [it.id] });
+        }).then(function (r) {
+            var back = r.settings && r.settings[it.id];
+            if (back === undefined) throw new Error(t("The screen did not respond"));
+            it.value = it.coded ? String(back) : parseInt(back, 10);
+            if (String(it.value) !== String(want)) throw new Error(t("The screen refused this setting for now"));
+            return it.value;
+        });
+    }
+    function picItem(id) {
+        return tvSettings().then(function (items) {
+            for (var i = 0; i < items.length; i++) if (items[i].id === id) return items[i];
+            return null;
+        });
+    }
+    /* ◀ ▶: the value shown changes at once, the write goes out 350 ms after the last press, one at a time */
+    var picTimers = {}, picWriting = {};
+    function picAdjust(id, delta, onChange) {
+        return picItem(id).then(function (it) {
+            if (!it || !it.writable || it.coded) throw new Error(t("Setting unavailable for now"));
+            if (it.target === undefined) it.target = it.value;
+            it.target = Math.max(it.min, Math.min(it.max, it.target + delta));
+            if (onChange) onChange(it.target, it);
+            clearTimeout(picTimers[id]);
+            picTimers[id] = setTimeout(function flush() {
+                if (picWriting[id]) { picTimers[id] = setTimeout(flush, 150); return; }
+                if (it.target === it.value) return;
+                picWriting[id] = true;
+                picWrite(it, it.target).then(function () { picWriting[id] = false; }, function (e) {
+                    picWriting[id] = false;
+                    it.target = it.value;
+                    picCache = null;
+                    if (onChange) onChange(it.value, it);
+                    if (APL.toast) APL.toast(e.message);
+                });
+            }, 350);
+            return it.target;
+        });
+    }
+    function setPictureMode(v) {
+        return picItem("pictureMode").then(function (it) {
+            if (!it) throw new Error(t("Picture Mode unavailable"));
+            return picWrite(it, v).then(function (back) { picCache = null; return back; });
+        });
+    }
+
+    /* ---------- the apps running, on a rooted TV ---------- */
+    /* Never closed: the app in front, LG's home and system interface, the inputs, AirPlay */
+    var NEVER_CLOSE = /^(airplay|com\.knikt\.apllauncher|com\.webos\.app\.(home|livetv|hdmi\d*|starfish.*|.*systemui.*))$/;
+    function runningApps() {
+        if (!P.rooted) return Promise.resolve([]);
+        return rootLuna(APPMGR + "running", {}).then(function (r) {
+            return (r.running || []).map(function (a) { return String(a.id || ""); }).filter(Boolean);
+        });
+    }
+    function closeApps(ids) {
+        if (!P.rooted) return noRoot();
+        return rootLuna(APPMGR + "getForegroundAppInfo", {}).then(function (r) { return r.appId || ""; }, function () { return ""; }).then(function (front) {
+            var list = (ids || []).filter(function (id) { return id && id !== front && !NEVER_CLOSE.test(id); });
+            return list.reduce(function (p, id) {
+                return p.then(function () { return rootLuna(APPMGR + "closeByAppId", { id: id }).catch(function () {}); });
+            }, Promise.resolve()).then(function () { return list; });
+        });
+    }
+    function memoryLeft() {
+        return P.service("memory", {}).then(function (m) { return m.kb || 0; });
+    }
 
     /* ---------- how the launcher reaches the TV (Settings › About, in place of "Link to Vetro") ---------- */
     function link() {
@@ -227,7 +373,9 @@
         sys.openTvSettings = openSettings;
         sys.sleepNow = sleepNow;
         sys.switchSource = switchSource;
-        sys.runningApps = function () { return Promise.resolve([]); };
+        sys.runningApps = runningApps;
+        sys.closeApps = closeApps;
+        sys.memoryLeft = memoryLeft;
         sys.registerKeys = function () {};
         sys.armSleepTimer = function (m) { armSleepTimer(sys, m); };
         sys.readSleepTimer = function () { return readSleepTimer(sys); };
@@ -236,19 +384,24 @@
         sys.vetroGet = noRoot; sys.vetroPost = noRoot; sys.exec = noRoot;
         sys.noVetro = function () { return false; };         // the rows that need Vetro are not shown here (webos-settings.js)
         sys.isOled = function () { return !!P.oled; };
-        /* The picture: kept from apps without root (LG Connect Apps "Application error", luna "Access denied").
-           The Control Center's slider is the volume instead (P.ccSlider, webos-settings.js). */
+        /* The picture: LG keeps it from apps (LG Connect Apps "Application error", luna "Access denied"), not
+           from a rooted TV's service. Without root the Control Center's slider is the volume (P.ccSlider). */
         function volumeItem() { return { id: "volume", writable: true, value: snd.volume, min: 0, max: 100 }; }
-        sys.tvSettings = function () { return Promise.resolve([]); };
-        sys.tvItem = function (id) { return Promise.resolve(id === "volume" ? volumeItem() : null); };
-        sys.tvValue = function (id) { return Promise.resolve(id === "volume" ? snd.volume : null); };
+        sys.tvSettings = tvSettings;
+        sys.tvItem = function (id) { return id === "volume" ? Promise.resolve(volumeItem()) : picItem(id); };
+        sys.tvValue = function (id) {
+            if (id === "volume") return Promise.resolve(snd.volume);
+            return picItem(id).then(function (it) { return it ? (it.target !== undefined ? it.target : it.value) : null; });
+        };
         sys.tvAdjust = function (id, delta, onChange) {
-            if (id !== "volume") return Promise.reject(new Error(t("Setting unavailable for now")));
+            if (id !== "volume") return picAdjust(id, delta, onChange);
             var v = audio.setVolume(snd.volume + delta);
             if (onChange) onChange(v, volumeItem());
             return Promise.resolve(v);
         };
-        sys.setPictureMode = function () { return Promise.reject(new Error(t("Setting unavailable for now"))); };
+        sys.PICTURE_MODES = picModes;
+        sys.pictureModeName = modeName;
+        sys.setPictureMode = setPictureMode;
         sys.game = {
             get: function () { return Promise.resolve({ available: false, on: false }); },
             set: function () { return Promise.reject(new Error(t("Game Optimizer is in the TV's own settings"))); },

@@ -846,6 +846,7 @@
     var KEEP_OPEN = /^(APLauncher\.|apl\.launcher\.|xvvl3S1bvH\.|vetrotvapp)/;
     var VIDEO_APPS = ["org.tizen.netflix-app", "org.tizen.primevideo", "HEPsqFNie0.tvplusstandalone"];   // their tile carries a different id
     function memoryLeft() {
+        if (APL.sys.memoryLeft) return APL.sys.memoryLeft();        // LG (webos-system.js)
         return APL.sys.exec("awk '/MemAvailable|SwapFree/{s+=$2} END{print s}' /proc/meminfo").then(function (r) { return parseInt(r.output, 10) || 0; });
     }
     APL.freeMemory = function () {
@@ -855,7 +856,11 @@
             if (!open.length) { toast(APL.t("No apps to close"), true); return; }
             return memoryLeft().then(function (before) {
                 var cmd = open.map(function (id) { return "app_launcher -k " + id + " >/dev/null 2>&1"; }).join("; ") + "; sleep 1";
-                return APL.sys.exec(cmd).then(memoryLeft).then(function (after) {
+                var closing = APL.sys.closeApps
+                    ? APL.sys.closeApps(open).then(function (done) { open = done; return new Promise(function (r) { setTimeout(r, 1000); }); })
+                    : APL.sys.exec(cmd);
+                return closing.then(memoryLeft).then(function (after) {
+                    if (!open.length) { toast(APL.t("No apps to close"), true); return; }
                     var freed = Math.max(0, Math.round((after - before) / 1024));
                     toast(open.length > 1 ? APL.t("{n} apps closed: {mb} MB freed", { n: open.length, mb: freed }) : APL.t("{n} app closed: {mb} MB freed", { n: open.length, mb: freed }), true);
                 });

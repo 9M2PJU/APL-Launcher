@@ -25,9 +25,11 @@
     // Rows of the Samsung screen's own settings (settings-tree.js), until LG's equivalents below replace them
     var SAMSUNG_TYPES = { service: 1, game: 1, tv: 1, tvmode: 1, native: 1 };
 
+    // On a rooted TV the launcher's service reads and sets these through LG's own settings (webos-system.js)
+    var ROOT_ROWS = { "tv:backlight": 1, "tv:contrast": 1, "tv:sharpness": 1, "tv:color": 1, "tvmode:": 1 };
     function samsungOnly(item) {
-        if (item.vetro === true) return true;
-        if (SAMSUNG_TYPES[item.type] && !(P.tvRows && P.tvRows[item.type + ":" + (item.id || "")])) return true;
+        if (item.vetro === true && !(P.rooted && item.type === "action" && item.label === t("Free Up Memory"))) return true;
+        if (SAMSUNG_TYPES[item.type] && !(P.rooted && ROOT_ROWS[item.type + ":" + (item.id || "")])) return true;
         if ((item.type === "toggle" || item.type === "choice") && SAMSUNG_PREFS[item.key]) return true;
         if (item.type === "hide" && item.id === "apl.samsunghome") return true;
         if (item.type === "action" && (item.label === t("Check for Update") || item.label === t("Go Back to the Installed Version"))) return true;
@@ -56,9 +58,17 @@
             item.desc = t("Trending films, series and videos on each service, top albums, games, sports. Films and series need a TMDB key, videos a YouTube key (see Online Services).");
         } else if (item.type === "choice" && item.key === "language") {
             item.desc = t("Automatic follows the TV's language. The launcher restarts to apply it.");
+        } else if (item.type === "tv" && item.id === "backlight" && P.oled) {
+            item.label = t("OLED Pixel Brightness");
+            item.desc = t("How bright the OLED panel is. ◀ ▶ to adjust, live.");
+        } else if (item.type === "tvmode") {
+            item.desc = t("The TV's own modes: Filmmaker Mode, Cinema, Standard, Vivid… Changes right away. Each mode keeps its own settings.");
+        } else if (item.type === "action" && item.label === t("Free Up Memory")) {
+            item.desc = t("Closes the apps left open behind the launcher (Netflix, Disney+, LG Channels…). They reopen normally, but start over from the beginning. The app in front, the inputs and AirPlay stay.");
         }
         return item;
     }
+    function tvRow(id, label, desc) { return { type: "tv", id: id, label: label, desc: desc }; }
 
     function adapt(node) {
         if (!node.children) return node;
@@ -92,15 +102,28 @@
         }, function () { return t("Unavailable"); });
     }
     P.extraRows = function (node) {
-        if (node.label === t("Picture")) {
+        if (node.label === t("Picture") && P.rooted) {
+            var after = 0;
+            node.children.forEach(function (c, i) { if (c.type === "tv" && c.id === "contrast") after = i + 1; });
+            if (after) node.children.splice(after, 0, tvRow("brightness", t("Brightness"), t("The black level: brightens or darkens the dark areas. ◀ ▶ to adjust, live.")));
+            node.children.push({ type: "action", label: t("Picture Settings on the TV"), icon: "display",
+                run: function () { sys.openTvSettings(); },
+                desc: t("Everything else (AI Picture, Eye Comfort Mode, Dynamic Tone Mapping…): in LG's own settings.") });
+        } else if (node.label === t("Picture")) {
             node.children.unshift({ type: "action", label: t("Picture Settings on the TV"), icon: "display",
                 run: function () { sys.openTvSettings(); },
                 desc: t("Picture mode, OLED Pixel Brightness, contrast, colour: in LG's own settings. Without root, the TV keeps them for its own menus.") });
+        } else if (node.label === t("Expert Settings") && P.rooted) {
+            node.children.unshift(tvRow("tint", t("Tint (G/R)"), t("◀ ▶ to adjust, live.")),
+                                  tvRow("colorTemperature", t("Color Temperature"), t("Cool leans blue, warm leans red. ◀ ▶ to adjust, live.")));
         } else if (node.label === t("Sound")) {
             var at = 0;
             node.children.forEach(function (c, i) { if (c.type === "mute") at = i + 1; });
             node.children.splice(at, 0, { type: "info", label: t("Sound Mode"), get: readSoundMode,
                 desc: t("Chosen in the TV's own settings (Sound › Sound Mode).") });
+        } else if (node.label === t("About This Screen") && P.rooted) {
+            node.children.push({ type: "info", label: t("Root Access"), get: function () { return t("On (Homebrew Channel)"); },
+                                 desc: t("The launcher's helper runs as root: picture settings, the apps left open, Free Up Memory. Given by webos/root/install.sh, again at each start.") });
         } else if (node.label === t("About This Screen")) {
             node.children.push({ type: "info", label: t("Developer Mode"), get: function () { return P.devmode ? P.devmode() : "—"; },
                                  desc: t("LG deletes the apps installed in Developer Mode when its 1000 hours run out, this launcher included. The launcher renews them on its own, once a day, as the Developer Mode app's Extend button does.") });
@@ -112,7 +135,13 @@
 
     /* ---------- Control Center ---------- */
     P.ccHint = t("Tip: the red button or ⏯ opens Control Center on the Home Screen");
-    P.ccSlider = { id: "volume", icon: "speaker", title: t("Volume") };
+    /* The slider: the brightness as on Samsung on a rooted TV, the volume otherwise (controlcenter.js keeps this object) */
+    P.ccSlider = {};
+    P.onRoot(function (on) {
+        P.ccSlider.id = on ? "backlight" : "volume";
+        P.ccSlider.icon = on ? "sun" : "speaker";
+        P.ccSlider.title = on ? t("Brightness") : t("Volume");
+    });
     /* The sound outputs the TV offers (LG Connect Apps): the one in use is ticked. */
     var OUTPUT_LIST = ["tv_speaker", "external_arc", "external_optical", "bt_soundbar", "headphone", "lineout", "tv_speaker_headphone"];
     P.ccOutputName = function () { return sys.audio.outputMode(); };

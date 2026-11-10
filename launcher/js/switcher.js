@@ -74,7 +74,7 @@
 
     function closeApp(t) {
         var a = t._app, i = nav.tiles.indexOf(t);
-        sys.exec("app_launcher -k " + a.id + " >/dev/null 2>&1; true").catch(function () {});
+        (sys.closeApps ? sys.closeApps([a.id]) : sys.exec("app_launcher -k " + a.id + " >/dev/null 2>&1; true")).catch(function () {});
         rowEl.removeChild(t);
         var rest = nav.tiles.filter(function (x) { return x !== t; });
         if (!rest.length) { close(); return; }

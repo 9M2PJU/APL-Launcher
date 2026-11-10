@@ -59,6 +59,12 @@ fetch "$HOOK/10-apl-block-updates"   init.d/10-apl-block-updates
 fetch "$HOOK/11-apl-block-privacy"   init.d/11-apl-block-privacy
 fetch "$HOOK/12-apl-debloat"         init.d/12-apl-debloat
 fetch "$HOOK/13-apl-services-stop"   init.d/13-apl-services-stop
+fetch "$HOOK/20-apl-elevate"         init.d/20-apl-elevate
+
+echo
+echo "Giving APL Launcher's service root (picture settings, closing apps)"
+sh "$HOOK/20-apl-elevate"
+pkill -f com.knikt.apllauncher.service 2>/dev/null || true
 
 printf '%s\n' "$APL_VERSION" > "$APL/VERSION"
 printf '%s\n' "$BRANCH"      > "$APL/BRANCH"

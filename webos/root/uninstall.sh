@@ -19,7 +19,7 @@ echo "APL Launcher — webOS root uninstall"
 echo
 
 echo "Removing boot hooks from $HOOK/"
-for f in 10-apl-block-updates 11-apl-block-privacy 12-apl-debloat 13-apl-services-stop; do
+for f in 10-apl-block-updates 11-apl-block-privacy 12-apl-debloat 13-apl-services-stop 20-apl-elevate; do
     if [ -e "$HOOK/$f" ]; then
         echo "  $HOOK/$f"
         rm -f "$HOOK/$f"
@@ -37,6 +37,9 @@ for m in $(awk '$2 == "/etc/hosts" {print $2}' /proc/mounts); do
     umount "$m" 2>/dev/null && echo "  umount $m"
 done
 
+echo
+echo "APL Launcher's service keeps root until the launcher is installed again"
+echo "(installing it writes its luna files back to normal)."
 echo
 echo "Done. The scripts in $APL/ and the pause files (OFF, OFF-*) are kept."
 echo "To remove them too:  rm -rf $APL"

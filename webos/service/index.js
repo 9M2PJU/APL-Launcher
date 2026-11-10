@@ -19,6 +19,8 @@
      sleep     {minutes}         -> {at}                turns the TV off later (0: cancel)
      status    {}                -> state, sleep timer, versions, the last steps
      devmode   {extend}          -> {hours} left in Developer Mode, renewed below 960 h
+     luna      {uri, payload}    -> {payload}           on a rooted TV only, a short list of LG's own calls
+     memory    {}                -> {kb}                memory available, swap included
    and the apps' icons and backgrounds on http://127.0.0.1:8767 (below).
    ============================================================ */
 "use strict";
@@ -170,12 +172,53 @@ service.register("sleep", guard(function (message) {
 
 service.register("status", guard(function (message) {
     var c = tv();
-    message.respond({ returnValue: true, version: pkg.version, node: process.version, state: c.state, error: c.error || undefined,
+    message.respond({ returnValue: true, version: pkg.version, node: process.version, root: ROOT, state: c.state, error: c.error || undefined,
                       host: c.host, origin: c.origin, unsigned: c.unsigned, sleepAt: sleepAt, caller: caller(message), listeners: Object.keys(listeners).length,
                       log: ssap.log.slice(-30) });
 }));
 
 service.register("ping", function (message) { message.respond({ returnValue: true }); });
+
+/* ---------- on a rooted TV ----------
+   The Homebrew Channel's elevate-service (webos/root/) runs this service as root with every luna permission.
+   The launcher then gets what LG keeps for its own menus, and only that: the picture and sound settings,
+   the apps running, closing one. Nothing else is relayed. */
+var ROOT = !!(process.getuid && process.getuid() === 0);
+var LUNA_OK = {
+    "luna://com.webos.settingsservice/getSystemSettings": 1,
+    "luna://com.webos.settingsservice/getSystemSettingDesc": 1,
+    "luna://com.webos.settingsservice/setSystemSettings": 1,
+    "luna://com.webos.applicationManager/running": 1,
+    "luna://com.webos.applicationManager/getForegroundAppInfo": 1,
+    "luna://com.webos.applicationManager/closeByAppId": 1
+};
+var SETTINGS_OK = { picture: 1, sound: 1 };
+service.register("luna", guard(function (message) {
+    var p = message.payload || {}, uri = String(p.uri || ""), args = p.payload || {};
+    if (!ROOT) { message.respond({ returnValue: false, errorText: "not rooted", notRooted: true }); return; }
+    if (!LUNA_OK[uri]) { message.respond({ returnValue: false, errorText: "not allowed: " + uri }); return; }
+    if (/\/(get|set)System/.test(uri) && !SETTINGS_OK[args.category]) { message.respond({ returnValue: false, errorText: "category not allowed" }); return; }
+    var done = false;
+    var timer = setTimeout(function () { if (!done) { done = true; message.respond({ returnValue: false, errorText: "no answer" }); } }, 15000);
+    service.call(uri, args, function (m) {
+        if (done) return;
+        done = true; clearTimeout(timer);
+        var r = m && m.payload || {};
+        message.respond({ returnValue: true, payload: r });
+    });
+}));
+
+service.register("memory", guard(function (message) {
+    fs.readFile("/proc/meminfo", "utf8", function (err, txt) {
+        if (err) { message.respond({ returnValue: false, errorText: err.code || "meminfo" }); return; }
+        var kb = 0;
+        String(txt).split("\n").forEach(function (l) {
+            var m = /^(MemAvailable|SwapFree):\s+(\d+)/.exec(l);
+            if (m) kb += parseInt(m[2], 10);
+        });
+        message.respond({ returnValue: true, kb: kb });
+    });
+}));
 
 /* ---------- Developer Mode: never let it run out ----------
    When LG's Developer Mode session runs out (1000 hours), the TV deletes every app installed through it,
