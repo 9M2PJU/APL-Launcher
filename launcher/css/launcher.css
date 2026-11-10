@@ -57,6 +57,12 @@ html, body {
     will-change: opacity, transform;                 /* layer ready in advance: the fade redraws nothing */
 }
 .bg.is-active { opacity: 1; }
+/* LG draws the page in 4K: a layer kept ready is 32 MB there (8 on Samsung), and its browser gets 250 MB
+   for all of them (--force-gpu-mem-available-mb). One per app visited went past it after eight apps (431 MB
+   measured on a G5), and the TV left squares of the screen undrawn, black. Only the backdrop on screen is
+   kept ready; a fading one keeps its layer for the length of its fade. 209 MB measured after. */
+.is-webos .bg { will-change: auto; }
+.is-webos .bg.is-active { will-change: opacity, transform; }
 /* A backdrop picture is an <img> (launcher.js showPicture): a decoded bitmap is
    painted whole, where a CSS background on this layer filled itself in a line at
    a time from the top as it decoded. */
