@@ -98,6 +98,8 @@
                     ], APL.t("The keys are set in APL Launcher Setup, on the PC."))
                 ], APL.t("The Top Shelf shows the first one available, top to bottom. Turn one off to skip it.")),
                 toggle(APL.t("Visual Effects"), "visualEffects", APL.t("Blur and glass. Prettier but slower: off by default so the screen stays smooth.")),
+                toggle(APL.t("Dynamic Backdrops"), "cleanFrameBackdrops",
+                    APL.t("A film or series that service streams right now, on the apps that have nothing of their own to show: the storefront's trending list for your country (JustWatch, no key). Apps with a Top Shelf keep it - What You're Watching, What's Popular, Plex, Spotify and the players' Continue Watching come first.")),
                 toggle(APL.t("Slow Background Motion"), "bgMotion", APL.t("A slow camera move over the Home Screen images. Pretty, but it keeps the screen very busy and slows everything else down."))
             ], APL.t("Theme, Top Shelf, visual effects.")),
 
@@ -293,6 +295,17 @@
                     action(APL.t("Go Back to the Installed Version"), function () { if (APL.updater) APL.updater.reset(); },
                         APL.t("Forgets the downloaded updates and goes back to the version installed by APL Launcher Setup."), "reset")
                 ], APL.t("Automatic updates from GitHub.")),
+                action(APL.t("Support APL Launcher"), function () {
+                    var page = "https://ko-fi.com/knikt", qr = document.createElement("div");
+                    qr.className = "aplalert__qr";
+                    if (APL.qr) qr.appendChild(APL.qr.canvas(page, 360));
+                    var url = document.createElement("div");
+                    url.className = "aplalert__qrurl";
+                    url.textContent = page.replace(/^https?:\/\//, "");
+                    qr.appendChild(url);
+                    APL.alert({ title: APL.t("Support APL Launcher"), message: APL.t("Scan the code with your phone's camera. Thank you!"),
+                                node: qr, buttons: [{ label: APL.t("OK") }] });
+                }, APL.t("APL Launcher is free and made by one person. If you like it, you can buy me a coffee on Ko-fi: OK shows a code to scan with your phone."), "sparkle"),
                 menu(APL.t("About This Screen"), "info", [
                     info(APL.t("Name"), function () { return sys.product().name; }),
                     info(APL.t("Model"), function () { return sys.product().model; }),

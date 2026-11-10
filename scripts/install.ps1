@@ -430,7 +430,7 @@ Step 4 (Tr "Building the launcher…" "Compilation du launcher…")
 $webOnly = $false
 $tizen6 = ""
 if (Test-Vetro $TvIp) {
-    $platform = Get-ScreenPlatform "http://$TvIp`:8099"
+    $platform = Get-ScreenPlatform "http://$TvIp`:$(Get-VetroPort)"
     if ($platform) {
         $seen = if ($platform.Tizen) { "Tizen $($platform.Tizen)" } else { Tr "an unknown Tizen version" "une version de Tizen inconnue" }
         if ($platform.Tizen6) {
@@ -491,13 +491,13 @@ if (Test-Vetro $TvIp) {
             # The launcher works without it. One installed before (a test build) is left in place and still used.
             $why = $_.Exception.Message
             $left = ""
-            try { $left = Invoke-VetroExec "http://$TvIp`:8099" "pkgcmd -l 2>/dev/null | grep -cF '[apl.launcher.overlay]' || true" } catch {}
+            try { $left = Invoke-VetroExec "http://$TvIp`:$(Get-VetroPort)" "pkgcmd -l 2>/dev/null | grep -cF '[apl.launcher.overlay]' || true" } catch {}
             $pair = ($left.Trim() -split '\s+')[-1] -notin @('', '0')
             if ($pair) { Write-Host ((Tr "        APL Overlay was not updated: " "        APL Overlay n'a pas été mis à jour : ") + $why + (Tr " The one already on the screen stays." " Celui déjà sur l'écran reste.")) -ForegroundColor DarkYellow }
             else { Write-Host ((Tr "        APL Overlay was not installed: " "        APL Overlay n'a pas été installé : ") + $why + (Tr " The launcher works on its own." " Le launcher marche seul.")) -ForegroundColor DarkYellow }
         }
         try {
-            Invoke-RestMethod -Uri "http://$TvIp`:8099/apps/launch" -Method Post -ContentType 'application/json' `
+            Invoke-RestMethod -Uri "http://$TvIp`:$(Get-VetroPort)/apps/launch" -Method Post -ContentType 'application/json' `
                 -Body (@{ appId = "APLauncher.Home" } | ConvertTo-Json -Compress) -TimeoutSec 25 | Out-Null
         } catch {}
     }
@@ -544,7 +544,7 @@ Write-Host (Tr "   A) On the screen: Settings > All Settings > Advanced Features
 Write-Host (Tr "        - 'Autorun Smart Hub'  -> OFF" "        - « Lancer Smart Hub automatiquement »        -> DÉSACTIVÉ")
 Write-Host (Tr "        - 'Autorun Last App'   -> ON" "        - « Lancer automatiquement la dernière app »  -> ACTIVÉ")
 Write-Host ""
-Write-Host (Tr "   B) On this PC, open  http://$TvIp`:8099  (Vetro) > Remapper tab:" "   B) Sur ce PC, ouvre  http://$TvIp`:8099  (Vetro) > onglet Remapper :")
+Write-Host (Tr "   B) On this PC, open  http://$TvIp`:$(Get-VetroPort)  (Vetro) > Remapper tab:" "   B) Sur ce PC, ouvre  http://$TvIp`:$(Get-VetroPort)  (Vetro) > onglet Remapper :")
 Write-Host (Tr "        in the device list, pick your remote: 'Smart Control 2016' if it is" "        dans la liste des appareils, choisis ta télécommande : « Smart Control 2016 » si elle est")
 Write-Host (Tr "        paired over Bluetooth, 'wt61p807 rc device' if it only works over infrared;" "        appairée en Bluetooth, « wt61p807 rc device » si elle marche en infrarouge seulement ;")
 Write-Host (Tr "        listen for a key > press HOME > open the app 'APL Launcher' > Save" "        écouter une touche > appuie sur HOME > ouvrir l'app « APL Launcher » > Enregistrer")

@@ -124,14 +124,26 @@ def compile_net(csc, refs, sources, out, work):
         print(text)
 
 
+def project_sources(folder):
+    """A project's .cs files, as its .csproj builds them: its own folder, plus the files it links from
+    elsewhere (<Compile Include="..\\VetroPort.cs" />, shared by the bridge and APL Overlay)."""
+    sources = sorted(glob.glob(os.path.join(folder, "*.cs")))
+    for proj in glob.glob(os.path.join(folder, "*.csproj")):
+        for inc in re.findall(r'<Compile\s+Include="([^"]+\.cs)"', open(proj, encoding="utf-8").read()):
+            path = os.path.normpath(os.path.join(folder, inc.replace("\\", "/")))
+            if path not in sources:
+                sources.append(path)
+    return sources
+
+
 def build_all(csc, refs, api, work):
     """{file name: bytes} of APLOverlay.dll, APLBoot.dll and Bridge.dll for one TizenFX API level."""
     tizen = [d for d in refs[api] if "Wearable" not in os.path.basename(d)]
     references = refs["core"] + tizen
     projects = {
         "APLOverlay.dll": sorted(glob.glob(os.path.join(ROOT, "overlay", "*.cs"))),
-        "APLBoot.dll": [os.path.join(ROOT, "overlay", "boot", "Program.cs")],
-        "Bridge.dll": [os.path.join(ROOT, "overlay", "bridge", "Program.cs")],
+        "APLBoot.dll": project_sources(os.path.join(ROOT, "overlay", "boot")),
+        "Bridge.dll": project_sources(os.path.join(ROOT, "overlay", "bridge")),
     }
     out = {}
     for name, sources in projects.items():

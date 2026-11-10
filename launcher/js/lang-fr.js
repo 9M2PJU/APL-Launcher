@@ -298,8 +298,12 @@ window.APL_LANG_FR = {
     "Clock on black": "Horloge sur fond noir",
     "Aerial: the Apple TV flyover videos, streamed live (China, Hawaii, London, space station…). Without a network, it switches to the app artwork.": "Aerial : les vidéos de survol de l'Apple TV, en direct (Chine, Hawaï, Londres, station spatiale…). Sans réseau, on passe aux visuels des apps.",
     "The screen kept {app} as its home app, Autorun Smart Hub {state}.": "L'écran a gardé {app} comme app d'accueil, Smart Hub au démarrage {state}.",
+    "The screen didn't answer within {s} s. Try again in a minute.": "L'écran n'a pas répondu en {s} s. Réessaie dans une minute.",
     "on": "activé",
     "off": "désactivé",
+    "Support APL Launcher": "Soutenir APL Launcher",
+    "Scan the code with your phone's camera. Thank you!": "Scanne le code avec l'appareil photo de ton téléphone. Merci !",
+    "APL Launcher is free and made by one person. If you like it, you can buy me a coffee on Ko-fi: OK shows a code to scan with your phone.": "APL Launcher est gratuit et fait par une seule personne. Si tu l'aimes, tu peux m'offrir un café sur Ko-fi : OK affiche un code à scanner avec ton téléphone.",
     "Move the Clock": "Déplacer l'horloge",
     "Every minute": "Toutes les minutes",
     "Every 2 minutes": "Toutes les 2 minutes",
@@ -333,6 +337,7 @@ window.APL_LANG_FR = {
     "How the launcher talks to Vetro. Through the bridge it reads the screen's settings; without it, orders still go out but the settings show Unavailable.": "Comment le launcher parle à Vetro. Par le pont, il lit les réglages de l'écran ; sans lui, les ordres partent quand même mais les réglages affichent Indisponible.",
     "Through the bridge": "Par le pont",
     "Bridge: Vetro refused": "Pont : Vetro a refusé",
+    "port {port}": "port {port}",
     "Bridge: {error}": "Pont : {error}",
     "Bridge works, Vetro unreachable": "Le pont marche, Vetro injoignable",
     "no answer at all": "aucune réponse",
@@ -618,5 +623,6 @@ window.APL_LANG_FR = {
     "{keys} are back to Samsung. Run APL Launcher Setup again to get the overlay back.": "{keys} reviennent à Samsung. Relance APL Launcher Setup pour retrouver l'overlay.",
     "{keys} is back to Samsung. Run APL Launcher Setup again to get the overlay back.": "{keys} revient à Samsung. Relance APL Launcher Setup pour retrouver l'overlay.",
     "A tile that opens Samsung's Smart Hub, the way out now that the Home button opens the launcher. Press Home there to come back.": "Une tuile qui ouvre le Smart Hub de Samsung, la porte de sortie maintenant que le bouton Home ouvre le launcher. Appuie sur Home pour revenir.",
-    "Opens Samsung's Smart Hub on the screen": "Ouvre le Smart Hub de Samsung sur l'écran"
+    "Opens Samsung's Smart Hub on the screen": "Ouvre le Smart Hub de Samsung sur l'écran",
+    "A film or series that service streams right now, on the apps that have nothing of their own to show: the storefront's trending list for your country (JustWatch, no key). Apps with a Top Shelf keep it - What You're Watching, What's Popular, Plex, Spotify and the players' Continue Watching come first.": "Un film ou une série que ce service diffuse en ce moment, sur les apps qui n'ont rien à montrer d'elles-mêmes : les tendances de la boutique de votre pays (JustWatch, sans clé). Les apps qui ont un Top Shelf le gardent — Ce que vous regardez, Ce qui est populaire, Plex, Spotify et la reprise de lecture des lecteurs passent d'abord.",
 };

@@ -16,7 +16,7 @@
 # -Tizen6 6.0 | 6.5: the two packages made for that Tizen 6 version (tools/make-tizen6.py): the launcher with its
 # .NET bridge and start-up service but without APL Overlay (apl-launcher-tizen6X-v<version>.wgt, filled in like
 # the full package), and APL Overlay alone (apl-overlay-tizen6X-v<version>.tpk, apl.launcher.overlay), signed
-# into -OverlayFile. With no release having them yet (before 1.0.22), the launcher alone, as -WebOnly. If APL
+# into -OverlayFile. With no release having them yet (before 1.0.25), the launcher alone, as -WebOnly. If APL
 # Overlay can't be signed, there is no -OverlayFile: the launcher is installed on its own.
 param(
     [string]$ProfileName = "APLauncher",
@@ -115,7 +115,7 @@ while (-not $sources) {
     }
     if (-not $rel) {
         if ($Tizen6) {
-            # The Tizen 6 pair comes with 1.0.22: before it, the launcher alone, as Setup always installed it there
+            # The Tizen 6 pair comes with 1.0.25: before it, the launcher alone, as Setup always installed it there
             Write-Host (Tr "        No release has the packages for Tizen $Tizen6 yet: the launcher is installed on its own." "        Aucune version n'a encore les paquets pour Tizen $Tizen6 : le launcher est installé seul.") -ForegroundColor DarkYellow
             $Tizen6 = ""; $WebOnly = $true
             continue

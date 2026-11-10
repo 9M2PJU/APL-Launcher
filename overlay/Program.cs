@@ -59,6 +59,7 @@ namespace APL
         protected override void OnCreate()
         {
             base.OnCreate();
+            VetroPort.Log = Note;
             Window win = Window.Instance;
             win.BackgroundColor = new Color(0f, 0f, 0f, 0f);
 #if TIZEN6
