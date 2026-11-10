@@ -443,9 +443,16 @@
             '<span class="cc__val">' + (v === null ? "—" : v) + '</span>');
     }
 
+    var renderedKey = "";
     function render() {
         var keep = nav.index;                  // Bluetooth search: the list grows, focus stays in place
         items = view === "main" ? mainItems() : view === "audio" ? audioItems() : view === "pair" ? pairItems() : airplayItems();
+        /* The same tiles as last time (opening the Control Center again): they are kept and only redrawn.
+           Built again, each new tile got a new glass pane to paint, about 100 ms then 2 heavy frames on an LG
+           drawing in 4K. */
+        var key = view + ":" + items.map(function (it) { return it.cls + "|" + (it.title || ""); }).join(",");
+        if (key === renderedKey && view === "main" && body.children.length) { redraw(); return; }
+        renderedKey = key;
         body.innerHTML = "";
         body.className = "cc__body cc__body--" + view;
         scrollY = 0;
@@ -516,6 +523,30 @@
         paintCaption(nav.current());
         /* The new tiles get their glass in this same frame: waiting for glass.js
            to notice them showed their plain fill for a moment as the panel opened. */
+        if (APL.glass && APL.glass.paint) APL.glass.paint();
+    }
+    /* render() with the tiles already there: each one gets its fresh item and is drawn again */
+    function redraw() {
+        var tiles = [].slice.call(body.querySelectorAll(".cc__t")), focusables = [], k = 0;
+        items.forEach(function (it) {
+            if (it.cls === "head" || it.cls === "section") return;
+            var t = tiles[k++];
+            if (!t) return;
+            t._item = it;
+            draw(it, t);
+            focusables.push(t);
+            if (it.type === "backlight") {
+                sys.tvItem(SLIDER.id).then(function (m) {
+                    if (m) drawBacklight(t, m.target !== undefined ? m.target : m.value, m);
+                }, function () {});
+            }
+        });
+        focusables.unshift(avatarEl);
+        scrollY = 0;
+        body.style.transform = "translateY(0)";
+        nav.setTiles(focusables);
+        nav.focus(Math.min(lastMainIndex, focusables.length - 1));
+        paintCaption(nav.current());
         if (APL.glass && APL.glass.paint) APL.glass.paint();
     }
 

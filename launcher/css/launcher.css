@@ -76,6 +76,10 @@ html, body {
 .is-webos body { position: relative; overflow: clip; }
 /* The grid's blurred picture fades in faster: two 4K layers blended on each frame of its fade */
 .is-webos .bgblur { transition-duration: 250ms; }
+/* The Control Center: its dim (a plain colour with Visual Effects off, the default) and its panel each a
+   layer. The screen draws a plain colour without painting it; opening no longer repaints a 4K surface. */
+.is-webos .cc__dim { will-change: opacity; }
+.is-webos .cc__panel { will-change: transform, opacity; }
 /* The scrim, a plain gradient, drawn at a quarter of the size and scaled up (webos.js adds is-up once it is
    drawn, so it keeps that size): 2 MB instead of 32, under LG's 250 MB, and nothing to see in a gradient.
    Over the grid it only fades out: its darkening is drawn into the grid's blurred picture (launcher.js
