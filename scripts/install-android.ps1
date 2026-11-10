@@ -19,6 +19,8 @@ param(
     [string]$Apk,
     [switch]$NoHomeService,     # leaves the remote buttons service off (Home keeps the TV's own launcher)
     [string]$Repo = "Knikt/APL-Launcher",
+    [switch]$AplTv,             # also installs APL TV (apl-tv-android.apk of Knikt/APL-TV's latest release)
+    [string]$AplTvRepo = "Knikt/APL-TV",
     [switch]$Unattended,
     [switch]$CheckOnly
 )
@@ -28,7 +30,7 @@ $Root = Split-Path $PSScriptRoot -Parent
 $Quiet = $Unattended -or $CheckOnly
 $AppId = "com.knikt.apllauncher"
 $KeyService = "$AppId/$AppId.KeyService"
-$Total = 4
+$Total = 4 + [int][bool]$AplTv
 
 function Step([int]$n, [string]$txt) {
     Write-Host ""
@@ -170,6 +172,30 @@ if (-not $NoHomeService) {
     $now = (Adb @('-s', $serial, 'shell', 'settings', 'get', 'secure', 'enabled_accessibility_services')).Output
     if ($now -match [regex]::Escape($KeyService)) { Write-Host (Tr "        Remote buttons on: Home opens APL Launcher." "        Boutons de la télécommande activés : Home ouvre APL Launcher.") -ForegroundColor Green }
     else { Write-Host (Tr "        The remote buttons service could not be turned on: APL Launcher will offer it at its first start." "        Le service des boutons n'a pas pu être activé : APL Launcher le proposera à son premier démarrage.") -ForegroundColor Yellow }
+}
+# ---------- APL TV (optional: never stops the install) ----------
+if ($AplTv) {
+    Step 5 (Tr "Installing APL TV…" "Installation d'APL TV…")
+    try {
+        $rel = Invoke-RestMethod -UseBasicParsing -Uri "https://api.github.com/repos/$AplTvRepo/releases/latest" -Headers @{ 'User-Agent' = 'APL-Launcher-Setup' } -TimeoutSec 60
+        $asset = @($rel.assets) | Where-Object { $_.name -match '^apl-tv-v.*-android\.apk$' } | Select-Object -First 1
+        if (-not $asset) { $asset = @($rel.assets) | Where-Object { $_.name -eq 'apl-tv-android.apk' } | Select-Object -First 1 }
+        if (-not $asset) { throw (Tr "APL TV $($rel.tag_name) has no Android package" "APL TV $($rel.tag_name) n'a pas de paquet Android") }
+        $tvApk = Join-Path $env:LOCALAPPDATA ("APL-Launcher\" + $asset.name)
+        Invoke-WebRequest -UseBasicParsing -Uri $asset.browser_download_url -OutFile $tvApk -TimeoutSec 300
+        $sums = @($rel.assets) | Where-Object { $_.name -eq 'SHA256SUMS-apk.txt' } | Select-Object -First 1
+        if ($sums) {
+            $txt = (Invoke-WebRequest -UseBasicParsing -Uri $sums.browser_download_url -TimeoutSec 60).Content
+            if ($txt -is [byte[]]) { $txt = [Text.Encoding]::ASCII.GetString($txt) }
+            $want = ([regex]::Match($txt, '([0-9a-fA-F]{64})\s+\*?' + [regex]::Escape($asset.name))).Groups[1].Value.ToLowerInvariant()
+            if ($want -and $want -ne (Get-FileHash -LiteralPath $tvApk -Algorithm SHA256).Hash.ToLowerInvariant()) { throw (Tr "the download is damaged (SHA256)" "le téléchargement est abîmé (SHA256)") }
+        }
+        $r = Adb @('-s', $serial, 'install', '-r', $tvApk)
+        if ($r.Output -notmatch 'Success') { throw $r.Output.Trim() }
+        Write-Host (Tr "        APL TV installed ($($asset.name))." "        APL TV installé ($($asset.name)).") -ForegroundColor Green
+    } catch {
+        Write-Host (Tr "        APL TV could not be installed ($($_.Exception.Message)). APL Launcher is fine; APL TV can be installed later from its releases." "        APL TV n'a pas pu être installé ($($_.Exception.Message)). APL Launcher est bien installé ; APL TV peut s'installer plus tard depuis ses versions.") -ForegroundColor Yellow
+    }
 }
 Adb @('-s', $serial, 'shell', 'am', 'start', '-n', "$AppId/.MainActivity") | Out-Null
 Write-Host ""

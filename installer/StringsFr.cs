@@ -517,6 +517,17 @@ namespace APL.Setup
               "Si Home ouvre encore le launcher de la TV, les étapes sont dans **Réglages › Android TV** d'APL Launcher." },
             { "Never use Force stop on APL Launcher: Android then turns its remote buttons service off.",
               "N'utilise jamais Forcer l'arrêt sur APL Launcher : Android coupe alors son service des boutons." },
+
+            // ---------- debloat and APL TV, on by default ----------
+            { "Debloat the screen after installing", "Debloat de l'écran après l'installation" },
+            { "Optimize removes Samsung's ads, viewing tracking and the apps you don't use. It shows the list first; Restore undoes it.",
+              "Optimiser enlève les pubs de Samsung, le pistage de ce que tu regardes et les apps que tu n'utilises pas. Il montre d'abord la liste ; Restaurer annule tout." },
+            { "The IPTV player in the same style, for your own M3U playlists, Xtream accounts and Jellyfin, Emby or Plex servers. It comes with no channels. Its Continue Watching shows on APL Launcher's Home Screen.",
+              "Le lecteur IPTV dans le même style, pour tes propres playlists M3U, comptes Xtream et serveurs Jellyfin, Emby ou Plex. Il est livré sans chaîne. Son « Continuer de regarder » s'affiche sur l'accueil d'APL Launcher." },
+            { "The debloat (LG's ads and tracking stopped) needs a rooted TV.", "Le debloat (pubs et pistage de LG arrêtés) demande une TV rootée." },
+            { "The IPTV player, from its latest release", "Le lecteur IPTV, depuis sa dernière version" },
+            { "**APL TV** is installed too (unless the details above say otherwise): open it and add your playlist from your phone with its QR code.",
+              "**APL TV** est installé aussi (sauf si les détails disent le contraire) : ouvre-le et ajoute ta playlist depuis ton téléphone avec son QR code." },
         };
     }
 }

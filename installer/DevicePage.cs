@@ -39,7 +39,13 @@ namespace APL.Setup
 
         // the form
         private TextBox ipBox, passwordBox, passphraseBox, pairPortBox, pairCodeBox, tmdbBox, youTubeBox, fanartBox;
-        private CheckBox homeToggle, debloatToggle, homeServiceToggle;
+        private CheckBox homeToggle, debloatToggle, homeServiceToggle, aplTvToggle;
+        private bool withAplTv;     // what the running install was asked for (its list of steps)
+
+        private static string AplTvHelp()
+        {
+            return T("The IPTV player in the same style, for your own M3U playlists, Xtream accounts and Jellyfin, Emby or Plex servers. It comes with no channels. Its Continue Watching shows on APL Launcher's Home Screen.");
+        }
         private Grid statusMark;
         private TextBlock statusText, statusHelp, pcText;
         private Grid pcMark;
@@ -216,10 +222,15 @@ namespace APL.Setup
                     opts.Children.Add(Ui.Separator(new Thickness(0)));
                     opts.Children.Add(ToggleRow(T("Debloat the TV"), T("Stops LG's ads, viewing tracking, telemetry and extra services (about 390 MB of memory freed on a G5). The TV's software updates stay blocked either way: they would remove the root."), out debloatToggle, true));
                 }
+                opts.Children.Add(Ui.Separator(new Thickness(0)));
+                opts.Children.Add(ToggleRow(T("Also install APL TV"), AplTvHelp(), out aplTvToggle, true));
+                if (!rooted) opts.Children.Add(Ui.Text(T("The debloat (LG's ads and tracking stopped) needs a rooted TV."), "Secondary", new Thickness(2, 4, 0, 4)));
             }
             else
             {
                 opts.Children.Add(ToggleRow(T("Home opens APL Launcher"), T("Turns on APL Launcher's remote buttons service (Accessibility). Twice Home: the App Switcher; held: the Control Center."), out homeServiceToggle, true));
+                opts.Children.Add(Ui.Separator(new Thickness(0)));
+                opts.Children.Add(ToggleRow(T("Also install APL TV"), AplTvHelp(), out aplTvToggle, true));
                 opts.Children.Add(Ui.Text(T("Your TMDB, YouTube and Fanart.tv keys can't go into the Android package yet: the Top Shelf shows what is popular without them."), "Secondary", new Thickness(2, 4, 0, 4)));
             }
             RenderStatus();
@@ -286,9 +297,11 @@ namespace APL.Setup
             if (r == rooted && ipBox != null) return;
             string ip = ipBox != null ? ipBox.Text : "", pw = passwordBox != null ? passwordBox.Text : "", pass = passphraseBox != null ? passphraseBox.Text : "";
             string tm = tmdbBox != null ? tmdbBox.Text : "", yt = youTubeBox != null ? youTubeBox.Text : "", fa = fanartBox != null ? fanartBox.Text : "";
+            bool tv = aplTvToggle == null || aplTvToggle.IsChecked == true;
             rooted = r;
             passwordBox = passphraseBox = null;
             BuildForm();
+            aplTvToggle.IsChecked = tv;
             ipBox.Text = ip;
             if (passwordBox != null) passwordBox.Text = pw;
             if (passphraseBox != null) passphraseBox.Text = pass;
@@ -664,6 +677,8 @@ namespace APL.Setup
                 }
                 if (homeServiceToggle.IsChecked != true) args.Add("-NoHomeService");
             }
+            withAplTv = aplTvToggle.IsChecked == true;
+            if (withAplTv) args.Add("-AplTv");
             BeginProgress();
             ScriptResult r;
             try { r = await Main.Runner.Run(script, args, T("Installing…"), OnLine, secrets.Where(s => s.Length > 0), true); }
@@ -671,18 +686,41 @@ namespace APL.Setup
             if (r.Ok) await Succeeded(); else Failed(r.Message);
         }
 
+        // The steps, in the scripts' order (APL TV after the launcher, before the root features)
         private string[] StepTitles()
         {
-            if (lg) return rooted ? new[] { T("Package"), T("Connection"), T("Install"), T("Root features"), T("Opening") }
-                                  : new[] { T("Package"), T("Connection"), T("Install"), T("Opening") };
-            return new[] { T("Tools"), T("Package"), T("Connection"), T("Install") };
+            var t = new List<string>();
+            if (lg)
+            {
+                t.AddRange(new[] { T("Package"), T("Connection"), T("Install") });
+                if (withAplTv) t.Add("APL TV");
+                if (rooted) t.Add(T("Root features"));
+                t.Add(T("Opening"));
+            }
+            else
+            {
+                t.AddRange(new[] { T("Tools"), T("Package"), T("Connection"), T("Install") });
+                if (withAplTv) t.Add("APL TV");
+            }
+            return t.ToArray();
         }
 
         private string[] StepDetails()
         {
-            if (lg) return rooted ? new[] { T("APL Launcher with your keys"), T("SSH, as root"), T("LG's own installer"), T("Home, picture settings, debloat"), T("APL Launcher opens on the TV") }
-                                  : new[] { T("APL Launcher with your keys"), T("Developer Mode's key"), T("LG's own installer"), T("APL Launcher opens on the TV") };
-            return new[] { T("adb on this PC"), T("APL Launcher for Android"), T("Allow this PC on the TV"), T("The package, then Home") };
+            var d = new List<string>();
+            if (lg)
+            {
+                d.AddRange(new[] { T("APL Launcher with your keys"), rooted ? T("SSH, as root") : T("Developer Mode's key"), T("LG's own installer") });
+                if (withAplTv) d.Add(T("The IPTV player, from its latest release"));
+                if (rooted) d.Add(T("Home, picture settings, debloat"));
+                d.Add(T("APL Launcher opens on the TV"));
+            }
+            else
+            {
+                d.AddRange(new[] { T("adb on this PC"), T("APL Launcher for Android"), T("Allow this PC on the TV"), T("The package, then Home") });
+                if (withAplTv) d.Add(T("The IPTV player, from its latest release"));
+            }
+            return d.ToArray();
         }
 
         internal void BeginProgress()
@@ -786,6 +824,7 @@ namespace APL.Setup
                     T("Never use Force stop on APL Launcher: Android then turns its remote buttons service off.")
                 };
             }
+            if (withAplTv) how = how.Concat(new[] { T("**APL TV** is installed too (unless the details above say otherwise): open it and add your playlist from your phone with its QR code.") }).ToArray();
             for (int i = 0; i < how.Length; i++) finishSteps.Children.Add(InstallPage.Numbered(i + 1, how[i]));
             ShowView("finish");
         }

@@ -24,6 +24,8 @@ param(
     [string]$Sites,           # websites as apps: JSON [{"name":"…","url":"https://…"}], or that JSON in base64
     [switch]$NoHome,          # rooted: Home keeps LG's Home
     [switch]$NoDebloat,       # rooted: LG's ads, tracking and extra services are left running
+    [switch]$AplTv,           # also installs APL TV (the latest release of Knikt/APL-TV, its LG package)
+    [string]$AplTvRepo = "Knikt/APL-TV",
     [switch]$Unattended,
     [switch]$CheckOnly,
     [switch]$PackageOnly,
@@ -36,7 +38,9 @@ $Root = Split-Path $PSScriptRoot -Parent
 $Quiet = $Unattended -or $CheckOnly
 $AppId = "com.knikt.apllauncher"
 $ServiceId = "$AppId.service"
-$Total = if ($Rooted) { 5 } else { 4 }
+$Total = 4 + [int][bool]$Rooted + [int][bool]$AplTv
+$script:StepN = 0
+function NextStep([string]$txt) { $script:StepN++; Step $script:StepN $txt }
 
 function Step([int]$n, [string]$txt) {
     Write-Host ""
@@ -331,7 +335,7 @@ Write-Host (Tr "        APL Launcher - install on an LG TV" "        APL Launche
 Write-Host "  ==============================================" -ForegroundColor White
 
 # ---------- 1. the package ----------
-Step 1 (Tr "Building the package with your settings…" "Fabrication du paquet avec tes réglages…")
+NextStep (Tr "Building the package with your settings…" "Fabrication du paquet avec tes réglages…")
 $L = Join-Path $Root "launcher"
 $config = [IO.File]::ReadAllText((Join-Path $L "config.xml"))
 $version = ([regex]::Match($config, '<widget[^>]*\sversion="([^"]+)"')).Groups[1].Value
@@ -477,7 +481,7 @@ if ($PackageOnly) {
 }
 
 # ---------- 2. connect ----------
-Step 2 (Tr "Connecting to the TV ($TvIp)…" "Connexion à la TV ($TvIp)…")
+NextStep (Tr "Connecting to the TV ($TvIp)…" "Connexion à la TV ($TvIp)…")
 $work = Join-Path $env:LOCALAPPDATA "APL-Launcher\webos"
 New-Item -ItemType Directory -Force -Path $work | Out-Null
 $script:KeyFile = $null
@@ -531,18 +535,22 @@ if ($Rooted) {
 Save-TvIp $TvIp -Name "webos-ip.txt"
 
 # ---------- 3. send and install ----------
-Step 3 (Tr "Installing APL Launcher on the TV…" "Installation d'APL Launcher sur la TV…")
-$ipkOnTv = "$tvDir/apl-launcher-setup.ipk"
-$r = Invoke-TvSsh -Command "mkdir -p $tvDir && cat > $ipkOnTv && sha256sum $ipkOnTv" -InputFile $OutFile -TimeoutSec 300
-if ($r.Code -ne 0 -or $r.Out -notmatch $ipkHash) {
-    Fail (Tr "The package did not arrive whole on the TV. Try again. ($($r.Err.Trim()))" "Le paquet n'est pas arrivé entier sur la TV. Réessaie. ($($r.Err.Trim()))")
-}
-Write-Host (Tr "        Package sent ($([Math]::Round($ipkSize / 1MB, 1)) MB), checked." "        Paquet envoyé ($([Math]::Round($ipkSize / 1MB, 1)) Mo), vérifié.")
-$installScript = @"
-IPK=$ipkOnTv
-LOG=$tvDir/apl-launcher-setup.log
+NextStep (Tr "Installing APL Launcher on the TV…" "Installation d'APL Launcher sur la TV…")
+# Sends a package and installs it with LG's own installer (as ares-install does). Returns "" or why it failed.
+function Install-IpkOnTv([string]$LocalIpk, [string]$Name) {
+    $hash = (Get-FileHash -LiteralPath $LocalIpk -Algorithm SHA256).Hash.ToLowerInvariant()
+    $size = (Get-Item -LiteralPath $LocalIpk).Length
+    $onTv = "$tvDir/$Name.ipk"
+    $r = Invoke-TvSsh -Command "mkdir -p $tvDir && cat > $onTv && sha256sum $onTv" -InputFile $LocalIpk -TimeoutSec 300
+    if ($r.Code -ne 0 -or $r.Out -notmatch $hash) {
+        return (Tr "the package did not arrive whole on the TV ($($r.Err.Trim()))" "le paquet n'est pas arrivé entier sur la TV ($($r.Err.Trim()))")
+    }
+    Write-Host (Tr "        Package sent ($([Math]::Round($size / 1MB, 1)) MB), checked." "        Paquet envoyé ($([Math]::Round($size / 1MB, 1)) Mo), vérifié.")
+    $installScript = @"
+IPK=$onTv
+LOG=$tvDir/$Name.log
 rm -f `$LOG
-$luna -i luna://com.webos.appInstallService/dev/install '{"id":"com.ares.defaultName","ipkUrl":"$ipkOnTv","subscribe":true}' > `$LOG 2>&1 &
+$luna -i luna://com.webos.appInstallService/dev/install '{"id":"com.ares.defaultName","ipkUrl":"$onTv","subscribe":true}' > `$LOG 2>&1 &
 PID=`$!
 i=0
 while [ `$i -lt 240 ]; do
@@ -552,16 +560,47 @@ while [ `$i -lt 240 ]; do
 done
 kill `$PID 2>/dev/null; cat `$LOG; rm -f `$IPK; echo APL-INSTALL-TIMEOUT; exit 1
 "@
-$r = Invoke-TvSsh -Command 'sh -s' -Script $installScript -TimeoutSec 300
-if ($r.Out -notmatch 'APL-INSTALL-OK') {
-    $why = ($r.Out -split "`n" | Where-Object { $_ -match 'errorText|failed|reason' } | Select-Object -First 2) -join ' '
-    Fail (Tr "The TV did not install the package. $why" "La TV n'a pas installé le paquet. $why")
+    $r = Invoke-TvSsh -Command 'sh -s' -Script $installScript -TimeoutSec 300
+    if ($r.Out -notmatch 'APL-INSTALL-OK') {
+        return (($r.Out -split "`n" | Where-Object { $_ -match 'errorText|failed|reason' } | Select-Object -First 2) -join ' ')
+    }
+    return ""
 }
+$why = Install-IpkOnTv $OutFile "apl-launcher-setup"
+if ($why) { Fail (Tr "The TV did not install the package: $why" "La TV n'a pas installé le paquet : $why") }
 Write-Host (Tr "        Installed." "        Installé.") -ForegroundColor Green
+
+# ---------- APL TV (optional: never stops the install) ----------
+if ($AplTv) {
+    NextStep (Tr "Installing APL TV…" "Installation d'APL TV…")
+    $done = $false
+    try {
+        try { [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12 } catch {}
+        $rel = Invoke-RestMethod -UseBasicParsing -Uri "https://api.github.com/repos/$AplTvRepo/releases/latest" -Headers @{ 'User-Agent' = 'APL-Launcher-Setup' } -TimeoutSec 60
+        $asset = @($rel.assets) | Where-Object { $_.name -match '^apl-tv-v.*-lg-webos\.ipk$' } | Select-Object -First 1
+        if (-not $asset) { throw (Tr "APL TV $($rel.tag_name) has no LG package" "APL TV $($rel.tag_name) n'a pas de paquet LG") }
+        $tvIpk = Join-Path $work $asset.name
+        Invoke-WebRequest -UseBasicParsing -Uri $asset.browser_download_url -OutFile $tvIpk -TimeoutSec 300
+        $sums = @($rel.assets) | Where-Object { $_.name -eq 'SHA256SUMS-ipk.txt' } | Select-Object -First 1
+        if ($sums) {
+            $txt = (Invoke-WebRequest -UseBasicParsing -Uri $sums.browser_download_url -TimeoutSec 60).Content
+            if ($txt -is [byte[]]) { $txt = [Text.Encoding]::ASCII.GetString($txt) }
+            $want = ([regex]::Match($txt, '([0-9a-fA-F]{64})\s+\*?' + [regex]::Escape($asset.name))).Groups[1].Value.ToLowerInvariant()
+            if ($want -and $want -ne (Get-FileHash -LiteralPath $tvIpk -Algorithm SHA256).Hash.ToLowerInvariant()) { throw (Tr "the download is damaged (SHA256)" "le téléchargement est abîmé (SHA256)") }
+        }
+        Write-Host "        $($asset.name)"
+        $why = Install-IpkOnTv $tvIpk "apl-tv-setup"
+        if ($why) { throw $why }
+        $done = $true
+        Write-Host (Tr "        APL TV installed: open it from the dock or LG's app list." "        APL TV installé : ouvre-le depuis le dock ou la liste des apps LG.") -ForegroundColor Green
+    } catch {
+        Write-Host (Tr "        APL TV could not be installed ($($_.Exception.Message)). APL Launcher is fine; APL TV can be installed later from its releases." "        APL TV n'a pas pu être installé ($($_.Exception.Message)). APL Launcher est bien installé ; APL TV peut s'installer plus tard depuis ses versions.") -ForegroundColor Yellow
+    }
+}
 
 # ---------- 4. rooted: the root scripts ----------
 if ($Rooted) {
-    Step 4 (Tr "Root features: Home, picture settings, debloat…" "Fonctions root : Home, réglages d'image, debloat…")
+    NextStep (Tr "Root features: Home, picture settings, debloat…" "Fonctions root : Home, réglages d'image, debloat…")
     $rootDir = Join-Path $Root "webos\root"
     $tar = New-Object AplTar($mtime)
     $rdone = @{}
@@ -600,7 +639,7 @@ echo APL-ROOT-OK
 }
 
 # ---------- 5. open it ----------
-Step $Total (Tr "Opening APL Launcher…" "Ouverture d'APL Launcher…")
+NextStep (Tr "Opening APL Launcher…" "Ouverture d'APL Launcher…")
 if ($Rooted -and -not $NoHome) {
     # Home opens APL Launcher from now on (app manager restarted: the screen goes black a few seconds)
     $r = Invoke-TvSsh -Command 'sh -s' -Script "grep -q ' /usr/palm/applications/com.webos.app.home ' /proc/mounts && echo APL-HOME-ALREADY || { (sh /media/developer/apl-debloat/apl-home.sh </dev/null >/dev/null 2>&1 &); echo APL-HOME-STARTED; }" -TimeoutSec 60
