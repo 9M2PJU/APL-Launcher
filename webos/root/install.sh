@@ -1,0 +1,75 @@
+#!/bin/sh
+# APL Launcher on webOS — one-command installer for the boot hooks and the
+# scripts they run. Pulls the files from this repo and puts them where the
+# Homebrew Channel will run them at every boot.
+#
+# Tested on LG OLED55G56LS (G5, firmware 43.21.77 / 11.2.0-3706, webOS 26),
+# with APL Launcher 1.0.24 and Homebrew Channel 0.7.3.
+#
+# Run this in SSH as root (password `alpine` after rooting with WTFBro):
+#
+#   wget -qO- https://raw.githubusercontent.com/Knikt/APL-Launcher-for-TizenOS/main/webos/root/install.sh | sh
+#
+# or from a feature branch:
+#
+#   BRANCH=claude/gallant-northcutt-5aae3a \
+#   wget -qO- "https://raw.githubusercontent.com/Knikt/APL-Launcher-for-TizenOS/$BRANCH/webos/root/install.sh" | sh -s -- "$BRANCH"
+#
+# To undo everything: sh /media/developer/apl-debloat/uninstall.sh
+set -eu
+
+APL_VERSION="1.0.24"
+REPO="Knikt/APL-Launcher-for-TizenOS"
+BRANCH="${1:-main}"
+URL="https://raw.githubusercontent.com/$REPO/$BRANCH/webos/root"
+
+APL=/media/developer/apl-debloat
+HOOK=/var/lib/webosbrew/init.d
+
+echo "APL Launcher $APL_VERSION — webOS root setup from $REPO ($BRANCH)"
+echo
+
+# Sanity: this should be a rooted LG TV with Homebrew Channel.
+[ -d "$HOOK" ] || { echo "ERROR: $HOOK does not exist. Is Homebrew Channel installed?"; exit 1; }
+[ -d /var/lib/webosbrew ] || { echo "ERROR: /var/lib/webosbrew does not exist. This isn't a rooted LG TV."; exit 1; }
+
+mkdir -p "$APL" "$HOOK"
+
+fetch() {
+    dst="$1"; src="$2"
+    echo "  $dst"
+    if command -v curl >/dev/null 2>&1; then
+        curl -fsSL -o "$dst" "$URL/$src"
+    else
+        wget -q -O "$dst" "$URL/$src"
+    fi
+    chmod +x "$dst"
+}
+
+echo "Downloading scripts into $APL/"
+fetch "$APL/apl-debloat-stop.sh"   bin/apl-debloat-stop.sh
+fetch "$APL/apl-debloat-undo.sh"   bin/apl-debloat-undo.sh
+fetch "$APL/apl-services-stop.sh"  bin/apl-services-stop.sh
+fetch "$APL/apl-services-undo.sh"  bin/apl-services-undo.sh
+fetch "$APL/uninstall.sh"          uninstall.sh
+
+echo
+echo "Downloading boot hooks into $HOOK/"
+fetch "$HOOK/10-apl-block-updates"   init.d/10-apl-block-updates
+fetch "$HOOK/11-apl-block-privacy"   init.d/11-apl-block-privacy
+fetch "$HOOK/12-apl-debloat"         init.d/12-apl-debloat
+fetch "$HOOK/13-apl-services-stop"   init.d/13-apl-services-stop
+
+printf '%s\n' "$APL_VERSION" > "$APL/VERSION"
+printf '%s\n' "$BRANCH"      > "$APL/BRANCH"
+
+echo
+echo "Installed. Reboot the TV to run the boot hooks."
+echo
+echo "To apply right now without rebooting:"
+echo "  sh $HOOK/10-apl-block-updates"
+echo "  sh $HOOK/11-apl-block-privacy"
+echo "  sh $APL/apl-debloat-stop.sh"
+echo "  sh $APL/apl-services-stop.sh"
+echo
+echo "To undo everything: sh $APL/uninstall.sh"

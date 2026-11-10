@@ -4,14 +4,20 @@ The scripts installed at every boot on a rooted LG TV. They go in
 `/var/lib/webosbrew/init.d/`, which the Homebrew Channel runs with
 `run-parts` after each start-up.
 
+Tested with APL Launcher **1.0.24** on an **LG OLED G5** (OLED55G56LS,
+firmware 43.21.77 / 11.2.0-3706, webOS 26), rooted with WTFBro
+([e.nya.je/getroot](https://e.nya.je/getroot/)) and Homebrew Channel
+0.7.3. The setup freed about **390 MB of memory pressure** at steady
+state (swap went from 355 MB to 18 MB).
+
 | File | What it does | Starts |
 |---|---|---|
 | `init.d/10-apl-block-updates` | Blocks LG's 6 firmware-update hostnames (`snu`, `snu-dev`, `nsu`, `su`, `su-dev`, `su-ssl`.lge.com) in `/etc/hosts`. | at boot |
 | `init.d/11-apl-block-privacy` | Blocks 21 LG ad/telemetry/content-recognition hostnames, from the SAFE tier of furkan-bayrak/lg-tv-blocklist (CC BY 4.0). Netflix, Prime, HBO and YouTube keep working. | at boot |
-| `init.d/12-apl-debloat` | After 60 s, runs `bin/apl-debloat-stop.sh`. | at boot |
+| `init.d/12-apl-debloat` | After 15 s, runs `bin/apl-debloat-stop.sh`. | at boot |
 | `bin/apl-debloat-stop.sh` | Stops LG's `adoverlay-service`, `acr2` (viewing tracking / LivePlus), `remotelogger`, `service-logger`, `contentminer`, `nudge`, `sportsalarm`, and adds 3 more ad servers to `/etc/hosts`. Four groups (`ads`, `tracking`, `logs`, `suggestions`): one of `/media/developer/apl-debloat/OFF-<group>` pauses that group. `OFF` pauses the whole thing. | on demand or by `12-apl-debloat` |
 | `bin/apl-debloat-undo.sh` | Puts every group back: lifts the bind-mounts, restarts the systemd units, removes the 3 hostnames. | on demand |
-| `init.d/13-apl-services-stop` | After 90 s, runs `bin/apl-services-stop.sh`. | at boot |
+| `init.d/13-apl-services-stop` | After 25 s, runs `bin/apl-services-stop.sh`. | at boot |
 | `bin/apl-services-stop.sh` | Frees RAM by stopping 12 LG systemd units (familycare, buddyconnector, alwaysready, AI inference, ruleengine, wowplay, cups-lpd, dmost, ninfod, rdxd, service-logger, mycar) and bind-mounting `/dev/null` over 9 luna-launched daemons (`com.webos.app.voice`, `lg.thinqai.adapter`, `airessrvallocator`, `iotproxy`, `iconnectivity`, `uploadd`, `amazon-alexa-adapter`, `performer`, `nlpmanager`). Derived from `modules/debloat.sh` of [JulioFerrero/own-your-glass](https://github.com/JulioFerrero/own-your-glass) (MIT), with avahi and ThinQ (iot-client/pushclient) left alone: AirPlay, Chromecast and ThinQ keep working. | on demand or by `13-apl-services-stop` |
 | `bin/apl-services-undo.sh` | Lifts the binary bind-mounts, restores the original file modes, starts the systemd units back. | on demand |
 
@@ -33,30 +39,34 @@ Disney+ wait for it at start-up (OYG F47, CleanYourTV issue 47).
 
 ## Install on the TV (one-off, SSH as root)
 
-```sh
-# bin/ runs apl-debloat-stop.sh from /media/developer/apl-debloat/
-mkdir -p /media/developer/apl-debloat /var/lib/webosbrew/init.d
-cd /tmp
-URL=https://raw.githubusercontent.com/Knikt/APL-Launcher-for-TizenOS/claude/gallant-northcutt-5aae3a/webos/root
-curl -fsSL -o /media/developer/apl-debloat/apl-debloat-stop.sh  "$URL/bin/apl-debloat-stop.sh"
-curl -fsSL -o /media/developer/apl-debloat/apl-debloat-undo.sh  "$URL/bin/apl-debloat-undo.sh"
-curl -fsSL -o /media/developer/apl-debloat/apl-services-stop.sh "$URL/bin/apl-services-stop.sh"
-curl -fsSL -o /media/developer/apl-debloat/apl-services-undo.sh "$URL/bin/apl-services-undo.sh"
-curl -fsSL -o /var/lib/webosbrew/init.d/12-apl-debloat          "$URL/init.d/12-apl-debloat"
-curl -fsSL -o /var/lib/webosbrew/init.d/13-apl-services-stop    "$URL/init.d/13-apl-services-stop"
-chmod +x /media/developer/apl-debloat/*.sh /var/lib/webosbrew/init.d/12-apl-debloat /var/lib/webosbrew/init.d/13-apl-services-stop
+One command, in SSH as root (password `alpine` after rooting with WTFBro):
 
-# Measure before, apply, measure after (reversible). Watch for errors.
-free -m
+```sh
+wget -qO- https://raw.githubusercontent.com/Knikt/APL-Launcher-for-TizenOS/main/webos/root/install.sh | sh
+```
+
+This pulls the six scripts and the four boot hooks into
+`/media/developer/apl-debloat/` and `/var/lib/webosbrew/init.d/`, and
+writes the version and branch into `/media/developer/apl-debloat/VERSION`
+and `BRANCH`. Reboot once, or apply right away:
+
+```sh
+sh /var/lib/webosbrew/init.d/10-apl-block-updates
+sh /var/lib/webosbrew/init.d/11-apl-block-privacy
 sh /media/developer/apl-debloat/apl-debloat-stop.sh
 sh /media/developer/apl-debloat/apl-services-stop.sh
-sleep 10
-free -m
-
-# Undo everything:
-# sh /media/developer/apl-debloat/apl-services-undo.sh
-# sh /media/developer/apl-debloat/apl-debloat-undo.sh
+free -m    # before / after, to measure the gain
 ```
+
+To undo everything:
+
+```sh
+sh /media/developer/apl-debloat/uninstall.sh
+```
+
+The uninstaller removes the boot hooks, lifts the live binds and starts
+the stopped systemd units back; a reboot alone would also undo almost
+everything, as long as the boot hooks are removed first.
 
 Pause one group without undoing it:
 
