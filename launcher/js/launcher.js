@@ -83,6 +83,50 @@
                "#07080c";
     }
 
+    /* A card's own background (an app with no artwork: Settings, Sources): the glow above. On LG
+       (APL.platform.cardPics) the glow is a small picture, composited from its bitmap like every other
+       backdrop, and the icon and the name are layers of their own (launcher.css): painted as one 4K layer
+       the card took 32 MB of the 125 the TV gives the page, and with the Settings panel over it (32 MB
+       more) the bottom of the panel was left unpainted, black (a G5). */
+    var glowPics = {};
+    function glowPic(colour) {
+        if (glowPics[colour]) return glowPics[colour];
+        var W = 384, H = 216, c = document.createElement("canvas"), x = c.getContext("2d", { willReadFrequently: true });
+        c.width = W; c.height = H;
+        x.fillStyle = "#07080c";
+        x.fillRect(0, 0, W, H);
+        // backdropFor(): [centre x, centre y, radius x, radius y, alpha, where it ends]
+        [[0.5, 0.44, 0.6, 0.7, 0.42, 0.7], [0.5, 1.15, 1.1, 0.8, 0.22, 0.6]].forEach(function (g) {
+            x.save();
+            x.translate(g[0] * W, g[1] * H);
+            x.scale(g[2] * W, g[3] * H);
+            var grad = x.createRadialGradient(0, 0, 0, 0, 0, 1);
+            grad.addColorStop(0, rgba(colour, g[4]));
+            grad.addColorStop(g[5], rgba(colour, 0));
+            x.fillStyle = grad;
+            x.fillRect(-3, -3, 6, 6);
+            x.restore();
+        });
+        return (glowPics[colour] = c.toDataURL("image/png"));
+    }
+    function cardBack(layer, app) {
+        var glow = layer.querySelector("img.bg__glow");
+        if (APL.platform && APL.platform.cardPics && !artOf(app) && !plain(app)) {
+            layer.style.background = "#07080c";
+            if (!glow) {
+                glow = document.createElement("img");
+                glow.className = "bg__glow";
+                glow.alt = "";
+                layer.insertBefore(glow, layer.firstChild);
+            }
+            var src = glowPic(brandColour(app));
+            if (glow.getAttribute("src") !== src) glow.src = src;
+            return;
+        }
+        if (glow) glow.parentNode.removeChild(glow);
+        layer.style.background = artOf(app) ? "#000" : backdropFor(app);
+    }
+
     /* ---------- dynamic backdrops (app-art.js) ---------- */
     /* The title a service is showing right now: the storefront's trending list for the
        screen's country (JustWatch, no key needed), one poster per app. Settings ›
@@ -221,6 +265,9 @@
        the dock (seen on the M8); the dock is then clear glass over the picture. */
     var frostSrc, frostToken = 0;
     function frost(src) {
+        /* LG: the dock's pane is always on and opaque, so this picture under it was never seen, and each
+           new one repainted the dock's layer, 2.5 Mpx with its blurred shadows (12 ms of GPU on a G5) */
+        if (APL.platform && APL.platform.noFrost) return;
         if (!dom.dock || src === frostSrc) return;           // the same picture: nothing to repaint
         frostSrc = src;
         var token = ++frostToken;
@@ -283,7 +330,7 @@
         /* Artwork is the layer's picture, an <img> (showPicture), not a
            background: a background on this full-screen layer was painted as the
            file decoded, a line at a time from the top. */
-        l.style.background = artOf(app) ? "#000" : backdropFor(app);
+        cardBack(l, app);
         if (!artOf(app) && !plain(app)) l.appendChild(brandCard(app));
         l.dataset.app = app.id;
         dom.bgA.parentNode.insertBefore(l, dom.bgA);
@@ -415,7 +462,7 @@
             if (token !== backdropToken) return;          // another app was selected in the meantime
             var next = (bgActive === dom.bgA) ? dom.bgB : dom.bgA;
             next.innerHTML = "";
-            next.style.background = image ? "#000" : backdropFor(app);
+            if (image) next.style.background = "#000"; else cardBack(next, app);
             if (!image && !plain(app)) next.appendChild(brandCard(app));
             if (!image) { showLayer(next, app); refreshGlass(); return; }
             showPicture(next, image, function () {
@@ -555,7 +602,7 @@
                    has this app's id too, and repainting it here put the app's own
                    picture back over the film - the backdrop that seemed to reload
                    itself on the first pass along the dock. */
-                if (bgActive && bgActive.dataset.app === app.id && !bgActive.dataset.poster) bgActive.style.background = backdropFor(app);
+                if (bgActive && bgActive.dataset.app === app.id && !bgActive.dataset.poster) cardBack(bgActive, app);
             }
         } catch (e) { /* image from another origin: keep the default colour */ }
     }
@@ -602,6 +649,78 @@
         return tile;
     }
 
+    /* LG (APL.platform.focusLayers): what focus adds to a tile, its large shadow, its sheen and (in the grid)
+       its name, is not painted on the tile. Painted there, focus repainted two tiles on every move, blurred
+       shadow included: 3.5 ms of GPU each on a G5 drawing in 4K, a frame lost per move. Two sets of three
+       layers are shared by all the tiles instead (one a layer each would be 150 layers, and the browser then
+       spent 5 to 15 ms a frame sorting them): a set is put on the tile taking the focus and scales with it,
+       while the other fades out where the focus was. The shadow and the sheen are pictures, composited from
+       their own bitmaps: the shadow is drawn once, at a quarter of its size (a blur loses nothing to it). */
+    var focusSets = null, focusTurn = 0;
+    function focusSet() {
+        function part(cls, inner) {
+            var d = document.createElement("div");
+            d.className = "tfx tfx--" + cls;
+            if (inner) d.appendChild(inner);
+            return d;
+        }
+        function pic() { var i = document.createElement("img"); i.alt = ""; return i; }
+        var set = { lift: part("lift", pic()), sheen: part("sheen", pic()), name: part("name", document.createElement("span")) };
+        set.all = [set.lift, set.sheen, set.name];
+        return set;
+    }
+    function focusFx(el) {
+        if (!APL.platform || !APL.platform.focusLayers) return;
+        if (!focusSets) focusSets = [focusSet(), focusSet()];
+        var art = focusArt(), cont = el.parentNode, old = focusSets[focusTurn], set = focusSets[focusTurn = 1 - focusTurn];
+        old.all.forEach(function (n) { n.classList.remove("is-on"); });
+        if (!cont) return;
+        if (!el._fxAt) el._fxAt = [el.offsetLeft, el.offsetTop];       // tiles are made again when the layout changes
+        var grid = el.dataset.row !== "0";
+        set.all.forEach(function (n) {
+            if (n.parentNode !== cont) cont.insertBefore(n, n === set.lift ? cont.firstChild : null);
+            n.style.left = el._fxAt[0] + "px";
+            n.style.top = el._fxAt[1] + "px";
+        });
+        if (set.art !== art.key) { set.art = art.key; set.lift.firstChild.src = art.lift; set.sheen.firstChild.src = art.sheen; }
+        var label = el.querySelector(".tile__label"), text = grid && label ? label.textContent : "";
+        if (set.name.firstChild.textContent !== text) set.name.firstChild.textContent = text;
+        set.lift.classList.add("is-on");
+        set.sheen.classList.add("is-on");
+        set.name.classList.toggle("is-on", !!text);
+    }
+    var focusPics = { key: "" };
+    function focusArt() {
+        var perf = dom.body.classList.contains("perf"), key = TILE_W + "x" + TILE_H + (perf ? "p" : "");
+        if (focusPics.key === key) return focusPics;
+        var P = 80, Q = 4, R = 20, FAR = 4000, w = TILE_W, h = TILE_H;
+        var READ = { willReadFrequently: true };          // read back at once: kept off the GPU
+        var c = document.createElement("canvas"), x = c.getContext("2d", READ);
+        c.width = Math.ceil((w + 2 * P) / Q); c.height = Math.ceil((h + 2 * P) / Q);
+        // launcher.css: .tile.is-focused .tile__card (and its lighter .perf shadow): [y, blur, spread, alpha]
+        (perf ? [[16, 26, 0, 0.5]] : [[30, 40, -6, 0.65], [10, 18, 0, 0.35]]).forEach(function (sh) {
+            x.shadowColor = "rgba(0,0,0," + sh[3] + ")";
+            x.shadowBlur = sh[1] / Q;
+            x.shadowOffsetX = FAR;                         // the shape that casts it stays off the canvas
+            x.shadowOffsetY = sh[0] / Q;
+            x.fillStyle = "#000";
+            x.beginPath();
+            x.roundRect((P - sh[2]) / Q - FAR, (P - sh[2]) / Q, (w + 2 * sh[2]) / Q, (h + 2 * sh[2]) / Q, Math.max(0, R + sh[2]) / Q);
+            x.fill();
+        });
+        focusPics.lift = c.toDataURL("image/png");
+        // .tile__card::after: linear-gradient(165deg, white 30% at 0, 6% at 38%, none at 60%)
+        var s = document.createElement("canvas"), y = s.getContext("2d", READ), sw = 100, sh2 = Math.round(100 * h / w);
+        s.width = sw; s.height = sh2;
+        var a = 165 * Math.PI / 180, dx = Math.sin(a), dy = -Math.cos(a), len = Math.abs(sw * dx) + Math.abs(sh2 * dy);
+        var g = y.createLinearGradient(sw / 2 - dx * len / 2, sh2 / 2 - dy * len / 2, sw / 2 + dx * len / 2, sh2 / 2 + dy * len / 2);
+        g.addColorStop(0, "rgba(255,255,255,0.30)"); g.addColorStop(0.38, "rgba(255,255,255,0.06)"); g.addColorStop(0.60, "rgba(255,255,255,0)");
+        y.fillStyle = g; y.fillRect(0, 0, sw, sh2);
+        focusPics.sheen = s.toDataURL("image/png");
+        focusPics.key = key;
+        return focusPics;
+    }
+
     /* ---------- states ---------- */
     function setMode(m) {
         mode = m;
@@ -614,12 +733,12 @@
     /* Apps per row: the tiles share the dock's width (1750 px inside its padding, 50 px gaps) and keep
        their 5:3 shape; the dock grows upward from the same bottom edge (1008), and the rows start below
        it as before. CSS reads the result from variables on <html>. */
-    var TILE_H = 150, DOCK_BOTTOM = 1008;
+    var TILE_H = 150, TILE_W = 250, DOCK_BOTTOM = 1008;
     function sizes() {
         var n = APL.sys.pref("appsPerRow");
         n = n === 5 || n === 7 ? n : 6;
         var w = Math.round((1750 - (n - 1) * 50) / n), h = Math.round(w * 0.6), dockH = h + 75;
-        DOCK_SIZE = n; TILE_H = h; DOCK_TOP = DOCK_BOTTOM - dockH;
+        DOCK_SIZE = n; TILE_H = h; TILE_W = w; DOCK_TOP = DOCK_BOTTOM - dockH;
         var s = document.documentElement.style;
         s.setProperty("--cols", n);
         s.setProperty("--tile-w", w + "px");
@@ -778,6 +897,7 @@
         lastFocus = i;
         rotN = 0;
         var app = apps[i], inDock = el.dataset.row === "0", fromGrid = mode === "grid";
+        focusFx(el);
         if (!inDock) stopRotate();
         if (mode !== "full") setMode(inDock ? "shelf" : "grid");
         else layout();

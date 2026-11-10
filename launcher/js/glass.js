@@ -49,6 +49,14 @@
         ".scard__art--glass"
     ];
 
+    /* LG (APL.platform.directGlass): a pane is kept for good, and what changes with the picture changes
+       without anything being painted again. The slice is an <img> the screen composites straight from its
+       480 x 270 bitmap (a layer made of one image is rastered at the image's own size, then scaled by the
+       GPU), and the shade over it is a plain layer whose opacity is the shade. A pane made again for each
+       picture had the whole surface repainted with it: on a G5 drawing in 4K the clock pill alone took
+       25 ms of GPU each time (blurred shadows, masked rim), the dock 12. */
+    var DIRECT = !!(APL.platform && APL.platform.directGlass);
+
     var baked = "";          /* data URL of the frozen backdrop */
     var bakedFrom = "";      /* the artwork it was made from */
     var forced = "";         /* setSource() override */
@@ -120,10 +128,33 @@
        on a slice that is already made: nothing is drawn on the frame that
        changes the backdrop. */
     var cache = {}, order = [], CACHE_MAX = 12;
+    /* The direct panes show the pane's picture from a blob: URL, loaded and decoded once here. Each <img>
+       given the data: URL itself read it again, 2.7 ms a pane on a G5, fifteen panes with the Control
+       Center built; one already loaded in the page is taken as it is (0.3 ms). */
+    var quickUrl = {}, quickN = 0;
+    function quick(data) {
+        if (data in quickUrl || !global.fetch || !global.URL) return;
+        quickUrl[data] = "";                              // on its way
+        global.fetch(data).then(function (r) { return r.blob(); }).then(function (b) {
+            var u = global.URL.createObjectURL(b), im = new global.Image();
+            im.onload = function () { quickUrl[data] = u; };
+            im.src = u;
+            if (im.decode) im.decode().catch(function () {});
+            if (++quickN > 40) {                          // the pictures gone from the cache give their blob back
+                Object.keys(quickUrl).forEach(function (d) {
+                    if (d === baked || order.some(function (k) { return cache[k] === d; })) return;
+                    if (quickUrl[d]) global.URL.revokeObjectURL(quickUrl[d]);
+                    delete quickUrl[d];
+                });
+                quickN = Object.keys(quickUrl).length;
+            }
+        }).catch(function () { delete quickUrl[data]; });
+    }
     function remember(src, data) {
         if (!src || !data) return;
         if (!cache[src]) order.push(src);
         cache[src] = data;
+        if (DIRECT) quick(data);
         while (order.length > CACHE_MAX) {
             var old = order.shift();
             if (cache[old] !== baked) delete lums[cache[old]];      // the pane on screen keeps its measure
@@ -393,12 +424,35 @@
         var l = el.__cgLayer;
         if (l && l.parentNode === el) return l;
         l = document.createElement("i");
-        l.className = "cg__glass";
+        l.className = "cg__glass" + (DIRECT ? " cg__glass--direct" : "");
         l.setAttribute("aria-hidden", "true");
+        if (DIRECT) {
+            var pic = document.createElement("img"), shade = document.createElement("i");
+            pic.className = "cg__pic"; pic.alt = ""; pic.decoding = "sync";
+            shade.className = "cg__shade";
+            l.appendChild(pic); l.appendChild(shade);
+            l.__pic = pic;
+        }
         el.insertBefore(l, el.firstChild);
         el.__cgLayer = l;
         el.__cgKey = "";
         return l;
+    }
+    /* The direct pane: the picture's place and the shade are two style writes, the picture one src. */
+    function paintDirect(l, el, r) {
+        var pic = l.__pic, pos = r.x + "," + r.y;
+        if (!pic || pic.parentNode !== l) {            // the tile's content was rebuilt around the pane
+            pic = l.__pic = l.querySelector(".cg__pic");
+            if (!pic) return;
+        }
+        if (l.__pos !== pos) { l.__pos = pos; pic.style.left = (-r.x) + "px"; pic.style.top = (-r.y) + "px"; }
+        tint(l, el, r);
+        if (l.__src !== baked) {
+            l.__src = baked;
+            if (!quickUrl[baked]) quick(baked);           // a gradient's pane, made without remember()
+            pic.src = quickUrl[baked] || baked;
+        }
+        l.classList.add("is-on");
     }
 
     /* Stage rectangle from layout offsets. A focused tile is scaled and a
@@ -478,10 +532,17 @@
         var list = document.querySelectorAll(TARGETS.join(",")), i, el, r, key, l;
         var theme = body.className.indexOf("theme-light") > -1 ? "l" : "d";
         if (body.classList.contains("perf")) theme += "p";
+        /* Every measure first, then every write: a write between two reads had the page laid out again
+           for each surface (offset() and paintDirect() were 40 ms a move in a profile on a G5). */
+        var jobs = [];
         for (i = 0; i < list.length; i++) {
             el = list[i];
             if (!el.offsetWidth || el.offsetHeight < 4) continue;
-            r = offset(el);
+            jobs.push(el, offset(el));
+        }
+        for (i = 0; i < jobs.length; i += 2) {
+            el = jobs[i];
+            r = jobs[i + 1];
             /* The artwork is part of the key, so a new picture re-slices even when
                the surface has not moved; the theme too, which decides the tint. */
             key = r.x + "," + r.y + "," + r.w + "," + r.h + ":" + baked.length + ":" + baked.slice(-24) + ":" + theme;
@@ -489,6 +550,7 @@
             if (el.__cgKey === key && l && l.parentNode === el && l.classList.contains("is-on")) continue;
             el.__cgKey = key;
             l = layerFor(el);
+            if (DIRECT) { paintDirect(l, el, r); continue; }
             if (l.__src !== baked) {
                 /* The pane is already rendered (see the cache above): one style
                    write, laid over the old pane, which leaves on the next frame.

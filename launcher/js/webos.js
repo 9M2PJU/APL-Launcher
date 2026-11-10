@@ -373,9 +373,12 @@
         cachedApps: function () { return appsCache || []; },
         /* The App Switcher leaves out LG's own apps that the TV keeps preloaded (LG Channels): never opened by you */
         notInSwitcher: function (id) { return LG_OWN.indexOf(id) !== -1; },
-        readyLayers: 2,                       // backdrops kept ready in 4K (launcher.js readyLayer)
         blurAhead: true,                      // the grid's blurred picture prepared before the grid opens (launcher.js)
         gridTint: true,                       // the grid's darkening drawn into that picture (launcher.js, launcher.css)
+        directGlass: true,                    // panes kept, their picture an <img>, their shade an opacity (glass.js)
+        cardPics: true,                       // a card's glow as a small picture (launcher.js cardBack)
+        noFrost: true,                        // no picture under the dock's pane (launcher.js frost)
+        focusLayers: true,                    // a tile's focus shadow and sheen as layers (launcher.js makeTile)
         takeAction: function () { var a = pendingAction; pendingAction = ""; return a; },
         ccBack: function () { var id = returnTo; returnTo = ""; if (id && Date.now() - returnAt < 600000) launch(id).catch(function () {}); }
     };
