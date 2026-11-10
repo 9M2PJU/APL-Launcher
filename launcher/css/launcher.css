@@ -1126,8 +1126,8 @@ html, body {
 .wdg__mark { font-size: 96px; font-weight: 700; letter-spacing: -2px; color: #fff; text-align: center; line-height: 1.05; }
 .sw__widgets .wdg__card--channel .wdg__pic { padding: 22px 60px 54px; }
 .sw__widgets .wdg__mark { font-size: 38px; letter-spacing: 0; }
-.wdg__txt { position: absolute; left: 0; right: 0; bottom: 0; padding: 90px 30px 20px; background: linear-gradient(transparent, rgba(0, 0, 0, 0.8) 62%); }
-.wdg__card--video .wdg__txt { padding-bottom: 34px; }
+/* The same room under the text on every card, bar or not: the texts of two cards stay on one line */
+.wdg__txt { position: absolute; left: 0; right: 0; bottom: 0; padding: 90px 30px 34px; background: linear-gradient(transparent, rgba(0, 0, 0, 0.8) 62%); }
 .wdg__label { display: none; }
 .wdg__title { font-size: 34px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .wdg__sub { font-size: 24px; color: rgba(255, 255, 255, 0.76); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -1141,8 +1141,7 @@ html, body {
 .sw__widgets { position: absolute; left: 24px; bottom: 24px; display: flex; gap: 14px; }
 .sw__widgets .wdg__card { width: 320px; height: 180px; border-radius: 18px; }
 .sw__widgets .wdg__pic { padding-bottom: 40px; }
-.sw__widgets .wdg__txt { padding: 26px 14px 10px; }
-.sw__widgets .wdg__card--video .wdg__txt { padding-bottom: 20px; }
+.sw__widgets .wdg__txt { padding: 26px 14px 20px; }
 .sw__widgets .wdg__label { display: block; font-size: 15px; font-weight: 600; color: rgba(255, 255, 255, 0.76); }
 .sw__widgets .wdg__title { font-size: 21px; }
 .sw__widgets .wdg__sub { font-size: 15px; }

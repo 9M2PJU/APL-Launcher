@@ -395,6 +395,8 @@
         sys.runningApps = runningApps;
         sys.closeApps = closeApps;
         sys.memoryLeft = memoryLeft;
+        /* APL TV's Top Shelf (widgets.js), handed over by the launcher's service */
+        sys.appShelf = function () { return P.service("shelf", {}).then(function (m) { return m.shelf; }); };
         sys.registerKeys = function () {};
         sys.armSleepTimer = function (m) { armSleepTimer(sys, m); };
         sys.readSleepTimer = function () { return readSleepTimer(sys); };

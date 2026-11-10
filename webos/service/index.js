@@ -270,6 +270,27 @@ if (ROOT) {
     watchApps();
 }
 
+/* ---------- APL TV's Top Shelf ----------
+   APL TV writes what you were watching in /tmp/apltv-shelf.json (its own service, POST /shelf): titles,
+   pictures, progress, no address and no account. A page cannot read a file: this hands that one file
+   over, cut down to what the launcher shows. No root needed (services share /tmp). */
+var SHELF_FILE = "/tmp/apltv-shelf.json";
+service.register("shelf", guard(function (message) {
+    fs.stat(SHELF_FILE, function (err, st) {
+        if (err || !st.isFile() || st.size > 400000) { message.respond({ returnValue: false, errorText: "no shelf" }); return; }
+        fs.readFile(SHELF_FILE, "utf8", function (e, txt) {
+            var s = null;
+            try { s = JSON.parse(txt); } catch (x) {}
+            if (e || !s || typeof s !== "object") { message.respond({ returnValue: false, errorText: "no shelf" }); return; }
+            message.respond({ returnValue: true, shelf: {
+                app: s.app, at: s.at,
+                continueWatching: Array.isArray(s.continueWatching) ? s.continueWatching.slice(0, 4) : [],
+                lastChannel: s.lastChannel || null
+            } });
+        });
+    });
+}));
+
 service.register("memory", guard(function (message) {
     fs.readFile("/proc/meminfo", "utf8", function (err, txt) {
         if (err) { message.respond({ returnValue: false, errorText: err.code || "meminfo" }); return; }
