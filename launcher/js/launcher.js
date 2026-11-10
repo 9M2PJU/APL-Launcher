@@ -1432,6 +1432,7 @@
     var lastHome = 0;
     /* The native Control Center (overlay/) asks for a launcher page: Settings, Connection… */
     function requestedAction() {
+        if (APL.platform && APL.platform.takeAction) return APL.platform.takeAction();     // LG (webos.js)
         try {
             var data = global.tizen.application.getCurrentApplication().getRequestedAppControl().appControl.data || [];
             for (var i = 0; i < data.length; i++) if (data[i].key === "apl_action") return data[i].value[0];

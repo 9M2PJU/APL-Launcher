@@ -46,7 +46,7 @@ function stayAwake() {
     try { service.activityManager.create("keepAlive", function (activity) { keep = activity; }); } catch (e) {}
 }
 function maybeSleep() {
-    if (Object.keys(listeners).length || sleepTimer || !keep) return;
+    if (Object.keys(listeners).length || sleepTimer || !keep || ROOT) return;     // rooted: it watches the AI button
     try { service.activityManager.complete(keep, function () {}); } catch (e) {}
     keep = null;
 }
@@ -173,7 +173,7 @@ service.register("sleep", guard(function (message) {
 
 service.register("status", guard(function (message) {
     var c = tv();
-    message.respond({ returnValue: true, version: pkg.version, node: process.version, root: ROOT, state: c.state, error: c.error || undefined,
+    message.respond({ returnValue: true, version: pkg.version, node: process.version, root: ROOT, remote: Object.keys(raws), state: c.state, error: c.error || undefined,
                       host: c.host, origin: c.origin, unsigned: c.unsigned, sleepAt: sleepAt, caller: caller(message), listeners: Object.keys(listeners).length,
                       log: ssap.log.slice(-30) });
 }));
@@ -233,6 +233,57 @@ service.register("home", guard(function (message) {
                                        { detached: true, stdio: "ignore" }).unref();
     }, 400);
 }));
+
+/* ---------- the Magic Remote's AI button ----------
+   LG keeps it for its own assistant: no app ever gets it, not even as a launch. Its raw reports can be read
+   (/dev/hidraw*: every reader gets its own copy, LG's included): each button rides in the pointer's motion
+   report (id 0xfd, 20 bytes) as 0x80 and its code in bytes 17 and 18, and AI is 0x7c (MR25GA, on a G5).
+   Pressed, it opens the launcher's Control Center, which goes back to the app in front on Back.
+   Rooted TV only. /media/developer/apl-debloat/OFF-ai turns it off. */
+var AI_CODE = 0x7c, aiDown = false, aiAt = 0, raws = {};
+function remoteRaws() {
+    var out = [];
+    try {
+        fs.readdirSync("/sys/class/hidraw").forEach(function (n) {
+            var ue = "";
+            try { ue = fs.readFileSync("/sys/class/hidraw/" + n + "/device/uevent", "utf8"); } catch (e) {}
+            if (/HID_NAME=LGE MR/i.test(ue)) out.push("/dev/" + n);
+        });
+    } catch (e) {}
+    return out;
+}
+function aiPressed() {
+    if (fs.existsSync(ROOT_DIR + "/OFF-ai")) return;
+    service.call("luna://com.webos.applicationManager/getForegroundAppInfo", {}, function (m) {
+        var from = (m && m.payload && m.payload.appId) || "";
+        service.call("luna://com.webos.applicationManager/launch", { id: APP, params: { apl_action: "controlcenter", from: from } }, function () {});
+    });
+}
+/* The remote sleeps after a while and its device closes (EIO): looked for again every few seconds */
+function watchRemote() {
+    remoteRaws().forEach(function (dev) {
+        if (raws[dev]) return;
+        var s = fs.createReadStream(dev, { highWaterMark: 64 });
+        raws[dev] = s;
+        s.on("data", function (b) {
+            if (b.length < 20 || b[0] !== 0xfd) return;
+            var ai = (b[17] & 0x80) && b[18] === AI_CODE;
+            if (ai && !aiDown && Date.now() - aiAt > 800) { aiAt = Date.now(); aiPressed(); }
+            aiDown = !!ai;
+        });
+        function gone() { if (raws[dev] === s) delete raws[dev]; }
+        s.on("error", gone);
+        s.on("close", gone);
+    });
+}
+if (ROOT) {
+    stayAwake();
+    watchRemote();
+    setInterval(watchRemote, 3000);
+    /* Asleep, the remote has no device at all, and the press that wakes it is often AI itself: opened the
+       moment its device comes back, before its first report */
+    try { fs.watch("/dev", function (ev, name) { if (/^hidraw/.test(String(name || ""))) setTimeout(watchRemote, 20); }); } catch (e) {}
+}
 
 service.register("memory", guard(function (message) {
     fs.readFile("/proc/meminfo", "utf8", function (err, txt) {

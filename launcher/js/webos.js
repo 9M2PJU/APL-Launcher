@@ -314,7 +314,16 @@
 
     /* Opened again while running (its icon in LG's home bar): to the front, and like Home on Samsung,
        the Home Screen at rest (launcher.js, "appcontrol"). */
+    /* A request with the launch (the service, for the Magic Remote's AI button): {apl_action, from}. The app
+       that was in front comes back when the Control Center is left with Back (P.ccBack, controlcenter.js),
+       as the Control Center drawn over apps does on Samsung. */
+    var pendingAction = "", returnTo = "", returnAt = 0;
+    function launchParams() { try { return JSON.parse(S.launchParams || "{}") || {}; } catch (e) { return {}; } }
     document.addEventListener("webOSRelaunch", function () {
+        var p = launchParams();
+        pendingAction = typeof p.apl_action === "string" ? p.apl_action : "";
+        returnAt = Date.now();
+        returnTo = pendingAction === "controlcenter" && p.from && !SELF.test(p.from) && !/^com\.webos\.app\.home$/.test(p.from) ? String(p.from) : "";
         try { if (S.activate) S.activate(); } catch (e) {}
         var ev;
         try { ev = new Event("appcontrol"); } catch (x) { ev = document.createEvent("Event"); ev.initEvent("appcontrol", false, false); }
@@ -354,6 +363,8 @@
         loadApps: loadApps, launchApp: launchApp, isInstalled: isInstalled, openUrl: openUrl,
         cachedApps: function () { return appsCache || []; },
         /* The App Switcher leaves out LG's own apps that the TV keeps preloaded (LG Channels): never opened by you */
-        notInSwitcher: function (id) { return LG_OWN.indexOf(id) !== -1; }
+        notInSwitcher: function (id) { return LG_OWN.indexOf(id) !== -1; },
+        takeAction: function () { var a = pendingAction; pendingAction = ""; return a; },
+        ccBack: function () { var id = returnTo; returnTo = ""; if (id && Date.now() - returnAt < 600000) launch(id).catch(function () {}); }
     };
 })(window);

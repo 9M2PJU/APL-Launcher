@@ -590,6 +590,7 @@
                 if (view === "pair") { scanStop(); show("audio"); return; }
                 if (view !== "main") { view = "main"; render(); return; }
                 close();
+                if (P && P.ccBack) P.ccBack();          // LG: back to the app it was opened over (webos.js)
             },
             onKey: function (code) {
                 var t = nav.current(), it = t && t._item;
