@@ -42,7 +42,7 @@ The Python installer works on macOS, Linux, and Windows with Python 3. It instal
 3. From a downloaded or cloned repository, run `python3 scripts/install-via-vetro.py <screen-ip> /path/to/apl-launcher-full.wgt`. To enter the API keys and personal websites, add `--configure --duid <TV-DUID>`; if Apps2Samsung CLI is not on PATH, also pass `--apps2samsung-cli /path/to/apps2samsung-cli`. The script verifies Vetro connectivity and the file-transfer checksum, installs the hybrid package, confirms both launcher and overlay are registered, and launches it. Add `--no-launch` to skip launching.
 4. Follow steps 3 onward below to configure remote buttons and set up the launcher. Without keys, everything works except trending films and series in the Top Shelf.
 
-The installer sends the package to Vetro over the local network using bounded base64 chunks and removes its temporary files from the TV after installation. It does not print API keys or save them to disk outside its temporary package, which is deleted when the script exits. Tizen 6.x screens should use the launcher-only package instead, as described below.
+The installer sends the package to Vetro over the local network using bounded base64 chunks and removes its temporary files from the TV after installation. It does not print API keys or save them to disk outside its temporary package, which is deleted when the script exits. Tizen 6.x screens need their own two packages instead, as described below.
 
 ### Alternative: Apps2Samsung or TV-Store
 
@@ -55,7 +55,7 @@ Every release also has the whole package as `apl-launcher-full-vX.Y.Z.wgt`, for 
 
 After a full restart, the screen comes back on its last input or on Smart Hub; the start-up service puts the launcher on screen about 80 s after power-on. No personal websites, Memoji or SF Pro fonts in this package. Automatic updates work the same way. (`apl-launcher-vX.Y.Z.wgt`, next to it, is the launcher alone, without the overlay.)
 
-**Tizen 6.x screens**: APL Overlay and the other .NET parts of the full package don't run there. Install `apl-launcher-vX.Y.Z.wgt` instead, the launcher alone with its own bridge (in Apps2Samsung's catalog: the *Tizen 6* variant of APL Launcher, from 1.0.20), and map Home to **APL Launcher** with *Set Up the Remote Buttons*.
+**Tizen 6.x screens**: in the full package, opening the launcher starts APL Overlay instead. From 1.0.25, every release has two packages for each Tizen 6 version: `apl-launcher-tizen65-vX.Y.Z.wgt` and `apl-overlay-tizen65-vX.Y.Z.tpk` for Tizen 6.5 (2022 screens), `apl-launcher-tizen60-vX.Y.Z.wgt` and `apl-overlay-tizen60-vX.Y.Z.tpk` for Tizen 6.0 (2021 screens). The `.wgt` is the launcher with its bridge to Vetro and the start-up service, the `.tpk` is APL Overlay in a package of its own (`apl.launcher.overlay`). APL Launcher Setup picks the right pair by itself. With Apps2Samsung, install the `.wgt` as a custom `.wgt`, then the `.tpk` with its command line (the app's custom install takes `.wgt` files only): `apps2samsung-cli install apl-overlay-tizen65-vX.Y.Z.tpk --tv <screen-ip>`. Both files are unsigned: Apps2Samsung signs them for your screen. Then *Set Up the Remote Buttons* as above. Without the `.tpk`, the launcher works on its own and Home goes to APL Launcher; the *Tizen 6* variant of APL Launcher in Apps2Samsung's catalog is that too, `apl-launcher-vX.Y.Z.wgt`, the launcher alone with a web bridge.
 
 ### Optional API keys
 
@@ -77,7 +77,7 @@ The installer downloads 58 Memoji faces once from [wimell/tapback-memojis](https
 
 To use **your own Memoji**, put PNG images in the `APL Launcher avatars` folder inside your *Pictures* folder, then install again. They come first in the avatar list. On an iPhone: send your Memoji sticker in Messages, open it, then *Share › Save Image*.
 
-**Tizen 6.x screens** (The Frame 2022, for example): APL Launcher Setup installs the launcher on its own, with its own bridge to Vetro. APL Overlay and the other parts of the full package need Tizen 7 or newer: the Home Screen, Home, Sources and the settings work, the Control Center over videos and Alexa on the microphone don't.
+**Tizen 6.x screens** (The Frame 2022, for example): from 1.0.25, APL Launcher Setup reads whether the screen runs Tizen 6.0 or 6.5 and installs the two packages made for it, both signed with your certificate and the launcher with your keys: the launcher with its bridge to Vetro and the start-up service, then APL Overlay in a package of its own (`apl.launcher.overlay`), which gets Home and ⏯ like on newer screens. On Tizen 6 the launcher doesn't open when APL Overlay is in its package, hence the two. If APL Overlay can't be installed, the launcher works on its own (the Home Screen, Home, Sources and the settings, but not the Control Center over videos or Alexa on the microphone). Before 1.0.25, or when Setup can't tell 6.0 from 6.5, it installs the launcher alone, with a web bridge.
 
 ## 3. Replace Samsung's home screen
 

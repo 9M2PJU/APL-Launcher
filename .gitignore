@@ -39,3 +39,6 @@ launcher/js/avatars.local.js
 launcher/sounds/*.wav
 launcher/images/avatars/custom/
 launcher/images/avatars/memoji/
+
+# Tizen packages built or signed locally
+*.tpk
