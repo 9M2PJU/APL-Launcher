@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.25
+- **The focused card in Sources is white again.** Since the Liquid Glass (1.0.22), its white plate was painted under the glass: the focused card stayed dark glass, and its icon, dark for the white plate, could hardly be seen on it. The plate is now drawn on the glass, as in the Control Center since 1.0.24. Tried in the PC preview, in the dark and the light theme.
+- In the light theme, the Sources title is white like the cards. Sources keeps its dark veil in the light theme, and the title took the theme's dark text: it could hardly be seen.
+- *Settings › Appearance › Dynamic Backdrops* is in French when the launcher is (*Fonds dynamiques*): it was the only setting left in English.
+
 ## 1.0.24
 - **Liquid Glass stays readable on every picture.** The glass is a slice of the picture laid over the dock, the status pill and the Control Center tiles, and it hid their own tint: on a white or very bright picture the dock and the status pill turned into white glass, the time disappeared (contrast 1:1), and the Control Center labels were borderline. Each pane now measures the picture under it and darkens just enough for its text: a little on a dark picture, much more on a white one. In the light theme, a pale veil does the same for the dark text. Measured in the PC preview on white, yellow, red, black and half-white pictures: the text now stays between 6.4:1 and 19:1 in the dark theme, and above 9:1 in the light theme. Tried on the M8 with its own pictures, a very bright one included.
 - In the light theme, the clock in the status pill is dark like the rest of the pill. It stayed white and disappeared on the pale glass.

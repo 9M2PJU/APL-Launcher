@@ -1,8 +1,8 @@
 {
- "version": "1.0.24",
+ "version": "1.0.25",
  "loader": 1,
  "reinstall": "1.0.0",
- "notes": "Liquid Glass stays readable on every picture, and the Control Center is smooth, with no black flash or colour change",
+ "notes": "",
  "scripts": [
   "js/diag.js",
   "js/webos.js",
