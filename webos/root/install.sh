@@ -51,7 +51,12 @@ fetch "$APL/apl-debloat-stop.sh"   bin/apl-debloat-stop.sh
 fetch "$APL/apl-debloat-undo.sh"   bin/apl-debloat-undo.sh
 fetch "$APL/apl-services-stop.sh"  bin/apl-services-stop.sh
 fetch "$APL/apl-services-undo.sh"  bin/apl-services-undo.sh
+fetch "$APL/apl-home.sh"           bin/apl-home.sh
+fetch "$APL/apl-home-undo.sh"      bin/apl-home-undo.sh
 fetch "$APL/uninstall.sh"          uninstall.sh
+mkdir -p "$APL/home"
+fetch "$APL/home/index.html"       home/index.html
+fetch "$APL/home/appinfo.json"     home/appinfo.json
 
 echo
 echo "Downloading boot hooks into $HOOK/"
@@ -60,6 +65,7 @@ fetch "$HOOK/11-apl-block-privacy"   init.d/11-apl-block-privacy
 fetch "$HOOK/12-apl-debloat"         init.d/12-apl-debloat
 fetch "$HOOK/13-apl-services-stop"   init.d/13-apl-services-stop
 fetch "$HOOK/20-apl-elevate"         init.d/20-apl-elevate
+fetch "$HOOK/30-apl-home"            init.d/30-apl-home
 
 echo
 echo "Giving APL Launcher's service root (picture settings, closing apps)"
@@ -77,5 +83,8 @@ echo "  sh $HOOK/10-apl-block-updates"
 echo "  sh $HOOK/11-apl-block-privacy"
 echo "  sh $APL/apl-debloat-stop.sh"
 echo "  sh $APL/apl-services-stop.sh"
+echo "  sh $APL/apl-home.sh             (Home opens APL Launcher; the screen goes black a few seconds)"
+echo
+echo "LG's Home instead of APL Launcher: touch $APL/OFF-home, or sh $APL/apl-home-undo.sh for now."
 echo
 echo "To undo everything: sh $APL/uninstall.sh"

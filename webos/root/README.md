@@ -20,6 +20,10 @@ state (swap went from 355 MB to 18 MB).
 | `init.d/13-apl-services-stop` | After 25 s, runs `bin/apl-services-stop.sh`. | at boot |
 | `bin/apl-services-stop.sh` | Frees RAM by stopping 12 LG systemd units (familycare, buddyconnector, alwaysready, AI inference, ruleengine, wowplay, cups-lpd, dmost, ninfod, rdxd, service-logger, mycar) and bind-mounting `/dev/null` over 9 luna-launched daemons (`com.webos.app.voice`, `lg.thinqai.adapter`, `airessrvallocator`, `iotproxy`, `iconnectivity`, `uploadd`, `amazon-alexa-adapter`, `performer`, `nlpmanager`). Derived from `modules/debloat.sh` of [JulioFerrero/own-your-glass](https://github.com/JulioFerrero/own-your-glass) (MIT), with avahi and ThinQ (iot-client/pushclient) left alone: AirPlay, Chromecast and ThinQ keep working. | on demand or by `13-apl-services-stop` |
 | `bin/apl-services-undo.sh` | Lifts the binary bind-mounts, restores the original file modes, starts the systemd units back. | on demand |
+| `init.d/20-apl-elevate` | Gives APL Launcher's service root with the Homebrew Channel's own `elevate-service`, as HBC does for itself at each boot. Installing or updating the launcher writes the service's luna files back to normal; this puts root back at the next start. With root the launcher reads and sets the picture settings (Picture Mode, OLED Pixel Brightness, contrast…), closes the apps left open (Free Up Memory, App Switcher) and its Control Center slider is the brightness. `OFF-root` pauses it. | at boot |
+| `init.d/30-apl-home` | Runs `bin/apl-home.sh` at boot. `OFF-home` keeps LG's Home. | at boot |
+| `bin/apl-home.sh` | Home opens APL Launcher, and the TV starts on it. `home/` (a page named `com.webos.app.home` that only opens APL Launcher, again at each press of Home) is mounted in RAM over LG's Home and the app manager (`sam`) is restarted to read it: the way [CleanYourTV](https://github.com/lasharor/cleanyourtv-WebOS) (MIT) replaces the Flutter Home of webOS 24 and newer. Nothing is written under `/usr`. If APL Launcher isn't running 40 s later, LG's Home comes back by itself. Home → APL Launcher in 0.3 s on the G5. | on demand or by `30-apl-home` |
+| `bin/apl-home-undo.sh` | LG's Home back now (unmount, restart `sam`). | on demand |
 
 `apl-debloat-*` is based on scripts/debloat-stop.sh and debloat-undo.sh in
 [lasharor/cleanyourtv-WebOS](https://github.com/lasharor/cleanyourtv-WebOS)
@@ -76,7 +80,11 @@ touch /media/developer/apl-debloat/OFF-tracking
 touch /media/developer/apl-debloat/OFF-logs
 touch /media/developer/apl-debloat/OFF-suggestions
 touch /media/developer/apl-debloat/OFF                 # the whole thing
+touch /media/developer/apl-debloat/OFF-home            # LG's Home at the next start
+touch /media/developer/apl-debloat/OFF-root            # no root for the launcher's service at the next start
 ```
+
+LG's Home right now, without restarting: `sh /media/developer/apl-debloat/apl-home-undo.sh`.
 
 ## What breaks and what doesn't
 

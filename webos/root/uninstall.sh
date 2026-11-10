@@ -19,12 +19,16 @@ echo "APL Launcher — webOS root uninstall"
 echo
 
 echo "Removing boot hooks from $HOOK/"
-for f in 10-apl-block-updates 11-apl-block-privacy 12-apl-debloat 13-apl-services-stop 20-apl-elevate; do
+for f in 10-apl-block-updates 11-apl-block-privacy 12-apl-debloat 13-apl-services-stop 20-apl-elevate 30-apl-home; do
     if [ -e "$HOOK/$f" ]; then
         echo "  $HOOK/$f"
         rm -f "$HOOK/$f"
     fi
 done
+
+echo
+echo "LG's own Home back"
+[ -r "$APL/apl-home-undo.sh" ] && sh "$APL/apl-home-undo.sh" || echo "  apl-home-undo.sh not found, skipping"
 
 echo
 echo "Lifting live changes (debloat + services)"
