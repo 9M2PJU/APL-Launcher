@@ -157,4 +157,4 @@ Without root, Home keeps opening LG's Home, and there are no picture settings, n
 2. In the Setup, **Your TV › Android TV**, **Continue**, type the TV's IP address (with Wireless debugging on Android 11 and later, also its pairing port and code), then **Install**.
 3. On the TV, allow debugging from this PC (*Always allow*). The Setup finds `adb` or downloads Google's platform-tools once, installs the `.apk` of the latest release, turns on APL Launcher's remote buttons service (Home opens APL Launcher) and opens it.
 
-Without a PC: the **Downloader** app on the TV, with the link to the `.apk` of the latest release. More: [android.md](android.md).
+Without a PC: the **Downloader** app on the TV, with `https://github.com/Knikt/APL-Launcher/releases/latest/download/apl-launcher-android.apk` (always the latest version). More: [android.md](android.md).

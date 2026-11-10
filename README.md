@@ -62,7 +62,9 @@ That's all: the Setup builds APL Launcher with your settings, installs it, turns
 - **LG, rooted**: in the **Homebrew Channel**, *Settings › Add repository*, type
   `https://raw.githubusercontent.com/Knikt/APL-Launcher/main/webos/repo/apps.json`, then install **APL Launcher** from the list. For the root features, run once from an SSH app on your phone (user `root`, password `alpine`):
   `wget -qO- https://raw.githubusercontent.com/Knikt/APL-Launcher/main/webos/root/install.sh | sh`
-- **Android TV**: with the **Downloader** app on the TV, open the link to the `.apk` of the [latest release](https://github.com/Knikt/APL-Launcher/releases/latest) and install it. APL Launcher then asks for what Home needs.
+- **Android TV**: with the **Downloader** app on the TV, open
+  `https://github.com/Knikt/APL-Launcher/releases/latest/download/apl-launcher-android.apk`
+  and install it. APL Launcher then asks for what Home needs.
 
 ## Debloat built in
 
