@@ -136,7 +136,7 @@ namespace APL.Setup
                     break;
                 default:
                     howText.Text = T("The Setup installs the package with adb (USB or Network debugging, in the TV's Developer options) and turns on the remote buttons service: Home then opens APL Launcher.");
-                    phoneText.Text = T("With the Downloader app on the TV: type the link to the .apk of the latest release, install, then open APL Launcher: it asks for what Home needs.");
+                    phoneText.Text = T("With the Downloader app on the TV: type the code {0}, install, then open APL Launcher: it asks for what Home needs.", "9890834");
                     break;
             }
             bool apps2Samsung = choice == "tizen" && !rooted;

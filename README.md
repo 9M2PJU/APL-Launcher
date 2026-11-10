@@ -51,7 +51,7 @@ Pick the line for your TV. **APL Launcher Setup** (Windows) does everything for 
 | **Samsung, not rooted** | — | [Apps2Samsung](#apps2samsung-samsung): the launcher as an app |
 | **LG, rooted** (Homebrew Channel) | [APL Launcher Setup](#apl-launcher-setup-windows): everything, in about a minute | [Homebrew Channel repository](#homebrew-channel-lg-rooted), then [one SSH command](#root-features-on-lg-by-hand) for the root features |
 | **LG, not rooted** | [APL Launcher Setup](#apl-launcher-setup-windows) through LG's Developer Mode | — (without root, LG lets only a PC install apps) |
-| **Android TV, Google TV** | [APL Launcher Setup](#apl-launcher-setup-windows) with adb | The [Downloader](#downloader-android-tv) app on the TV |
+| **Android TV, Google TV** | [APL Launcher Setup](#apl-launcher-setup-windows) with adb | The [Downloader](#downloader-android-tv) app on the TV, code **9890834** |
 
 All the files are on the [latest release](https://github.com/Knikt/APL-Launcher/releases/latest).
 
@@ -96,9 +96,7 @@ Undo it all: `sh /media/developer/apl-debloat/uninstall.sh`. Details: [webos/roo
 
 ### Downloader (Android TV)
 
-No PC needed. Install the **Downloader** app (by AFTVnews) on the TV, open it and type
-
-`https://github.com/Knikt/APL-Launcher/releases/latest/download/apl-launcher-android.apk`
+No PC needed. Install the **Downloader** app (by AFTVnews) on the TV, open it and type the code **9890834** (or the full link `https://github.com/Knikt/APL-Launcher/releases/latest/download/apl-launcher-android.apk`).
 
 It always gives the latest version. Install it, then open APL Launcher: it asks for what Home needs.
 
