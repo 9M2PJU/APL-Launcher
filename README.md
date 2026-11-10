@@ -43,7 +43,21 @@ What root adds: Home opens APL Launcher and the TV starts on it, the Control Cen
 
 ## Install
 
-You need a Windows 10 or 11 PC on the same network as the TV.
+Pick the line for your TV. **APL Launcher Setup** (Windows) does everything for you; the other ways need no PC, or are for doing it by hand.
+
+| Your TV | With a Windows PC | Without a PC |
+|---|---|---|
+| **Samsung, rooted** (Vetro) | [APL Launcher Setup](#apl-launcher-setup-windows): everything | [Apps2Samsung](#apps2samsung-samsung) from a phone, then *Set Up the Remote Buttons* in the launcher |
+| **Samsung, not rooted** | — | [Apps2Samsung](#apps2samsung-samsung): the launcher as an app |
+| **LG, rooted** (Homebrew Channel) | [APL Launcher Setup](#apl-launcher-setup-windows): everything, in about a minute | [Homebrew Channel repository](#homebrew-channel-lg-rooted), then [one SSH command](#root-features-on-lg-by-hand) for the root features |
+| **LG, not rooted** | [APL Launcher Setup](#apl-launcher-setup-windows) through LG's Developer Mode | — (without root, LG lets only a PC install apps) |
+| **Android TV, Google TV** | [APL Launcher Setup](#apl-launcher-setup-windows) with adb | The [Downloader](#downloader-android-tv) app on the TV |
+
+All the files are on the [latest release](https://github.com/Knikt/APL-Launcher/releases/latest).
+
+### APL Launcher Setup (Windows)
+
+For every TV, rooted or not. Windows 10 or 11, on the same network as the TV.
 
 1. **Download APL Launcher Setup** (`APL-Launcher-Setup.exe`) from the [latest release](https://github.com/Knikt/APL-Launcher/releases/latest) and open it. If Windows says the app is not signed: *More info › Run anyway*.
 2. **Choose your TV** and tell whether it is rooted. The Setup shows what you get, and what is missing without root.
@@ -54,17 +68,52 @@ You need a Windows 10 or 11 PC on the same network as the TV.
 
    <img src="docs/images/setup/en-install-lg.png" alt="APL Launcher Setup: install on an LG TV" width="720">
 
-That's all: the Setup builds APL Launcher with your settings, installs it, turns on what root allows, and opens it on the TV. On Samsung it also needs Tizen Studio and your Samsung certificate on the PC (the Setup checks them and tells you what to do). The full guide, step by step: [docs/installation.md](docs/installation.md).
+What it does on each TV:
+- **Samsung (rooted)**: builds APL Launcher with your keys, signs it with your Samsung certificate and installs it through Vetro. It needs Tizen Studio and the certificate on the PC: the Setup checks them and says what to do. Its **Optimize** and **Restore** pages are for Samsung too.
+- **LG, rooted**: builds the package with your keys and sends it over SSH (user `root`, password `alpine` unless you changed it), installs it, then turns on the root features and the debloat. Tested on an LG OLED G5 (webOS 26) with Homebrew Channel 0.7.3.
+- **LG, not rooted**: installs through LG's **Developer Mode** app (a free LG developer account; turn on *Dev Mode Status*, then *Key Server*, and type its passphrase in the Setup). APL Launcher renews the Developer Mode's 1000 hours by itself.
+- **Android TV**: finds adb (or downloads Google's platform-tools once), installs the `.apk` and turns on the remote buttons service, so Home opens APL Launcher. First turn on *USB debugging* or *Network debugging* in the TV's *Developer options* (*Settings › Device Preferences › About*, press OK seven times on *Build*).
 
-### Without a PC
+The full guide, step by step: [docs/installation.md](docs/installation.md).
 
-- **Samsung**: [Apps2Samsung](https://github.com/Apps2Samsung/Apps2Samsung) installs `apl-launcher-full-vX.Y.Z.wgt` from your phone.
-- **LG, rooted**: in the **Homebrew Channel**, *Settings › Add repository*, type
-  `https://raw.githubusercontent.com/Knikt/APL-Launcher/main/webos/repo/apps.json`, then install **APL Launcher** from the list. For the root features, run once from an SSH app on your phone (user `root`, password `alpine`):
-  `wget -qO- https://raw.githubusercontent.com/Knikt/APL-Launcher/main/webos/root/install.sh | sh`
-- **Android TV**: with the **Downloader** app on the TV, open
-  `https://github.com/Knikt/APL-Launcher/releases/latest/download/apl-launcher-android.apk`
-  and install it. APL Launcher then asks for what Home needs.
+### Homebrew Channel (LG, rooted)
+
+No PC needed. On the TV, open the **Homebrew Channel**, then *Settings* › **Add repository**, type
+
+`https://raw.githubusercontent.com/Knikt/APL-Launcher/main/webos/repo/apps.json`
+
+go back to the list, open **APL Launcher** and choose **Install**. New versions show up there too.
+
+### Root features on LG, by hand
+
+Installed from the Homebrew Channel, APL Launcher works like on a TV without root. For the root features (Home opens APL Launcher, the TV's picture settings, closing apps, Guide = Control Center, debloat, updates blocked), run this once over SSH, from a PC or from an SSH app on your phone (user `root`, password `alpine`):
+
+```sh
+wget -qO- https://raw.githubusercontent.com/Knikt/APL-Launcher/main/webos/root/install.sh | sh
+```
+
+Undo it all: `sh /media/developer/apl-debloat/uninstall.sh`. Details: [webos/root/README.md](webos/root/README.md).
+
+### Downloader (Android TV)
+
+No PC needed. Install the **Downloader** app (by AFTVnews) on the TV, open it and type
+
+`https://github.com/Knikt/APL-Launcher/releases/latest/download/apl-launcher-android.apk`
+
+It always gives the latest version. Install it, then open APL Launcher: it asks for what Home needs.
+
+### adb, by hand (Android TV)
+
+```sh
+adb connect <tv-ip>
+adb install -r apl-launcher-v1.1.0-android.apk
+```
+
+Then open APL Launcher once. More, including the Home button: [docs/android.md](docs/android.md).
+
+### Apps2Samsung (Samsung)
+
+From a phone or a PC, [Apps2Samsung](https://github.com/Apps2Samsung/Apps2Samsung) signs and installs `apl-launcher-full-vX.Y.Z.wgt` (Tizen 7 and later) for your screen; on Tizen 6, the `tizen60` or `tizen65` pair. With Vetro, then open *Settings › Remote and Devices › Set Up the Remote Buttons* in the launcher. On macOS or Linux, `scripts/install-via-vetro.py` installs through Vetro too ([guide](docs/installation.md)).
 
 ## Debloat built in
 

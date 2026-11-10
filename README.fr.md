@@ -43,7 +43,21 @@ Ce que le root ajoute : Home ouvre APL Launcher et la TV démarre dessus, le cen
 
 ## Installer
 
-Il te faut un PC Windows 10 ou 11 sur le même réseau que la TV.
+Prends la ligne de ta TV. **APL Launcher Setup** (Windows) fait tout pour toi ; les autres façons se passent de PC, ou servent à le faire à la main.
+
+| Ta TV | Avec un PC Windows | Sans ordinateur |
+|---|---|---|
+| **Samsung rootée** (Vetro) | [APL Launcher Setup](#apl-launcher-setup-windows) : tout | [Apps2Samsung](#apps2samsung-samsung) depuis un téléphone, puis *Régler les touches de la télécommande* dans le launcher |
+| **Samsung non rootée** | — | [Apps2Samsung](#apps2samsung-samsung) : le launcher comme une app |
+| **LG rootée** (Homebrew Channel) | [APL Launcher Setup](#apl-launcher-setup-windows) : tout, en une minute environ | [Dépôt du Homebrew Channel](#homebrew-channel-lg-rootée), puis [une commande SSH](#fonctions-root-sur-lg-à-la-main) pour les fonctions root |
+| **LG non rootée** | [APL Launcher Setup](#apl-launcher-setup-windows) par le mode développeur de LG | — (sans root, LG ne laisse installer des apps que depuis un PC) |
+| **Android TV, Google TV** | [APL Launcher Setup](#apl-launcher-setup-windows) avec adb | L'app [Downloader](#downloader-android-tv) sur la TV |
+
+Tous les fichiers sont dans la [dernière version](https://github.com/Knikt/APL-Launcher/releases/latest).
+
+### APL Launcher Setup (Windows)
+
+Pour toutes les TV, rootées ou non. Windows 10 ou 11, sur le même réseau que la TV.
 
 1. **Télécharge APL Launcher Setup** (`APL-Launcher-Setup.exe`) depuis la [dernière version](https://github.com/Knikt/APL-Launcher/releases/latest) et ouvre-le. Si Windows dit que l'app n'est pas signée : *Informations complémentaires › Exécuter quand même*.
 2. **Choisis ta TV** et dis si elle est rootée. L'installateur montre ce que tu auras, et ce qui manque sans root.
@@ -54,17 +68,52 @@ Il te faut un PC Windows 10 ou 11 sur le même réseau que la TV.
 
    <img src="docs/images/setup/fr-install-lg.png" alt="APL Launcher Setup : installer sur une TV LG" width="720">
 
-C'est tout : l'installateur fabrique APL Launcher avec tes réglages, l'installe, active ce que le root permet et l'ouvre sur la TV. Sur Samsung, il faut aussi Tizen Studio et ton certificat Samsung sur le PC (l'installateur les vérifie et te dit quoi faire). Le guide complet, étape par étape : [docs/installation.md](docs/installation.md) (en anglais).
+Ce qu'il fait sur chaque TV :
+- **Samsung (rootée)** : fabrique APL Launcher avec tes clés, le signe avec ton certificat Samsung et l'installe par Vetro. Il faut Tizen Studio et le certificat sur le PC : l'installateur les vérifie et te dit quoi faire. Ses pages **Optimiser** et **Restaurer** sont aussi pour Samsung.
+- **LG rootée** : fabrique le paquet avec tes clés et l'envoie en SSH (utilisateur `root`, mot de passe `alpine` sauf si tu l'as changé), l'installe, puis active les fonctions root et le debloat. Testé sur une LG OLED G5 (webOS 26) avec le Homebrew Channel 0.7.3.
+- **LG non rootée** : installe par l'app **Developer Mode** de LG (un compte développeur LG gratuit ; active *Dev Mode Status*, puis *Key Server*, et tape sa phrase secrète dans l'installateur). APL Launcher renouvelle tout seul les 1000 heures du mode développeur.
+- **Android TV** : trouve adb (ou télécharge une fois les platform-tools de Google), installe le `.apk` et active le service des boutons, pour que Home ouvre APL Launcher. Active d'abord le *débogage USB* ou le *débogage réseau* dans les *Options pour les développeurs* de la TV (*Paramètres › Préférences de l'appareil › À propos*, appuie sept fois sur OK sur *Build*).
 
-### Sans ordinateur
+Le guide complet, étape par étape : [docs/installation.md](docs/installation.md) (en anglais).
 
-- **Samsung** : [Apps2Samsung](https://github.com/Apps2Samsung/Apps2Samsung) installe `apl-launcher-full-vX.Y.Z.wgt` depuis ton téléphone.
-- **LG rootée** : dans le **Homebrew Channel**, *Settings › Add repository*, tape
-  `https://raw.githubusercontent.com/Knikt/APL-Launcher/main/webos/repo/apps.json`, puis installe **APL Launcher** depuis la liste. Pour les fonctions root, lance une fois depuis une app SSH sur ton téléphone (utilisateur `root`, mot de passe `alpine`) :
-  `wget -qO- https://raw.githubusercontent.com/Knikt/APL-Launcher/main/webos/root/install.sh | sh`
-- **Android TV** : avec l'app **Downloader** sur la TV, ouvre
-  `https://github.com/Knikt/APL-Launcher/releases/latest/download/apl-launcher-android.apk`
-  et installe-le. APL Launcher demande ensuite ce qu'il faut pour Home.
+### Homebrew Channel (LG rootée)
+
+Sans ordinateur. Sur la TV, ouvre le **Homebrew Channel**, puis *Settings* › **Add repository**, tape
+
+`https://raw.githubusercontent.com/Knikt/APL-Launcher/main/webos/repo/apps.json`
+
+reviens à la liste, ouvre **APL Launcher** et choisis **Install**. Les nouvelles versions s'y affichent aussi.
+
+### Fonctions root sur LG, à la main
+
+Installé depuis le Homebrew Channel, APL Launcher marche comme sur une TV sans root. Pour les fonctions root (Home ouvre APL Launcher, réglages d'image de la TV, fermeture des apps, Guide = centre de contrôle, debloat, mises à jour bloquées), lance une fois en SSH, depuis un PC ou une app SSH sur ton téléphone (utilisateur `root`, mot de passe `alpine`) :
+
+```sh
+wget -qO- https://raw.githubusercontent.com/Knikt/APL-Launcher/main/webos/root/install.sh | sh
+```
+
+Pour tout annuler : `sh /media/developer/apl-debloat/uninstall.sh`. Détails : [webos/root/README.md](webos/root/README.md).
+
+### Downloader (Android TV)
+
+Sans ordinateur. Installe l'app **Downloader** (d'AFTVnews) sur la TV, ouvre-la et tape
+
+`https://github.com/Knikt/APL-Launcher/releases/latest/download/apl-launcher-android.apk`
+
+C'est toujours la dernière version. Installe-la, puis ouvre APL Launcher : il demande ce qu'il faut pour Home.
+
+### adb, à la main (Android TV)
+
+```sh
+adb connect <ip-de-la-tv>
+adb install -r apl-launcher-v1.1.0-android.apk
+```
+
+Puis ouvre APL Launcher une fois. Plus de détails, dont la touche Home : [docs/android.md](docs/android.md).
+
+### Apps2Samsung (Samsung)
+
+Depuis un téléphone ou un PC, [Apps2Samsung](https://github.com/Apps2Samsung/Apps2Samsung) signe et installe `apl-launcher-full-vX.Y.Z.wgt` (Tizen 7 et plus) pour ton écran ; sur Tizen 6, la paire `tizen60` ou `tizen65`. Avec Vetro, ouvre ensuite *Réglages › Télécommande et appareils › Régler les touches de la télécommande* dans le launcher. Sur macOS ou Linux, `scripts/install-via-vetro.py` installe aussi par Vetro ([guide](docs/installation.md)).
 
 ## Debloat intégré
 
