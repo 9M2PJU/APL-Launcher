@@ -19,10 +19,11 @@
 
     var tz = global.tizen;
     var wa = global.webapis;
-    /* Another TV system (js/webos.js on LG) is a real screen too: it gives its own sound, network,
-       picture… (P.adaptSys, at the end of this file) */
+    /* Another TV system is a real screen too: LG (js/webos.js) gives its own sound, network, picture…
+       (P.adaptSys, at the end of this file), and Android TV (android/web/android.js) replaces what follows
+       with Android's calls */
     var P = global.APL && global.APL.platform;
-    var PREVIEW = !tz && !P;
+    var PREVIEW = !tz && !P && !global.APLAndroid;
     var APL = global.APL;
 
     /* ---------- preferences (stored on the screen) ---------- */
@@ -986,6 +987,7 @@
     global.APL.sys = {
         PREVIEW: PREVIEW,
         pref: pref, setPref: setPref, onPref: onPref, profiles: profiles,
+        setDefault: function (k, v) { DEFAULTS[k] = v; },     // another platform's defaults (android.js)
         audio: audio, network: network, product: product, display: display, storage: storage, hdr: hdr,
         remoteKey: remoteKey, openSamsungSettings: openSamsungSettings, sleepNow: sleepNow,
         switchSource: switchSource, vetroAlive: vetroAlive, vetroLink: vetroLink,

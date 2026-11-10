@@ -292,6 +292,11 @@
 
     /* ---------- views ---------- */
     function mainItems() {
+        var list = samsungItems();
+        // Another platform keeps the tiles it can do (android.js: no Game Mode, AirPlay, Sources or brightness)
+        return APL.platform && APL.platform.ccItems ? APL.platform.ccItems(list) : list;
+    }
+    function samsungItems() {
         return [
             { cls: "big", icon: "power", title: APL.t("Sleep"),
               select: function () { sys.sleepNow().catch(function (e) { APL.toast(e.message); }); } },
