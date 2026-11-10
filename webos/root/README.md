@@ -11,12 +11,25 @@ The scripts installed at every boot on a rooted LG TV. They go in
 | `init.d/12-apl-debloat` | After 60 s, runs `bin/apl-debloat-stop.sh`. | at boot |
 | `bin/apl-debloat-stop.sh` | Stops LG's `adoverlay-service`, `acr2` (viewing tracking / LivePlus), `remotelogger`, `service-logger`, `contentminer`, `nudge`, `sportsalarm`, and adds 3 more ad servers to `/etc/hosts`. Four groups (`ads`, `tracking`, `logs`, `suggestions`): one of `/media/developer/apl-debloat/OFF-<group>` pauses that group. `OFF` pauses the whole thing. | on demand or by `12-apl-debloat` |
 | `bin/apl-debloat-undo.sh` | Puts every group back: lifts the bind-mounts, restarts the systemd units, removes the 3 hostnames. | on demand |
+| `init.d/13-apl-services-stop` | After 90 s, runs `bin/apl-services-stop.sh`. | at boot |
+| `bin/apl-services-stop.sh` | Frees RAM by stopping 12 LG systemd units (familycare, buddyconnector, alwaysready, AI inference, ruleengine, wowplay, cups-lpd, dmost, ninfod, rdxd, service-logger, mycar) and bind-mounting `/dev/null` over 9 luna-launched daemons (`com.webos.app.voice`, `lg.thinqai.adapter`, `airessrvallocator`, `iotproxy`, `iconnectivity`, `uploadd`, `amazon-alexa-adapter`, `performer`, `nlpmanager`). Derived from `modules/debloat.sh` of [JulioFerrero/own-your-glass](https://github.com/JulioFerrero/own-your-glass) (MIT), with avahi and ThinQ (iot-client/pushclient) left alone: AirPlay, Chromecast and ThinQ keep working. | on demand or by `13-apl-services-stop` |
+| `bin/apl-services-undo.sh` | Lifts the binary bind-mounts, restores the original file modes, starts the systemd units back. | on demand |
 
-Based on scripts/debloat-stop.sh and debloat-undo.sh in
+`apl-debloat-*` is based on scripts/debloat-stop.sh and debloat-undo.sh in
 [lasharor/cleanyourtv-WebOS](https://github.com/lasharor/cleanyourtv-WebOS)
 (MIT), with the launcher check removed (the debloat runs regardless of
 which app is Home) and the config.json dependency dropped (each group is
 on by default; a file in `/media/developer/apl-debloat` turns one off).
+
+`apl-services-*` is based on modules/debloat.sh in
+[JulioFerrero/own-your-glass](https://github.com/JulioFerrero/own-your-glass)
+(MIT). The `oyg harden` orchestration, the dry-run framework, the state
+machine and the aggressive tier are dropped. **avahi-daemon /
+avahi-adaptor are kept running** (AirPlay / Chromecast discovery), and
+**iot-client / pushclient too** (ThinQ). `/usr/sbin/sdx` is deliberately
+NOT bind-neutralised: doing so silently kills LG's Settings UI (OYG
+FINDINGS F42). `/usr/sbin/admanager` is kept running: HBO Max and
+Disney+ wait for it at start-up (OYG F47, CleanYourTV issue 47).
 
 ## Install on the TV (one-off, SSH as root)
 
@@ -25,15 +38,23 @@ on by default; a file in `/media/developer/apl-debloat` turns one off).
 mkdir -p /media/developer/apl-debloat /var/lib/webosbrew/init.d
 cd /tmp
 URL=https://raw.githubusercontent.com/Knikt/APL-Launcher-for-TizenOS/claude/gallant-northcutt-5aae3a/webos/root
-curl -fsSL -o /media/developer/apl-debloat/apl-debloat-stop.sh "$URL/bin/apl-debloat-stop.sh"
-curl -fsSL -o /media/developer/apl-debloat/apl-debloat-undo.sh "$URL/bin/apl-debloat-undo.sh"
-curl -fsSL -o /var/lib/webosbrew/init.d/12-apl-debloat         "$URL/init.d/12-apl-debloat"
-chmod +x /media/developer/apl-debloat/*.sh /var/lib/webosbrew/init.d/12-apl-debloat
+curl -fsSL -o /media/developer/apl-debloat/apl-debloat-stop.sh  "$URL/bin/apl-debloat-stop.sh"
+curl -fsSL -o /media/developer/apl-debloat/apl-debloat-undo.sh  "$URL/bin/apl-debloat-undo.sh"
+curl -fsSL -o /media/developer/apl-debloat/apl-services-stop.sh "$URL/bin/apl-services-stop.sh"
+curl -fsSL -o /media/developer/apl-debloat/apl-services-undo.sh "$URL/bin/apl-services-undo.sh"
+curl -fsSL -o /var/lib/webosbrew/init.d/12-apl-debloat          "$URL/init.d/12-apl-debloat"
+curl -fsSL -o /var/lib/webosbrew/init.d/13-apl-services-stop    "$URL/init.d/13-apl-services-stop"
+chmod +x /media/developer/apl-debloat/*.sh /var/lib/webosbrew/init.d/12-apl-debloat /var/lib/webosbrew/init.d/13-apl-services-stop
 
-# Test it now (reversible). Watch for errors.
+# Measure before, apply, measure after (reversible). Watch for errors.
+free -m
 sh /media/developer/apl-debloat/apl-debloat-stop.sh
+sh /media/developer/apl-debloat/apl-services-stop.sh
+sleep 10
+free -m
 
 # Undo everything:
+# sh /media/developer/apl-debloat/apl-services-undo.sh
 # sh /media/developer/apl-debloat/apl-debloat-undo.sh
 ```
 
