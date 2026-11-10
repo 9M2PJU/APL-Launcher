@@ -1,11 +1,13 @@
 #!/bin/sh
-# apl-home-undo.sh: LG's own Home back, now. At the next start apl-home.sh runs again unless the boot hook
+# apl-home-undo.sh: LG's own Home and Guide back, now. At the next start apl-home.sh runs again unless the boot hook
 # 30-apl-home is removed or /media/developer/apl-debloat/OFF-home exists.
 export PATH=/usr/bin:/usr/sbin:/bin:/sbin:$PATH
 H=/usr/palm/applications/com.webos.app.home
 luna() { luna-send "$@" </dev/null; }
 grep -q " $H " /proc/mounts || { echo "LG's Home is not replaced"; exit 0; }
 for m in $(awk -v h="$H" '$2 == h {print $2}' /proc/mounts); do umount "$m"; done
+G=/usr/palm/applications/com.webos.app.livemenu
+for m in $(awk -v g="$G" '$2 == g {print $2}' /proc/mounts); do umount "$m"; done
 (sleep 3; pkill -9 -f /usr/palm/applications/airplay/LunaExecutable) </dev/null >/dev/null 2>&1 &
 systemctl restart sam
 for i in $(seq 1 60); do systemctl is-active sam >/dev/null 2>&1 && break; sleep 2; done

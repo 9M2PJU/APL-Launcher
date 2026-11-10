@@ -57,6 +57,9 @@ fetch "$APL/uninstall.sh"          uninstall.sh
 mkdir -p "$APL/home"
 fetch "$APL/home/index.html"       home/index.html
 fetch "$APL/home/appinfo.json"     home/appinfo.json
+mkdir -p "$APL/guide"
+fetch "$APL/guide/index.html"      guide/index.html
+fetch "$APL/guide/appinfo.json"    guide/appinfo.json
 
 echo
 echo "Downloading boot hooks into $HOOK/"

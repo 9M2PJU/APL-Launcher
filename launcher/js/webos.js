@@ -314,13 +314,14 @@
 
     /* Opened again while running (its icon in LG's home bar): to the front, and like Home on Samsung,
        the Home Screen at rest (launcher.js, "appcontrol"). */
-    /* A request with the launch (the service, for the Magic Remote's AI button): {apl_action, from}. The app
+    /* A request with the launch (the service, for the Guide button): {apl_action, from}. The app
        that was in front comes back when the Control Center is left with Back (P.ccBack, controlcenter.js),
        as the Control Center drawn over apps does on Samsung. */
     var pendingAction = "", returnTo = "", returnAt = 0;
-    function launchParams() { try { return JSON.parse(S.launchParams || "{}") || {}; } catch (e) { return {}; } }
-    document.addEventListener("webOSRelaunch", function () {
-        var p = launchParams();
+    /* The params of THIS launch only (the event's detail): webOSSystem.launchParams keeps the last ones given,
+       and a plain Home press then replayed "controlcenter" */
+    document.addEventListener("webOSRelaunch", function (e) {
+        var p = e && e.detail && typeof e.detail === "object" ? e.detail : {};
         pendingAction = typeof p.apl_action === "string" ? p.apl_action : "";
         returnAt = Date.now();
         returnTo = pendingAction === "controlcenter" && p.from && !SELF.test(p.from) && !/^com\.webos\.app\.home$/.test(p.from) ? String(p.from) : "";

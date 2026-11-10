@@ -1,5 +1,5 @@
 #!/bin/sh
-# apl-home.sh: the Home key opens APL Launcher, and the TV starts on it.
+# apl-home.sh: the Home key opens APL Launcher, the TV starts on it, and Guide opens its Control Center.
 # home/ (a page named com.webos.app.home that only opens APL Launcher) is mounted in RAM over LG's Home,
 # then the app manager (sam) is restarted so it reads it: the way CleanYourTV (MIT) replaces the Flutter
 # Home of webOS 24 and newer. Nothing is written under /usr. Undone by apl-home-undo.sh, or by a restart
@@ -10,6 +10,8 @@ APL=/media/developer/apl-debloat
 H=/usr/palm/applications/com.webos.app.home
 ME=/media/developer/apps/usr/palm/applications/com.knikt.apllauncher
 T=/tmp/apl-home
+G=/usr/palm/applications/com.webos.app.livemenu
+TG=/tmp/apl-guide
 LOG=/tmp/apl-home.log
 log() { echo "$(cut -d' ' -f1 /proc/uptime) $*" | tee -a $LOG; }
 luna() { luna-send "$@" </dev/null; }
@@ -22,6 +24,11 @@ rm -rf $T && mkdir -p $T
 cp "$APL/home/index.html" "$APL/home/appinfo.json" $T/ && cp "$ME/icon-80.png" $T/icon.png 2>/dev/null
 for i in $(seq 1 60); do systemctl is-active sam >/dev/null 2>&1 && break; sleep 1; done
 mount --bind $T $H || { log "the mount over LG's Home failed"; exit 1; }
+# The Guide button opens APL Launcher's Control Center (guide/), unless OFF-guide
+if [ ! -e "$APL/OFF-guide" ] && [ -r "$APL/guide/index.html" ] && [ -d $G ] && ! grep -q " $G " /proc/mounts; then
+    rm -rf $TG && mkdir -p $TG && cp "$APL/guide/index.html" "$APL/guide/appinfo.json" $TG/ && cp "$ME/icon-80.png" $TG/icon.png 2>/dev/null
+    mount --bind $TG $G && log "Guide opens the Control Center"
+fi
 log "mounted over LG's Home; restarting the app manager"
 # an AirPlay child of sam makes its stop wait about 90 s (CleanYourTV): ended once the stop has begun
 (sleep 3; pkill -9 -f /usr/palm/applications/airplay/LunaExecutable) </dev/null >/dev/null 2>&1 &

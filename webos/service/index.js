@@ -37,6 +37,11 @@ var pkg = require("./package.json");
 var ID = "com.knikt.apllauncher.service", APP = "com.knikt.apllauncher";
 var service = new Service(ID);
 var client = null, key = "";
+/* The key the TV gave, kept for this boot: restarted (an update, the app manager), the service must not ask
+   the TV again, which put LG's "allow this app?" question over whatever was on screen */
+var KEY_FILE = "/tmp/com.knikt.apllauncher.key";
+try { key = fs.readFileSync(KEY_FILE, "utf8").trim(); } catch (e) {}
+function keepKey(k) { try { fs.writeFileSync(KEY_FILE, k, { mode: 384 }); } catch (e) {} }
 var listeners = {}, keep = null, keepWanted = 0;
 var sleepTimer = null, sleepAt = 0;
 
@@ -46,7 +51,7 @@ function stayAwake() {
     try { service.activityManager.create("keepAlive", function (activity) { keep = activity; }); } catch (e) {}
 }
 function maybeSleep() {
-    if (Object.keys(listeners).length || sleepTimer || !keep || ROOT) return;     // rooted: it watches the AI button
+    if (Object.keys(listeners).length || sleepTimer || !keep || ROOT) return;     // rooted: it watches for the Guide button
     try { service.activityManager.complete(keep, function () {}); } catch (e) {}
     keep = null;
 }
@@ -85,7 +90,7 @@ function tv() {
         });
     } catch (e) {}
     client = new ssap.Client({ key: key, hosts: hosts });
-    client.on("key", function (k) { key = k; broadcast({ state: client.state, key: k }); });
+    client.on("key", function (k) { key = k; keepKey(k); broadcast({ state: client.state, key: k }); });
     client.on("state", function (s) { broadcast({ state: s, error: client.error || undefined }); });
     return client;
 }
@@ -98,6 +103,7 @@ var connect = service.register("connect", guard(function (message) {
     var p = message.payload || {};
     if (p.key && typeof p.key === "string" && p.key !== key) {
         key = p.key;
+        keepKey(key);
         if (client) { client.key = key; }
     }
     var c = tv();
@@ -173,7 +179,7 @@ service.register("sleep", guard(function (message) {
 
 service.register("status", guard(function (message) {
     var c = tv();
-    message.respond({ returnValue: true, version: pkg.version, node: process.version, root: ROOT, remote: Object.keys(raws), state: c.state, error: c.error || undefined,
+    message.respond({ returnValue: true, version: pkg.version, node: process.version, root: ROOT, state: c.state, error: c.error || undefined,
                       host: c.host, origin: c.origin, unsigned: c.unsigned, sleepAt: sleepAt, caller: caller(message), listeners: Object.keys(listeners).length,
                       log: ssap.log.slice(-30) });
 }));
@@ -234,55 +240,34 @@ service.register("home", guard(function (message) {
     }, 400);
 }));
 
-/* ---------- the Magic Remote's AI button ----------
-   LG keeps it for its own assistant: no app ever gets it, not even as a launch. Its raw reports can be read
-   (/dev/hidraw*: every reader gets its own copy, LG's included): each button rides in the pointer's motion
-   report (id 0xfd, 20 bytes) as 0x80 and its code in bytes 17 and 18, and AI is 0x7c (MR25GA, on a G5).
-   Pressed, it opens the launcher's Control Center, which goes back to the app in front on Back.
-   Rooted TV only. /media/developer/apl-debloat/OFF-ai turns it off. */
-var AI_CODE = 0x7c, aiDown = false, aiAt = 0, raws = {};
-function remoteRaws() {
-    var out = [];
-    try {
-        fs.readdirSync("/sys/class/hidraw").forEach(function (n) {
-            var ue = "";
-            try { ue = fs.readFileSync("/sys/class/hidraw/" + n + "/device/uevent", "utf8"); } catch (e) {}
-            if (/HID_NAME=LGE MR/i.test(ue)) out.push("/dev/" + n);
-        });
-    } catch (e) {}
-    return out;
+/* ---------- the Guide button ----------
+   apl-home.sh puts a blank page in place of LG's Guide (com.webos.app.livemenu, webos/root/guide/). When the
+   TV opens it, the Control Center of APL Launcher opens instead, saying which app was in front so that Back
+   goes back to it. The app manager's life events tell both. Rooted TV only; OFF-guide turns it off. */
+var GUIDE = "com.webos.app.livemenu", lastApp = "", guideAt = 0;
+var NOT_AN_APP = /^(com\.webos\.app\.(home|livemenu|starfish.*|.*systemui.*|quicksettings|volume.*)|com\.knikt\.apllauncher)$/;
+function onLife(p) {
+    var id = String(p.appId || ""), ev = String(p.event || "");
+    if (ev === "foreground") {
+        if (id === APP || id === "com.webos.app.home") lastApp = "";
+        else if (!NOT_AN_APP.test(id)) lastApp = id;
+    }
+    if (id === GUIDE && (ev === "splash" || ev === "launch" || ev === "foreground") && Date.now() - guideAt > 1500) {
+        guideAt = Date.now();
+        ssap.note("Guide (" + ev + "): Control Center over " + (lastApp || "the launcher"));
+        service.call("luna://com.webos.applicationManager/closeByAppId", { id: GUIDE }, function () {});
+        service.call("luna://com.webos.applicationManager/launch", { id: APP, params: { apl_action: "controlcenter", from: lastApp } }, function () {});
+    }
 }
-function aiPressed() {
-    if (fs.existsSync(ROOT_DIR + "/OFF-ai")) return;
-    service.call("luna://com.webos.applicationManager/getForegroundAppInfo", {}, function (m) {
-        var from = (m && m.payload && m.payload.appId) || "";
-        service.call("luna://com.webos.applicationManager/launch", { id: APP, params: { apl_action: "controlcenter", from: from } }, function () {});
-    });
-}
-/* The remote sleeps after a while and its device closes (EIO): looked for again every few seconds */
-function watchRemote() {
-    remoteRaws().forEach(function (dev) {
-        if (raws[dev]) return;
-        var s = fs.createReadStream(dev, { highWaterMark: 64 });
-        raws[dev] = s;
-        s.on("data", function (b) {
-            if (b.length < 20 || b[0] !== 0xfd) return;
-            var ai = (b[17] & 0x80) && b[18] === AI_CODE;
-            if (ai && !aiDown && Date.now() - aiAt > 800) { aiAt = Date.now(); aiPressed(); }
-            aiDown = !!ai;
-        });
-        function gone() { if (raws[dev] === s) delete raws[dev]; }
-        s.on("error", gone);
-        s.on("close", gone);
-    });
+function watchApps() {
+    var sub = service.subscribe("luna://com.webos.applicationManager/getAppLifeEvents", { subscribe: true });
+    ssap.note("watching app launches for Guide");
+    sub.on("response", function (m) { if (!fs.existsSync(ROOT_DIR + "/OFF-guide")) onLife(m && m.payload || {}); });
+    sub.on("cancel", function () { setTimeout(watchApps, 5000); });
 }
 if (ROOT) {
     stayAwake();
-    watchRemote();
-    setInterval(watchRemote, 3000);
-    /* Asleep, the remote has no device at all, and the press that wakes it is often AI itself: opened the
-       moment its device comes back, before its first report */
-    try { fs.watch("/dev", function (ev, name) { if (/^hidraw/.test(String(name || ""))) setTimeout(watchRemote, 20); }); } catch (e) {}
+    watchApps();
 }
 
 service.register("memory", guard(function (message) {

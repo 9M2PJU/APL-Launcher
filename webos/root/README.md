@@ -24,6 +24,7 @@ state (swap went from 355 MB to 18 MB).
 | `init.d/30-apl-home` | Runs `bin/apl-home.sh` at boot. `OFF-home` keeps LG's Home. | at boot |
 | `bin/apl-home.sh` | Home opens APL Launcher, and the TV starts on it. `home/` (a page named `com.webos.app.home` that only opens APL Launcher, again at each press of Home) is mounted in RAM over LG's Home and the app manager (`sam`) is restarted to read it: the way [CleanYourTV](https://github.com/lasharor/cleanyourtv-WebOS) (MIT) replaces the Flutter Home of webOS 24 and newer. Nothing is written under `/usr`. If APL Launcher isn't running 40 s later, LG's Home comes back by itself. Home → APL Launcher in 0.3 s on the G5. | on demand or by `30-apl-home` |
 | `bin/apl-home-undo.sh` | LG's Home back now (unmount, restart `sam`). | on demand |
+| `guide/` | Mounted by `bin/apl-home.sh` over LG's Guide (`com.webos.app.livemenu`): a blank page. When the TV opens it, the launcher's service (root, watching the app manager's life events) closes it and opens APL Launcher's Control Center; Back goes back to the app that was in front. `OFF-guide` keeps LG's Guide. The Magic Remote's AI button can't be used: LG keeps it for its own assistant and no app ever gets it. | with `apl-home.sh` |
 
 `apl-debloat-*` is based on scripts/debloat-stop.sh and debloat-undo.sh in
 [lasharor/cleanyourtv-WebOS](https://github.com/lasharor/cleanyourtv-WebOS)
