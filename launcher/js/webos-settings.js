@@ -121,6 +121,13 @@
             node.children.forEach(function (c, i) { if (c.type === "mute") at = i + 1; });
             node.children.splice(at, 0, { type: "info", label: t("Sound Mode"), get: readSoundMode,
                 desc: t("Chosen in the TV's own settings (Sound › Sound Mode).") });
+        } else if (node.label === t("General & Privacy") && P.rooted && P.home && P.home.installed) {
+            var at24 = 0;
+            node.children.forEach(function (c, i) { if (c.type === "toggle" && c.key === "clock24") at24 = i + 1; });
+            node.children.splice(at24, 0, { type: "choice", label: t("Start on APL Launcher"), key: "lgHomeApl",
+                options: [[true, t("On")], [false, t("Off")]],
+                desc: t("The Home button opens APL Launcher, and the TV starts on it. Off: LG's own Home, right away and at each start. The screen goes black a few seconds when it changes."),
+                apply: function (v) { P.setHome(v); } });
         } else if (node.label === t("About This Screen") && P.rooted) {
             node.children.push({ type: "info", label: t("Root Access"), get: function () { return t("On (Homebrew Channel)"); },
                                  desc: t("The launcher's helper runs as root: picture settings, the apps left open, Free Up Memory. Given by webos/root/install.sh, again at each start.") });

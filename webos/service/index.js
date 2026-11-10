@@ -21,6 +21,7 @@
      devmode   {extend}          -> {hours} left in Developer Mode, renewed below 960 h
      luna      {uri, payload}    -> {payload}           on a rooted TV only, a short list of LG's own calls
      memory    {}                -> {kb}                memory available, swap included
+     home      {apl?}            -> state, or Home to APL Launcher / LG's Home (rooted TV)
    and the apps' icons and backgrounds on http://127.0.0.1:8767 (below).
    ============================================================ */
 "use strict";
@@ -206,6 +207,31 @@ service.register("luna", guard(function (message) {
         var r = m && m.payload || {};
         message.respond({ returnValue: true, payload: r });
     });
+}));
+
+/* Home opens APL Launcher, or LG's own Home (webos/root/bin/apl-home.sh and apl-home-undo.sh). {} reads the
+   state; {apl: true|false} switches now and for the next starts (OFF-home). The app manager restarts: the
+   screen goes black a few seconds, and the launcher's page with it. */
+var ROOT_DIR = "/media/developer/apl-debloat", HOME_RE = /\s\/usr\/palm\/applications\/com\.webos\.app\.home\s/;
+service.register("home", guard(function (message) {
+    if (!ROOT) { message.respond({ returnValue: false, errorText: "not rooted", notRooted: true }); return; }
+    var p = message.payload || {}, off = ROOT_DIR + "/OFF-home", replaced = false;
+    try { replaced = HOME_RE.test(fs.readFileSync("/proc/mounts", "utf8")); } catch (e) {}
+    var installed = fs.existsSync(ROOT_DIR + "/apl-home.sh") && fs.existsSync(ROOT_DIR + "/apl-home-undo.sh");
+    if (typeof p.apl !== "boolean") {
+        message.respond({ returnValue: true, installed: installed, replaced: replaced, off: fs.existsSync(off) });
+        return;
+    }
+    if (!installed) { message.respond({ returnValue: false, errorText: "webos/root/install.sh is not installed" }); return; }
+    try {
+        if (p.apl) { if (fs.existsSync(off)) fs.unlinkSync(off); }
+        else fs.writeFileSync(off, "");
+    } catch (e) { message.respond({ returnValue: false, errorText: e.code || String(e) }); return; }
+    message.respond({ returnValue: true, apl: p.apl });
+    setTimeout(function () {
+        require("child_process").spawn("sh", [ROOT_DIR + (p.apl ? "/apl-home.sh" : "/apl-home-undo.sh")],
+                                       { detached: true, stdio: "ignore" }).unref();
+    }, 400);
 }));
 
 service.register("memory", guard(function (message) {

@@ -352,6 +352,8 @@
         reconnect: function () { if (conn) { endSub(conn); conn = null; } state = "idle"; connect(); },
         launch: launch,
         loadApps: loadApps, launchApp: launchApp, isInstalled: isInstalled, openUrl: openUrl,
-        cachedApps: function () { return appsCache || []; }
+        cachedApps: function () { return appsCache || []; },
+        /* The App Switcher leaves out LG's own apps that the TV keeps preloaded (LG Channels): never opened by you */
+        notInSwitcher: function (id) { return LG_OWN.indexOf(id) !== -1; }
     };
 })(window);

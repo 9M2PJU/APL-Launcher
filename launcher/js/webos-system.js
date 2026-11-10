@@ -37,10 +37,24 @@
     P.service("status", {}).then(function (m) {
         var r = !!m.root;
         try { global.localStorage.setItem(ROOT_KEY, r ? "1" : "0"); } catch (e) {}
+        if (r) readHome();
         if (r === P.rooted) return;
         P.rooted = r;
         rootFns.forEach(function (fn) { try { fn(r); } catch (e) {} });
     }, function () {});
+    /* Home: APL Launcher or LG's own (webos/root/bin/apl-home.sh), Settings › General & Privacy */
+    P.home = null;
+    function readHome() {
+        P.service("home", {}).then(function (m) {
+            P.home = m;
+            if (P.sys && m.installed) P.sys.setPref("lgHomeApl", !!m.replaced);
+        }, function () {});
+    }
+    P.setHome = function (apl) {
+        return P.service("home", { apl: !!apl }).then(function () {
+            if (APL.toast) APL.toast(apl ? t("APL Launcher opens with Home in a few seconds") : t("LG's Home comes back in a few seconds"), true);
+        }, function (e) { if (APL.toast) APL.toast(e.message); });
+    };
     function rootLuna(uri, payload, ms) {
         if (!P.rooted) return noRoot();
         return P.lunaOnce("luna://com.knikt.apllauncher.service/luna", { uri: uri, payload: payload || {} }, ms || 15000)
@@ -364,6 +378,7 @@
             if (P.oled) D.screensaverClockMove = 2;      // as on Samsung's OLEDs: the clock goes round the corners
             // Samsung-only parts: no Smart Hub rows, no Vetro, no APL Overlay, no updates from GitHub yet
             D.hubShelf = false; D.homeReturn = false; D.alexaBridge = false; D.idleClose = false; D.bootCleanup = false; D.autoUpdate = false;
+            D.lgHomeApl = true;                       // read from the TV at each start (readHome)
         }
         sys.platform = "webos";
         sys.audio = audio;
@@ -412,5 +427,6 @@
             applyOnInput: function () { return Promise.resolve(); }
         };
         P.sys = sys;
+        if (P.home && P.home.installed) sys.setPref("lgHomeApl", !!P.home.replaced);
     };
 })(window);
