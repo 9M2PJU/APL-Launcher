@@ -9,7 +9,7 @@
     <tizen:profile name="tv"/>
 
     <name>APL Launcher</name>
-    <author href="https://github.com/Knikt/APL-Launcher-for-TizenOS">Knikt (Gero Corp.)</author>
+    <author href="https://github.com/Knikt/APL-Launcher">Knikt (Gero Corp.)</author>
     <description>Apple-TV-style app launcher for Samsung Tizen.</description>
 
     <icon src="icon.png"/>

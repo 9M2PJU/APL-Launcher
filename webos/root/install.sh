@@ -8,25 +8,34 @@
 #
 # Run this in SSH as root (password `alpine` after rooting with WTFBro):
 #
-#   wget -qO- https://raw.githubusercontent.com/Knikt/APL-Launcher-for-TizenOS/main/webos/root/install.sh | sh
+#   wget -qO- https://raw.githubusercontent.com/Knikt/APL-Launcher/main/webos/root/install.sh | sh
 #
 # or from a feature branch:
 #
 #   BRANCH=claude/gallant-northcutt-5aae3a \
-#   wget -qO- "https://raw.githubusercontent.com/Knikt/APL-Launcher-for-TizenOS/$BRANCH/webos/root/install.sh" | sh -s -- "$BRANCH"
+#   wget -qO- "https://raw.githubusercontent.com/Knikt/APL-Launcher/$BRANCH/webos/root/install.sh" | sh -s -- "$BRANCH"
+#
+# APL Launcher Setup (Windows) sends the files itself and runs it from that folder:
+#
+#   APL_SRC=/tmp/apl-root sh /tmp/apl-root/install.sh
 #
 # To undo everything: sh /media/developer/apl-debloat/uninstall.sh
 set -eu
 
 APL_VERSION="1.0.24"
-REPO="Knikt/APL-Launcher-for-TizenOS"
+REPO="Knikt/APL-Launcher"
 BRANCH="${1:-main}"
 URL="https://raw.githubusercontent.com/$REPO/$BRANCH/webos/root"
+SRC="${APL_SRC:-}"     # a folder with these files already on the TV (APL Launcher Setup): nothing downloaded
 
 APL=/media/developer/apl-debloat
 HOOK=/var/lib/webosbrew/init.d
 
-echo "APL Launcher $APL_VERSION — webOS root setup from $REPO ($BRANCH)"
+if [ -n "$SRC" ]; then
+    echo "APL Launcher $APL_VERSION — webOS root setup from $SRC"
+else
+    echo "APL Launcher $APL_VERSION — webOS root setup from $REPO ($BRANCH)"
+fi
 echo
 
 # Sanity: this should be a rooted LG TV with Homebrew Channel.
@@ -38,7 +47,9 @@ mkdir -p "$APL" "$HOOK"
 fetch() {
     dst="$1"; src="$2"
     echo "  $dst"
-    if command -v curl >/dev/null 2>&1; then
+    if [ -n "$SRC" ]; then
+        cp "$SRC/$src" "$dst"
+    elif command -v curl >/dev/null 2>&1; then
         curl -fsSL -o "$dst" "$URL/$src"
     else
         wget -q -O "$dst" "$URL/$src"
@@ -76,7 +87,7 @@ sh "$HOOK/20-apl-elevate"
 pkill -f com.knikt.apllauncher.service 2>/dev/null || true
 
 printf '%s\n' "$APL_VERSION" > "$APL/VERSION"
-printf '%s\n' "$BRANCH"      > "$APL/BRANCH"
+if [ -n "$SRC" ]; then echo setup > "$APL/BRANCH"; else printf '%s\n' "$BRANCH" > "$APL/BRANCH"; fi
 
 echo
 echo "Installed. Reboot the TV to run the boot hooks."

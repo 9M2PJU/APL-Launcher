@@ -44,10 +44,12 @@ Disney+ wait for it at start-up (OYG F47, CleanYourTV issue 47).
 
 ## Install on the TV (one-off, SSH as root)
 
+Easiest: **APL Launcher Setup** on a Windows PC (*Your TV › LG*, *My TV is rooted*). It installs the launcher and sends these files from the PC (nothing downloaded on the TV), runs `install.sh` with `APL_SRC`, and applies everything at once. Or by hand:
+
 One command, in SSH as root (password `alpine` after rooting with WTFBro):
 
 ```sh
-wget -qO- https://raw.githubusercontent.com/Knikt/APL-Launcher-for-TizenOS/main/webos/root/install.sh | sh
+wget -qO- https://raw.githubusercontent.com/Knikt/APL-Launcher/main/webos/root/install.sh | sh
 ```
 
 This pulls the six scripts and the four boot hooks into

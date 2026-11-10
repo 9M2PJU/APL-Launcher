@@ -18,7 +18,7 @@ param(
     [string]$LauncherDir = (Join-Path (Split-Path $PSScriptRoot -Parent) "launcher"),
     [string]$OutFile = (Join-Path (Split-Path $PSScriptRoot -Parent) "dist\APL-Launcher.wgt"),
     [string]$SfProDir,   # optional: copies the SF Pro fonts before building
-    [string]$Repo = "Knikt/APL-Launcher-for-TizenOS",
+    [string]$Repo = "Knikt/APL-Launcher",
     [switch]$WebOnly
 )
 . "$PSScriptRoot\lib.ps1"

@@ -1,188 +1,108 @@
-# APL Launcher pour Tizen OS
+<div align="center">
 
-Un écran d'accueil **façon Apple TV** pour les TV et Smart Monitors Samsung
-(Tizen) : Top Shelf, dock en verre, Centre de contrôle, Réglages, Sources… et
-plus aucun menu Samsung.
+# APL Launcher
+
+**Un écran d'accueil façon Apple TV pour ta TV.**
+Samsung (Tizen) · LG (webOS) · Android TV et Google TV
 
 Créé par Knikt (Gero Corp.)
 
 ![Accueil](docs/images/home.jpg)
 
-**[▶ L'essayer dans le navigateur](https://knikt.github.io/APL-Launcher-for-TizenOS/)** : rien à télécharger, rien ne touche à ta TV.
-Flèches, Entrée et Échap (ou la télécommande à l'écran).
+**[▶ L'essayer dans le navigateur](https://knikt.github.io/APL-Launcher/)** : rien à installer, rien ne touche à ta TV.
 
-La documentation complète est en anglais : [README.md](README.md). Ce qui marche, écran par écran et
-fonction par fonction : [docs/compatibility.md](docs/compatibility.md). Les nouveautés de chaque
-version : [CHANGELOG.md](CHANGELOG.md).
+[Installer](#installer) · [Quelle TV ?](#quelle-tv-) · [Debloat](#debloat-intégré) · [Nouveautés](CHANGELOG.md) · [Aide](#aide) · [English](README.md)
 
-## Ce qu'il faut avant
+</div>
 
-- **Un écran Samsung sous Tizen 7 ou plus récent** (TV ou Smart Monitor). Sous Tizen 6, le
-  launcher marche seul, sans APL Overlay : pas de Centre de contrôle sur les apps, pas d'Alexa,
-  pas de fermeture des apps inutilisées. Tizen 5.5 et plus ancien : pas pour l'instant.
-- **Vetro, obligatoire** : [Vetro](https://github.com/andrearicci93/vetro) doit
-  être installé et lancé sur l'écran **avant** APL Launcher. Il donne l'accès
-  root par un petit service sur l'écran : sans lui, pas de touche Home, pas de
-  Centre de contrôle sur les vidéos, pas d'Alexa, pas d'optimisation. Installe-le
-  avec **le guide de Vetro** (l'écran doit être rooté), puis vérifie que
-  `http://<ip-de-l-écran>:8099` s'ouvre sur le PC. Si ton Vetro utilise un autre port,
-  le launcher et APL Launcher Setup le trouvent tout seuls.
-- **Un PC Windows 10 ou 11**, sur le même réseau que l'écran. Sans PC Windows :
-  [Apps2Samsung](docs/installation.md#alternative-apps2samsung-or-tv-store) depuis un téléphone, ou
-  [`scripts/install-via-vetro.py`](docs/installation.md#no-windows-pc-install-through-vetro-with-python)
-  avec Python 3 depuis macOS ou Linux.
-- **[Tizen Studio](https://developer.tizen.org/development/tizen-studio/download)**
-  avec la ligne de commande et la *Samsung Certificate Extension*.
-- **Un certificat Samsung** (auteur + distributeur) fait pour ton écran, par
-  Tizen Studio ou Apps2Samsung. L'installateur le trouve tout seul. Garde-le
-  précieusement : les mises à jour doivent être signées avec le même.
+---
 
-TizenBrew et TizenTube ne sont **pas** nécessaires. Rien d'autre que le launcher
-et son petit assistant, APL Overlay, n'est installé sur l'écran.
+## Ce que tu as
+
+- **L'accueil de l'Apple TV** : un Top Shelf plein écran pour l'app sur laquelle tu es, un dock en Liquid Glass, une grille d'apps, des dossiers, des animations fluides et des sons.
+- **« Continuer de regarder »** depuis tes apps (lecteurs IPTV, Stremio, [APL TV](https://github.com/Knikt/APL-TV)), et les tendances de Netflix, Prime Video, Disney+, YouTube et d'autres.
+- **Centre de contrôle**, **Recherche**, **Réglages** (avec les vrais réglages d'image de ta TV), **Sources** pour les entrées HDMI, des **profils** pour la famille, un **économiseur d'écran** avec les vues aériennes.
+- **Home ouvre APL Launcher**, deux fois Home pour le multi-apps, et la TV démarre dessus en une seconde environ.
+- **Un debloat intégré** : pubs, pistage et apps ou services inutiles enlevés. [Plus bas](#debloat-intégré).
+- **Se met à jour tout seul**, en **français et en anglais**.
+
+| | | |
+|---|---|---|
+| ![Grille](docs/images/grid.jpg) | ![Centre de contrôle](docs/images/control-center.jpg) | ![Réglages](docs/images/settings.jpg) |
+| ![Recherche](docs/images/search.jpg) | ![Sources](docs/images/sources.jpg) | ![Profils](docs/images/profiles.jpg) |
+
+## Quelle TV ?
+
+| TV | Sans root | Avec root |
+|---|---|---|
+| **Samsung** (Tizen 7 et plus ; Tizen 6 en partie) | Le launcher comme une app, installé avec [Apps2Samsung](https://github.com/Apps2Samsung/Apps2Samsung) | **Tout**, avec [Vetro](https://github.com/andrearicci93/vetro) sur l'écran |
+| **LG** (webOS) | Le launcher, par le mode développeur de LG (il faut un PC) | **Tout**, avec le Homebrew Channel ([rootée](https://e.nya.je/getroot/)) |
+| **Android TV, Google TV** | **Tout** : pas besoin de root | — |
+
+Ce que le root ajoute : Home ouvre APL Launcher et la TV démarre dessus, le centre de contrôle par-dessus les apps (Samsung) ou sur la touche Guide (LG), la fermeture des apps restées ouvertes, les réglages d'image de la TV dans le launcher, et le debloat. L'installateur te le montre pour ta TV. Ce qui marche sur quel modèle : [docs/compatibility.md](docs/compatibility.md).
 
 ## Installer
 
-1. **Installe Vetro** sur l'écran (voir plus haut).
-2. **Télécharge APL Launcher Setup** (`APL-Launcher-Setup.exe`) dans la
-   [dernière version](https://github.com/Knikt/APL-Launcher-for-TizenOS/releases/latest) et ouvre-le. Si Windows dit que l'app n'est pas signée :
-   *Informations complémentaires › Exécuter quand même*.
-3. Page **Installer** : le logiciel trouve l'écran (ou tape son adresse IP),
-   vérifie Tizen Studio, le certificat Samsung sur le PC, et prend les clés
-   TMDB, YouTube et Fanart.tv (facultatives) et les sites à afficher comme des apps.
-   Clique sur **Installer** : il compile, signe, installe le launcher et APL Overlay
-   par Vetro, puis ouvre le launcher.
-4. Termine une seule fois, comme le logiciel te le montre :
-   - **sur l'écran** : *Paramètres › Tous les paramètres › Fonctions avancées* →
-     **Lancer Smart Hub automatiquement** : Désactivé ;
-     **Lancer automatiquement la dernière app** : Activé ;
-   - **dans Vetro** › **Remapper** : choisis ta télécommande dans la liste des
-     appareils (**Smart Control 2016** si elle est appairée en Bluetooth,
-     **wt61p807 rc device** si elle marche en infrarouge seulement ; pour l'appairer :
-     vise l'écran et maintiens **Retour** et **⏯** ensemble 3 secondes), touche
-     **Home** → **APL Launcher**, puis active **Remote interception**. Clique ensuite
-     sur **C'est fait — configurer les boutons** : Home et ⏯ passent à APL Overlay
-     (et Samsung TV Plus / Prime Video si AquaPlay / TizenTube sont installés).
-     Sur l'écran, *Réglages › Télécommande et appareils › Régler les touches de la
-     télécommande* fait la même chose, sans PC.
+Il te faut un PC Windows 10 ou 11 sur le même réseau que la TV.
 
-   Après un redémarrage complet, Vetro met jusqu'à 2 minutes à reprendre la main.
-5. Facultatif : la page **Optimiser** retire les apps et services inutiles.
-   Elle montre tout et attend ta confirmation.
-6. Facultatif : **Alexa** sur le bouton micro : *Réglages › Télécommande et appareils ›
-   Alexa sur le bouton micro* dans le launcher, choisis Amazon Alexa et connecte
-   ton compte Amazon (télécommande appairée en Bluetooth).
-7. Facultatif : *Réglages › Général et Confidentialité › Démarrer sur APL Launcher* :
-   l'écran démarre sur le launcher en une seconde environ.
+1. **Télécharge APL Launcher Setup** (`APL-Launcher-Setup.exe`) depuis la [dernière version](https://github.com/Knikt/APL-Launcher/releases/latest) et ouvre-le. Si Windows dit que l'app n'est pas signée : *Informations complémentaires › Exécuter quand même*.
+2. **Choisis ta TV** et dis si elle est rootée. L'installateur montre ce que tu auras, et ce qui manque sans root.
 
-**Un problème ?** La page **Restaurer** remet le bouton Home et le menu Samsung, et
-annule l'optimisation.
+   <img src="docs/images/setup/fr-your-tv.png" alt="APL Launcher Setup : choisir sa TV" width="720">
+
+3. **Tape l'adresse IP de la TV** (ou clique sur **Rechercher**) et clique sur **Installer**. Ajoute tes clés gratuites TMDB, YouTube et Fanart.tv si tu en as : elles apportent le Top Shelf en direct et les visuels.
+
+   <img src="docs/images/setup/fr-install-lg.png" alt="APL Launcher Setup : installer sur une TV LG" width="720">
+
+C'est tout : l'installateur fabrique APL Launcher avec tes réglages, l'installe, active ce que le root permet et l'ouvre sur la TV. Sur Samsung, il faut aussi Tizen Studio et ton certificat Samsung sur le PC (l'installateur les vérifie et te dit quoi faire). Le guide complet, étape par étape : [docs/installation.md](docs/installation.md) (en anglais).
+
+### Sans ordinateur
+
+- **Samsung** : [Apps2Samsung](https://github.com/Apps2Samsung/Apps2Samsung) installe `apl-launcher-full-vX.Y.Z.wgt` depuis ton téléphone.
+- **LG rootée** : dans le **Homebrew Channel**, *Settings › Add repository*, tape
+  `https://raw.githubusercontent.com/Knikt/APL-Launcher/main/webos/repo/apps.json`, puis installe **APL Launcher** depuis la liste. Pour les fonctions root, lance une fois depuis une app SSH sur ton téléphone (utilisateur `root`, mot de passe `alpine`) :
+  `wget -qO- https://raw.githubusercontent.com/Knikt/APL-Launcher/main/webos/root/install.sh | sh`
+- **Android TV** : avec l'app **Downloader** sur la TV, ouvre le lien du `.apk` de la [dernière version](https://github.com/Knikt/APL-Launcher/releases/latest) et installe-le. APL Launcher demande ensuite ce qu'il faut pour Home.
+
+## Debloat intégré
+
+| TV | Ce qui est enlevé | Annuler |
+|---|---|---|
+| **Samsung** (avec Vetro) | La page **Optimiser** de l'installateur : apps inutilisées, pubs de Samsung, pistage de ce que tu regardes et Bixby, domaines de pub bloqués. Elle montre toute la liste et attend ton accord. [Détails](docs/optimizer.md) | Page **Restaurer** |
+| **LG** (rootée) | Les pubs de LG, le pistage LivePlus, la télémétrie, les suggestions et une douzaine de services inutiles (environ 390 Mo de mémoire libérés sur une OLED G5). Les mises à jour du logiciel de la TV sont bloquées, pour qu'elles n'enlèvent pas le root. AirPlay, Chromecast, ThinQ et les apps de streaming marchent toujours. [Détails](webos/root/README.md) | Une commande, ou l'interrupteur de l'installateur |
+| **Android TV** | Rien n'est enlevé : le launcher de la TV reste simplement derrière APL Launcher. | — |
+
+Rien n'est supprimé du système de la TV : tout est seulement coupé, et revient.
 
 ## Mises à jour
 
-Automatiques : l'écran vérifie GitHub toutes les 6 h,
-s'installe tout seul la nouvelle version, et revient de lui-même à la version
-installée si la nouvelle ne démarre pas. Rouvre APL Launcher Setup seulement quand
-l'écran le demande, ou pour mettre à jour APL Overlay. Ce qui change à chaque
-version : [CHANGELOG.md](CHANGELOG.md) (en anglais).
+- **Samsung** : APL Launcher se met à jour tout seul depuis ce dépôt, et revient à la version installée si une nouvelle ne démarre pas.
+- **LG** : le Homebrew Channel montre les nouvelles versions (si tu l'as installé depuis son dépôt), sinon relance l'installateur.
+- **Android TV** : relance l'installateur, ou installe le nouveau `.apk`.
 
-## APL Launcher Setup
-
-Un seul logiciel Windows, en français quand Windows est en français. Rien à
-installer pour le lancer.
-
-| Page | Rôle |
-|---|---|
-| **Installer** | Trouve l'écran, vérifie le PC, compile, signe, installe le launcher et APL Overlay, puis guide les deux derniers réglages. Peut aussi installer [APL TV](https://github.com/Knikt/APL-TV), le lecteur IPTV dans le même style pour tes propres playlists. |
-| **Optimiser** | Allège l'écran (apps, pubs, pistage, Bixby). Montre tout avant ; réversible. |
-| **Restaurer** | Rend le bouton Home à Samsung et annule l'optimisation ; peut aussi désinstaller le launcher. |
-| **Outils** | Aperçu du launcher sur le PC, réparation de TizenBrew et TizenTube, diagnostics en lecture seule, ouvrir Vetro. |
-
-## Sur l'écran
-
-- **Liquid Glass** : le dock, l'horloge, le Centre de contrôle et Sources sont en verre et
-  laissent voir l'image derrière eux. Le verre est préparé une fois par image au lieu d'être
-  flouté en direct : il est toujours là et ne ralentit jamais l'écran. Chaque morceau de verre
-  s'assombrit juste assez pour son texte, qui reste lisible sur une affiche blanche comme sur
-  une sombre, en thème sombre comme en thème clair.
-- **Home** deux fois : le sélecteur d'apps. **Home maintenu** ou **⏯** : le Centre de contrôle, même sur une vidéo.
-  Il est fluide (53 à 56 images par seconde sur la M8) et a aussi Mode Jeu, Accessibilité,
-  l'économiseur et Rechercher.
-- **Rechercher** : ▲ deux fois depuis le dock, puis quelques lettres : les apps qui
-  correspondent s'affichent au fur et à mesure, et avant ça les dernières utilisées.
-- **OK maintenu sur une app** : Modifier l'écran d'accueil, Déplacer vers un dossier, Masquer l'app, Supprimer l'app.
-- **5, 6 ou 7 apps par rangée** dans le dock et la grille (*Réglages › Écran d'accueil ›
-  Apps par rangée*).
-- **Top Shelf** : ce qui est populaire en ce moment dans ton pays sur chaque service
-  (Netflix, Prime Video, Disney+, CANAL+, Crunchyroll, JioHotstar, Sony LIV…), et d'abord
-  ton propre contenu pour les apps qui en donnent (Plex, Spotify). En option
-  (*Réglages › Apparence*), un film ou une série que le service diffuse en ce moment
-  derrière les apps qui n'ont rien à montrer.
-- **Continuer de regarder** : pour AquaPlay, Hot Player, [APL TV](#apl-tv), Stremio et Nuvio,
-  la dernière chaîne avec son logo, ou le film ou la série en cours avec son image,
-  l'épisode et la jauge.
-- **Sources** : toutes les entrées HDMI de l'écran, l'USB-C, AirPlay et, sur les TV, la
-  **TV en direct** (antenne, câble ou satellite). OK pour passer sur une entrée ; OK maintenu
-  pour choisir l'appareil branché (Switch 2, Steam Deck, PS5…) ou la mettre sur l'accueil.
-- **Réglages** : tous les menus de l'écran, à la façon d'Apple TV.
-- **Démarrage en une seconde** : *Réglages › Général et Confidentialité › Démarrer sur APL
-  Launcher* fait du launcher l'accueil de l'écran : il s'affiche une seconde environ après
-  l'allumage au lieu d'une minute (1,3 s au lieu de 64 s sur la M8).
-- **Profils** (avatar en haut à droite, depuis le Centre de contrôle) : chaque
-  personne a son accueil, ses apps masquées, ses préférences et son historique.
-  OK maintenu sur un profil : choisir son **Memoji**. Tes propres Memoji : mets
-  les images PNG dans *Images › APL Launcher avatars* sur le PC, puis relance
-  l'installation.
-- **Économiseur d'écran** : les vidéos aériennes d'Apple, en 4K, ou une horloge. Contre le
-  marquage, l'horloge peut passer d'un coin à l'autre (*Réglages › Économiseur d'écran ›
-  Déplacer l'horloge*) : le launcher reconnaît les écrans OLED à leur modèle et l'active
-  tout seul sur eux.
-- Les apps laissées **10 minutes en fond** se ferment toutes seules, jamais celle
-  qui est devant (*Réglages › Apps* pour couper), et celles que Samsung ouvre tout seul
-  au bout d'1 minute si tu ne t'en sers pas. Le launcher, lui, reste en mémoire : en
-  quittant une app, plus d'écran noir le temps qu'il redémarre.
-- **Langue** : le launcher est en français quand l'écran l'est, en anglais sinon ;
-  *Réglages › Général et Confidentialité › Langue* pour choisir.
-
-Le launcher lui-même reste en 1920×1080 : sur ces écrans, la couche qui dessine
-les apps et les menus n'a que ce mode. Seules les vidéos passent en 4K.
-
-Guide complet (en anglais) : [docs/user-guide.md](docs/user-guide.md).
+Les nouveautés : [CHANGELOG.md](CHANGELOG.md).
 
 ## APL TV
 
-**[APL TV](https://github.com/Knikt/APL-TV)** est le lecteur IPTV fait pour aller avec APL Launcher, par le
-même créateur : TV en direct, films et séries depuis tes propres playlists M3U et comptes Xtream, et depuis
-ton propre serveur Jellyfin, Emby ou Plex, dans le même style Apple TV. Il marche sur Samsung (Tizen 6 ou plus
-récent), LG (webOS) et Android TV, Google TV et Fire TV.
+**[APL TV](https://github.com/Knikt/APL-TV)** est le lecteur IPTV qui va avec APL Launcher : TV en direct, guide des programmes, films et séries depuis tes propres playlists M3U, comptes Xtream et serveurs Jellyfin, Emby ou Plex, dans le même style. Sur Samsung, LG et Android TV. Son « Continuer de regarder » s'affiche sur l'accueil d'APL Launcher. Il est livré sans chaîne ni fournisseur : utilise-le avec des contenus que tu as le droit de regarder.
 
-[![APL TV : l'accueil, la page d'un titre, la TV en direct et le lecteur](https://raw.githubusercontent.com/Knikt/APL-TV/main/docs/images/home.jpg)](https://github.com/Knikt/APL-TV)
+## Aide
 
-- **TV en direct** avec la chaîne qui joue derrière l'interface, un **guide des programmes** en grille, le
-  **multi-écran** sur Samsung (jusqu'à 4 chaînes à la fois), et une chaîne que tu peux mettre en pause et
-  reprendre en arrière.
-- **Films et séries** avec le résumé en français, le casting, les notes IMDb, les saisons et les épisodes, et
-  les âges conseillés à la française (-12, -16…).
-- **Ton serveur multimédia** : Jellyfin, Emby et Plex, une catégorie par bibliothèque, lus directement depuis
-  le serveur.
-- **Reprendre la lecture**, chaînes favorites, **recherche** au clavier ou avec **Alexa**, et réglage depuis
-  le téléphone avec un QR code, où tu peux aussi ranger ta playlist.
-- **Fait pour APL Launcher** : sur l'accueil, le Top Shelf d'APL TV montre ce que tu regardais et ta dernière
-  chaîne, et OK l'ouvre directement au bon endroit.
-- **S'installe** avec APL Launcher Setup (page *Installer* › *Installer aussi APL TV*) ou depuis ses
-  [versions](https://github.com/Knikt/APL-TV/releases/latest) : un `.wgt` pour Samsung, un `.ipk` pour LG,
-  un `.apk` pour Android. Pas besoin de root.
+- [Installation pas à pas](docs/installation.md) · [Compatibilité](docs/compatibility.md) · [Guide d'utilisation](docs/user-guide.md) · [Dépannage](docs/troubleshooting.md) (en anglais)
+- Samsung : [Optimiser](docs/optimizer.md) · LG : [scripts root](webos/root/README.md) · Android : [touche Home et plus](docs/android.md)
 
-APL TV n'est qu'un lecteur : aucune chaîne, aucune playlist, aucun fournisseur. À utiliser avec des contenus
-que tu as le droit de regarder.
+**C'est sans risque ?** Rien n'est supprimé du système de la TV. Sur Samsung, **Restaurer** annule tout ; sur LG, `sh /media/developer/apl-debloat/uninstall.sh` ; sur Android, désinstalle l'app.
+
+**Ça lance des apps Android sur Samsung ou LG ?** Non : Tizen et webOS ne peuvent pas les faire tourner, root ou pas.
+
+Les issues et les pull requests sont les bienvenues : [CONTRIBUTING.md](CONTRIBUTING.md). Merci à skjnldsv, exzos28, praneetchoudhary0-droid et BPHvZ pour les leurs.
 
 ## Soutenir APL Launcher
 
-APL Launcher est gratuit, open source et fait par une seule personne sur son temps libre. Si tu l'aimes et que tu veux m'aider, tu peux m'offrir un café sur [Ko-fi](https://ko-fi.com/knikt). Ce n'est jamais obligatoire et tout reste gratuit. La même page soutient aussi [APL TV](https://github.com/Knikt/APL-TV).
+APL Launcher est gratuit, libre et fait par une seule personne sur son temps libre. S'il te plaît, tu peux m'offrir un café sur [Ko-fi](https://ko-fi.com/knikt). Jamais obligatoire : tout reste gratuit.
 
-[![Me soutenir sur Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/knikt)
+[![Soutiens-moi sur Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/knikt)
 
 ## Licence
 
-APL Launcher est créé par Knikt (Gero Corp.). Code sous [licence MIT](LICENSE). APL Launcher est un projet indépendant, sans lien
-avec Apple, Samsung ou Amazon ; leurs marques et logos appartiennent à leurs
-propriétaires.
+APL Launcher est créé par Knikt (Gero Corp.). Code sous [licence MIT](LICENSE). APL Launcher est un projet indépendant, sans lien avec Apple, Samsung, LG, Google ou Amazon ; leurs marques et logos appartiennent à leurs propriétaires. Les crédits complets sont dans le [README en anglais](README.md#license-trademarks-and-credits).

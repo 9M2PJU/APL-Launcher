@@ -1,0 +1,178 @@
+﻿# ============================================================
+#  install-android.ps1 — installs APL Launcher on an Android TV or Google TV from this PC.
+#  Started by APL Launcher Setup (Android TV); also runs on its own in PowerShell.
+#
+#    .\scripts\install-android.ps1 -TvIp 192.168.1.30
+#    .\scripts\install-android.ps1 -TvIp 192.168.1.30 -PairPort 37123 -PairCode 482913   (Wireless debugging)
+#
+#  1. adb: Android's own tool (platform-tools), found on this PC or downloaded once from Google
+#  2. the package: -Apk, else dist\apl-launcher-*-android.apk, else the latest GitHub release's .apk
+#  3. connects to the TV (USB or Network debugging: the TV asks to allow this PC once)
+#  4. installs it, turns on its remote buttons service (Home opens APL Launcher) and opens it
+#  -CheckOnly: only says what this PC has (APL-CHECK).
+# ============================================================
+param(
+    [string]$TvIp,
+    [string]$Port = "5555",
+    [string]$PairPort,          # Wireless debugging (Android 11+): the pairing port and code the TV shows
+    [string]$PairCode,
+    [string]$Apk,
+    [switch]$NoHomeService,     # leaves the remote buttons service off (Home keeps the TV's own launcher)
+    [string]$Repo = "Knikt/APL-Launcher",
+    [switch]$Unattended,
+    [switch]$CheckOnly
+)
+$ErrorActionPreference = 'Stop'
+. "$PSScriptRoot\lib.ps1"
+$Root = Split-Path $PSScriptRoot -Parent
+$Quiet = $Unattended -or $CheckOnly
+$AppId = "com.knikt.apllauncher"
+$KeyService = "$AppId/$AppId.KeyService"
+$Total = 4
+
+function Step([int]$n, [string]$txt) {
+    Write-Host ""
+    Write-Host "  [$n/$Total] $txt" -ForegroundColor Cyan
+    Send-Gui "APL-STEP $n $Total $txt"
+}
+function Fail([string]$msg) {
+    Write-Host ""
+    Write-Host (Tr "  PROBLEM: $msg" "  PROBLÈME : $msg") -ForegroundColor Red
+    if ($Quiet) { Send-Gui ("APL-RESULT fail " + ($msg -replace '\s*\r?\n\s*', ' ')) }
+    exit 1
+}
+
+$tools = Join-Path $env:LOCALAPPDATA "APL-Launcher\platform-tools"
+function Find-Adb {
+    $list = @((Join-Path $tools "adb.exe"),
+              "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe",
+              "$env:ANDROID_HOME\platform-tools\adb.exe", "$env:ANDROID_SDK_ROOT\platform-tools\adb.exe",
+              "E:\Android\Sdk\platform-tools\adb.exe")
+    foreach ($c in $list) { if ($c -and (Test-Path -LiteralPath $c)) { return $c } }
+    $cmd = Get-Command adb.exe -ErrorAction SilentlyContinue
+    if ($cmd) { return $cmd.Source }
+    return $null
+}
+function Find-LocalApk {
+    $dist = Join-Path $Root "dist"
+    if (-not (Test-Path -LiteralPath $dist)) { return $null }
+    $hit = Get-ChildItem -LiteralPath $dist -Filter "apl-launcher-*android*.apk" -File -ErrorAction SilentlyContinue |
+           Where-Object { $_.Name -notmatch 'testkey' } | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+    if ($hit) { return $hit.FullName }
+    return $null
+}
+
+if ($CheckOnly) {
+    $check = [ordered]@{ adb = (Find-Adb); apk = $(if ($Apk) { $Apk } else { Find-LocalApk }) }
+    Send-Gui ("APL-CHECK " + ($check | ConvertTo-Json -Compress))
+    if (-not $script:Gui) { $check | Format-List }
+    exit 0
+}
+try { Test-TvIp $TvIp } catch { Fail $_.Exception.Message }
+try { [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12 } catch {}
+
+Write-Host ""
+Write-Host "  ==============================================" -ForegroundColor White
+Write-Host (Tr "        APL Launcher - install on Android TV" "        APL Launcher - installation sur Android TV") -ForegroundColor White
+Write-Host "  ==============================================" -ForegroundColor White
+
+# ---------- 1. adb ----------
+Step 1 (Tr "Looking for adb on this PC…" "Recherche d'adb sur ce PC…")
+$adb = Find-Adb
+if (-not $adb) {
+    Write-Host (Tr "        Downloading Android's platform-tools from Google (about 7 MB)…" "        Téléchargement des platform-tools d'Android chez Google (7 Mo environ)…")
+    $zip = Join-Path $env:TEMP "apl-platform-tools.zip"
+    try { Invoke-WebRequest -UseBasicParsing -Uri "https://dl.google.com/android/repository/platform-tools-latest-windows.zip" -OutFile $zip -TimeoutSec 300 }
+    catch { Fail (Tr "platform-tools could not be downloaded: $($_.Exception.Message)" "Les platform-tools n'ont pas pu être téléchargés : $($_.Exception.Message)") }
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    $parent = Split-Path $tools -Parent
+    New-Item -ItemType Directory -Force -Path $parent | Out-Null
+    if (Test-Path -LiteralPath $tools) { Remove-Item -LiteralPath $tools -Recurse -Force }
+    [IO.Compression.ZipFile]::ExtractToDirectory($zip, $parent)    # the zip holds a platform-tools\ folder
+    Remove-Item -LiteralPath $zip -Force -ErrorAction SilentlyContinue
+    $adb = Find-Adb
+    if (-not $adb) { Fail (Tr "adb.exe is missing from the download." "adb.exe manque dans le téléchargement.") }
+}
+Write-Host "        adb: $adb" -ForegroundColor Green
+function Adb([string[]]$a) { Invoke-Native $adb $a }
+Adb @('start-server') | Out-Null
+
+# ---------- 2. the package ----------
+Step 2 (Tr "Getting APL Launcher for Android…" "Récupération d'APL Launcher pour Android…")
+if (-not $Apk) { $Apk = Find-LocalApk }
+if (-not $Apk) {
+    $api = "https://api.github.com/repos/$Repo/releases/latest"
+    try { $rel = Invoke-RestMethod -UseBasicParsing -Uri $api -Headers @{ 'User-Agent' = 'APL-Launcher-Setup' } -TimeoutSec 60 }
+    catch { Fail (Tr "Could not reach GitHub ($api): $($_.Exception.Message)" "GitHub injoignable ($api) : $($_.Exception.Message)") }
+    $asset = @($rel.assets) | Where-Object { $_.name -match 'android.*\.apk$' -and $_.name -notmatch 'testkey' } | Select-Object -First 1
+    if (-not $asset) { Fail (Tr "This release ($($rel.tag_name)) has no Android package yet." "Cette version ($($rel.tag_name)) n'a pas encore de paquet Android.") }
+    $Apk = Join-Path $env:LOCALAPPDATA ("APL-Launcher\" + $asset.name)
+    Write-Host (Tr "        Downloading $($asset.name)…" "        Téléchargement de $($asset.name)…")
+    Invoke-WebRequest -UseBasicParsing -Uri $asset.browser_download_url -OutFile $Apk -TimeoutSec 300
+    $sums = @($rel.assets) | Where-Object { $_.name -match '^SHA256SUMS' -and $_.name -match 'apk' } | Select-Object -First 1
+    if ($sums) {
+        $txt = (Invoke-WebRequest -UseBasicParsing -Uri $sums.browser_download_url -TimeoutSec 60).Content
+        if ($txt -is [byte[]]) { $txt = [Text.Encoding]::ASCII.GetString($txt) }
+        $want = ([regex]::Match($txt, '([0-9a-fA-F]{64})\s+\*?' + [regex]::Escape($asset.name))).Groups[1].Value.ToLowerInvariant()
+        $got = (Get-FileHash -LiteralPath $Apk -Algorithm SHA256).Hash.ToLowerInvariant()
+        if ($want -and $want -ne $got) { Remove-Item -LiteralPath $Apk -Force; Fail (Tr "The download is damaged (SHA256 differs). Try again." "Le téléchargement est abîmé (SHA256 différent). Réessaie.") }
+    }
+}
+if (-not (Test-Path -LiteralPath $Apk)) { Fail (Tr "Package not found: $Apk" "Paquet introuvable : $Apk") }
+Write-Host "        $(Split-Path $Apk -Leaf)" -ForegroundColor Green
+
+# ---------- 3. connect ----------
+Step 3 (Tr "Connecting to the TV ($TvIp)… Allow this PC on the TV if it asks." "Connexion à la TV ($TvIp)… Autorise ce PC sur la TV si elle le demande.")
+if ($PairPort -and $PairCode) {
+    $r = Adb @('pair', "${TvIp}:$PairPort", $PairCode)
+    Write-Host "        $($r.Output.Trim())"
+    if ($r.Output -notmatch 'Successfully paired') { Fail (Tr "Pairing refused: check the pairing port and code shown by the TV (Wireless debugging › Pair device with pairing code)." "Appairage refusé : vérifie le port et le code d'appairage affichés par la TV (Débogage sans fil › Associer l'appareil avec un code).") }
+}
+$serial = "${TvIp}:$Port"
+$state = ""
+for ($i = 0; $i -lt 45; $i++) {
+    $r = Adb @('connect', $serial)
+    $st = (Adb @('-s', $serial, 'get-state')).Output.Trim()
+    if ($st -eq 'device') { $state = 'device'; break }
+    if ($i -eq 0) { Write-Host "        $($r.Output.Trim())" }
+    if ($st -match 'unauthorized') {
+        if ($state -ne 'unauthorized') { Write-Host (Tr "        On the TV: allow debugging from this PC (tick Always allow)." "        Sur la TV : autorise le débogage depuis ce PC (coche Toujours autoriser).") -ForegroundColor Yellow }
+        $state = 'unauthorized'
+    }
+    Start-Sleep -Seconds 2
+}
+if ($state -ne 'device') {
+    if ($state -eq 'unauthorized') { Fail (Tr "The TV did not allow this PC. Accept the debugging question on the TV, then try again." "La TV n'a pas autorisé ce PC. Accepte la question de débogage sur la TV, puis réessaie.") }
+    Fail (Tr "No adb answer from $serial. Turn on USB debugging (or Network debugging) in the TV's Developer options." "Pas de réponse adb de $serial. Active le débogage USB (ou réseau) dans les Options pour les développeurs de la TV.")
+}
+Save-TvIp $TvIp -Name "android-ip.txt"
+$model = (Adb @('-s', $serial, 'shell', 'getprop', 'ro.product.model')).Output.Trim()
+$sdk = (Adb @('-s', $serial, 'shell', 'getprop', 'ro.build.version.sdk')).Output.Trim()
+Write-Host (Tr "        Connected: $model (Android API $sdk)" "        Connecté : $model (API Android $sdk)") -ForegroundColor Green
+
+# ---------- 4. install, Home, open ----------
+Step 4 (Tr "Installing APL Launcher on the TV…" "Installation d'APL Launcher sur la TV…")
+$r = Adb @('-s', $serial, 'install', '-r', $Apk)
+Write-Host "        $($r.Output.Trim())"
+if ($r.Output -notmatch 'Success') {
+    if ($r.Output -match 'INSTALL_FAILED_UPDATE_INCOMPATIBLE') { Fail (Tr "Another APL Launcher (signed with another key) is installed: uninstall it on the TV first." "Un autre APL Launcher (signé avec une autre clé) est installé : désinstalle-le d'abord sur la TV.") }
+    Fail (Tr "The TV did not install the package: $($r.Output.Trim())" "La TV n'a pas installé le paquet : $($r.Output.Trim())")
+}
+if (-not $NoHomeService) {
+    # Home opens APL Launcher: its accessibility service (docs/android.md, way A), added to the ones already on
+    $cur = (Adb @('-s', $serial, 'shell', 'settings', 'get', 'secure', 'enabled_accessibility_services')).Output.Trim()
+    if ($cur -eq 'null') { $cur = '' }
+    if ($cur -notmatch [regex]::Escape($KeyService)) {
+        $new = if ($cur) { "${cur}:$KeyService" } else { $KeyService }
+        Adb @('-s', $serial, 'shell', 'settings', 'put', 'secure', 'enabled_accessibility_services', $new) | Out-Null
+    }
+    Adb @('-s', $serial, 'shell', 'settings', 'put', 'secure', 'accessibility_enabled', '1') | Out-Null
+    $now = (Adb @('-s', $serial, 'shell', 'settings', 'get', 'secure', 'enabled_accessibility_services')).Output
+    if ($now -match [regex]::Escape($KeyService)) { Write-Host (Tr "        Remote buttons on: Home opens APL Launcher." "        Boutons de la télécommande activés : Home ouvre APL Launcher.") -ForegroundColor Green }
+    else { Write-Host (Tr "        The remote buttons service could not be turned on: APL Launcher will offer it at its first start." "        Le service des boutons n'a pas pu être activé : APL Launcher le proposera à son premier démarrage.") -ForegroundColor Yellow }
+}
+Adb @('-s', $serial, 'shell', 'am', 'start', '-n', "$AppId/.MainActivity") | Out-Null
+Write-Host ""
+Write-Host (Tr "  Done: APL Launcher is on the TV." "  Terminé : APL Launcher est sur la TV.") -ForegroundColor Green
+if ($Quiet) { Send-Gui "APL-RESULT ok" }
+exit 0

@@ -137,4 +137,40 @@ if release:
     ipk = final
     h = hashlib.sha256(open(ipk, "rb").read()).hexdigest()
     open(os.path.join(out, "SHA256SUMS-ipk.txt"), "w", encoding="utf-8", newline="\n").write("%s  %s\n" % (h, os.path.basename(ipk)))
+
+    # The Homebrew Channel's repository (webos/repo, see its README): APL Launcher installs from the TV itself,
+    # with no PC. The .ipk is the release's asset: publish the release with it, then commit webos/repo.
+    REPO = "Knikt/APL-Launcher"
+    RAW = "https://raw.githubusercontent.com/%s/main/" % REPO
+    manifest = {
+        "id": APP_ID,
+        "version": version,
+        "type": "web",
+        "title": "APL Launcher",
+        "appDescription": "An Apple TV style Home Screen",
+        "iconUri": RAW + "launcher/icon.png",
+        "sourceUrl": "https://github.com/" + REPO,
+        "rootRequired": False,
+        "ipkUrl": "https://github.com/%s/releases/download/v%s/%s" % (REPO, version, os.path.basename(ipk)),
+        "ipkHash": {"sha256": h},
+        "ipkSize": os.path.getsize(ipk),
+    }
+    index = {
+        "paging": {"page": 1, "count": 1, "maxPage": 1, "itemsTotal": 1, "prevUrl": None, "nextUrl": None},
+        "packages": [{
+            "id": APP_ID,
+            "title": "APL Launcher",
+            "iconUri": manifest["iconUri"],
+            "manifestUrl": RAW + "webos/repo/apl-launcher.json",
+            "manifest": manifest,
+            "pool": "main",
+            "shortDescription": "An Apple TV style Home Screen for LG TVs. Root features: see the README.",
+            "fullDescriptionUrl": "https://github.com/%s#readme" % REPO,
+        }],
+    }
+    repo_dir = os.path.join(ROOT, "webos", "repo")
+    os.makedirs(repo_dir, exist_ok=True)
+    json.dump(manifest, open(os.path.join(repo_dir, "apl-launcher.json"), "w", encoding="utf-8", newline="\n"), indent=2)
+    json.dump(index, open(os.path.join(repo_dir, "apps.json"), "w", encoding="utf-8", newline="\n"), indent=2)
+    print("Homebrew Channel repository:", os.path.join(repo_dir, "apps.json"), "(commit it once the release is published)")
 print("package:", ipk, os.path.getsize(ipk), "bytes")

@@ -78,15 +78,16 @@ function Find-Tizen {
 }
 
 # The screen's IP address, remembered on this PC (no hard-coded value)
-function Get-SavedTvIp {
-    $f = Join-Path $env:APPDATA "APL-Launcher\tv-ip.txt"
+# One file per kind of TV: tv-ip.txt (Samsung), webos-ip.txt (LG), android-ip.txt
+function Get-SavedTvIp([string]$Name = "tv-ip.txt") {
+    $f = Join-Path $env:APPDATA "APL-Launcher\$Name"
     if (Test-Path $f) { return ([IO.File]::ReadAllText($f)).Trim() }
     return ""
 }
-function Save-TvIp([string]$Ip) {
+function Save-TvIp([string]$Ip, [string]$Name = "tv-ip.txt") {
     $d = Join-Path $env:APPDATA "APL-Launcher"
     New-Item -ItemType Directory -Force -Path $d | Out-Null
-    [IO.File]::WriteAllText((Join-Path $d "tv-ip.txt"), $Ip)
+    [IO.File]::WriteAllText((Join-Path $d $Name), $Ip)
 }
 
 function Test-TvIp {
